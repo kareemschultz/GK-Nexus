@@ -6,6 +6,7 @@ import { complianceRouter } from "./compliance";
 import { dashboardRouter } from "./dashboard";
 import { documentsRouter } from "./documents";
 import { graIntegrationRouter } from "./gra-integration";
+import { immigrationRouter } from "./immigration";
 import { invoicesRouter } from "./invoices";
 import { notificationsRouter } from "./notifications";
 import { ocrRouter } from "./ocr";
@@ -18,6 +19,7 @@ export const appRouter = {
     message: "This is private",
     user: context.user,
   })),
+  ai: aiRouter,
   clients: clientsRouter,
   users: usersRouter,
   tax: taxRouter,
@@ -26,6 +28,7 @@ export const appRouter = {
   dashboard: dashboardRouter,
   invoices: invoicesRouter,
   compliance: complianceRouter,
+  immigration: immigrationRouter,
   gra: graIntegrationRouter,
   ocr: ocrRouter,
   notifications: notificationsRouter,

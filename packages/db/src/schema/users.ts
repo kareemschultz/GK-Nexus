@@ -45,8 +45,8 @@ export const users = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    createdBy: text("created_by"),
-    updatedBy: text("updated_by"),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
   },
   (table) => [
     index("users_email_idx").on(table.email),

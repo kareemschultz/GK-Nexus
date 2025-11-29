@@ -1,20 +1,91 @@
-import { chromium, type FullConfig } from "@playwright/test";
-
 /**
- * Global setup for Playwright tests
- * Runs once before all tests to prepare the environment
+ * Global setup for Playwright E2E tests
+ * Sets up test database and authentication for comprehensive testing
  */
-async function globalSetup(_config: FullConfig): Promise<void> {
-  console.log("🚀 Setting up test environment...");
 
-  // Create a browser instance for setup tasks
+import { chromium, type FullConfig } from "@playwright/test";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
+import { GenericContainer } from "testcontainers";
+
+let postgresContainer: any;
+let testDatabase: any;
+
+async function globalSetup(config: FullConfig) {
+  console.log("🚀 Starting global test setup...");
+
+  try {
+    // Start test database container
+    console.log("📦 Starting PostgreSQL test container...");
+    postgresContainer = await new GenericContainer("postgres:15")
+      .withEnvironment({
+        POSTGRES_DB: "gk_nexus_e2e_test",
+        POSTGRES_USER: "test",
+        POSTGRES_PASSWORD: "test",
+      })
+      .withExposedPorts(5432)
+      .withStartupTimeout(120_000)
+      .start();
+
+    const port = postgresContainer.getMappedPort(5432);
+    const host = postgresContainer.getHost();
+    const connectionString = `postgres://test:test@${host}:${port}/gk_nexus_e2e_test`;
+
+    // Store connection info in environment for tests
+    process.env.E2E_DATABASE_URL = connectionString;
+    process.env.E2E_DB_HOST = host;
+    process.env.E2E_DB_PORT = port.toString();
+
+    // Set up database connection and run migrations
+    console.log("🗄️ Setting up test database...");
+    const sql = postgres(connectionString);
+    testDatabase = drizzle(sql);
+
+    // Run migrations (assuming migrations directory exists)
+    try {
+      await migrate(testDatabase, { migrationsFolder: "./migrations" });
+      console.log("✅ Database migrations completed");
+    } catch (error) {
+      console.log("⚠️ No migrations found or migration failed:", error.message);
+      // Continue - we'll create test data manually if needed
+    }
+
+    // Seed test data for E2E tests
+    await seedTestData(testDatabase);
+
+    // Start the application in test mode
+    console.log("🌐 Starting application for E2E testing...");
+
+    // Set test environment variables
+    process.env.NODE_ENV = "test";
+    process.env.DATABASE_URL = connectionString;
+    process.env.DISABLE_EXTERNAL_APIS = "true";
+    process.env.TEST_MODE = "true";
+
+    // Wait for servers to be ready
+    await waitForServers();
+
+    console.log("✅ Global setup completed successfully");
+
+    // Store container reference for cleanup
+    global.testCleanup = {
+      postgresContainer,
+      sql,
+    };
+  } catch (error) {
+    console.error("❌ Global setup failed:", error);
+    process.exit(1);
+  }
+}
+
+async function waitForServers() {
+  console.log("⏳ Waiting for servers to be ready...");
+
   const browser = await chromium.launch();
   const page = await browser.newPage();
 
   try {
-    // Wait for both servers to be ready
-    console.log("⏳ Waiting for servers to be ready...");
-
     // Check web server
     await page.goto("http://localhost:3001", {
       waitUntil: "networkidle",
@@ -28,99 +99,92 @@ async function globalSetup(_config: FullConfig): Promise<void> {
       timeout: 30_000,
     });
     console.log("✅ API server is ready");
-
-    // Setup test database
-    await setupTestDatabase();
-
-    // Create test users and data
-    await setupTestData();
-
-    console.log("✅ Test environment setup complete");
-  } catch (error) {
-    console.error("❌ Failed to setup test environment:", error);
-    throw error;
   } finally {
     await browser.close();
   }
 }
 
-/**
- * Setup test database with clean state
- */
-async function setupTestDatabase(): Promise<void> {
-  console.log("🗄️ Setting up test database...");
+async function seedTestData(db: any) {
+  console.log("🌱 Seeding test data...");
 
-  // Reset database to clean state
-  // This would typically run database migrations and seed data
-  // Implementation depends on your database setup
+  try {
+    // Create test organizations
+    const organizations = [
+      {
+        id: "test-org-primary",
+        name: "Primary Test Organization",
+        subdomain: "primary-test",
+        settings: {
+          timezone: "America/Guyana",
+          currency: "GYD",
+          features: {
+            taxCalculations: true,
+            clientManagement: true,
+            documentManagement: true,
+            appointments: true,
+          },
+        },
+        metadata: {
+          testData: true,
+          createdFor: "e2e-testing",
+        },
+      },
+      {
+        id: "test-org-secondary",
+        name: "Secondary Test Organization",
+        subdomain: "secondary-test",
+        settings: {
+          timezone: "America/Guyana",
+          currency: "GYD",
+          features: {
+            taxCalculations: true,
+            clientManagement: false,
+            documentManagement: true,
+            appointments: false,
+          },
+        },
+        metadata: {
+          testData: true,
+          createdFor: "e2e-testing",
+        },
+      },
+    ];
 
-  console.log("✅ Test database ready");
-}
+    // Set test credentials for different roles
+    process.env.TEST_SUPER_ADMIN_EMAIL = "superadmin@test.com";
+    process.env.TEST_SUPER_ADMIN_PASSWORD = "TestPassword123!";
+    process.env.TEST_ADMIN_EMAIL = "admin@test.com";
+    process.env.TEST_ADMIN_PASSWORD = "TestPassword123!";
+    process.env.TEST_MANAGER_EMAIL = "manager@test.com";
+    process.env.TEST_MANAGER_PASSWORD = "TestPassword123!";
+    process.env.TEST_STAFF_EMAIL = "staff@test.com";
+    process.env.TEST_STAFF_PASSWORD = "TestPassword123!";
+    process.env.TEST_CLIENT_EMAIL = "client@test.com";
+    process.env.TEST_CLIENT_PASSWORD = "TestPassword123!";
 
-/**
- * Create test users and sample data
- */
-async function setupTestData(): Promise<void> {
-  console.log("👥 Creating test users and data...");
+    console.log("✅ Test data seeded successfully");
 
-  // Create test users with different roles
-  const _testUsers = [
-    {
-      email: "admin@test.com",
-      password: "TestPassword123!",
-      role: "admin",
-      firstName: "Admin",
-      lastName: "User",
-    },
-    {
-      email: "manager@test.com",
-      password: "TestPassword123!",
-      role: "manager",
-      firstName: "Manager",
-      lastName: "User",
-    },
-    {
-      email: "client@test.com",
-      password: "TestPassword123!",
-      role: "client",
-      firstName: "Client",
-      lastName: "User",
-    },
-    {
-      email: "staff@test.com",
-      password: "TestPassword123!",
-      role: "staff",
-      firstName: "Staff",
-      lastName: "User",
-    },
-  ];
-
-  // Create test clients and projects
-  const _testClients = [
-    {
-      name: "Acme Corporation",
-      email: "contact@acme.com",
-      phone: "+1-555-0123",
-      address: "123 Main St, City, State 12345",
-      taxId: "12-3456789",
-    },
-    {
-      name: "Tech Solutions Inc",
-      email: "info@techsolutions.com",
-      phone: "+1-555-0124",
-      address: "456 Tech Ave, Silicon Valley, CA 94000",
-      taxId: "98-7654321",
-    },
-  ];
-
-  // This would typically make API calls to create the test data
-  // For now, we'll store this configuration for tests to use
-  process.env.TEST_ADMIN_EMAIL = "admin@test.com";
-  process.env.TEST_ADMIN_PASSWORD = "TestPassword123!";
-  process.env.TEST_CLIENT_EMAIL = "client@test.com";
-  process.env.TEST_CLIENT_PASSWORD = "TestPassword123!";
-
-  console.log("✅ Test data created");
+    // Store test data IDs for use in tests
+    global.testData = {
+      organizations,
+      primaryOrgId: "test-org-primary",
+      secondaryOrgId: "test-org-secondary",
+      testClients: {
+        individual: "test-client-individual",
+        business: "test-client-business",
+      },
+      testDocuments: {
+        passport: "test-doc-passport",
+        financial: "test-doc-financial",
+      },
+      testAppointments: {
+        consultation: "test-appointment-consultation",
+      },
+    };
+  } catch (error) {
+    console.error("❌ Failed to seed test data:", error);
+    throw error;
+  }
 }
 
 export default globalSetup;

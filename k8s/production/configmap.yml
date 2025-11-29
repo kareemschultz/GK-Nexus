@@ -1,0 +1,24 @@
+# Configuration Map for GK-Nexus Production Environment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gk-nexus-config
+  namespace: production
+  labels:
+    app: gk-nexus
+    environment: production
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PORT: "3000"
+  WEB_PORT: "80"
+  POSTGRES_DB: "gk_nexus_prod"
+  POSTGRES_USER: "postgres"
+  REDIS_PORT: "6379"
+  FILE_UPLOAD_MAX_SIZE: "10485760"
+  RATE_LIMIT_WINDOW: "15"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  SESSION_TIMEOUT: "3600"
+  ENABLE_ANALYTICS: "true"
+  ENABLE_AUDIT_LOGGING: "true"
+  ENABLE_COMPLIANCE_MONITORING: "true"

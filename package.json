@@ -36,7 +36,19 @@
     "db:stop": "turbo -F @GK-Nexus/db db:stop",
     "db:down": "turbo -F @GK-Nexus/db db:down",
     "init": "tsx scripts/init-system.ts",
-    "init:system": "tsx scripts/init-system.ts"
+    "init:system": "tsx scripts/init-system.ts",
+    "test": "turbo run test",
+    "test:unit": "turbo run test --filter='@GK-Nexus/api' --filter='web'",
+    "test:integration": "turbo run test:integration --filter='@GK-Nexus/api'",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:coverage": "turbo run test:coverage",
+    "test:watch": "turbo run test:watch",
+    "test:ci": "bun run test:unit && bun run test:integration && bun run test:e2e",
+    "test:accessibility": "turbo -F web test:a11y",
+    "test:performance": "playwright test --grep='Performance'",
+    "test:security": "playwright test --grep='Security'"
   },
   "dependencies": {
     "dotenv": "^17.2.2",

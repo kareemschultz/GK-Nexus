@@ -1,0 +1,79 @@
+# Terraform Variables Configuration for GK-Nexus Production
+# =========================================================
+#
+# Copy this file to terraform.tfvars and update with your actual values
+# IMPORTANT: Never commit terraform.tfvars to version control
+
+# General Configuration
+project_name = "gk-nexus"
+environment  = "production"
+aws_region   = "us-east-1"
+domain_name  = "gknexus.com"
+
+# VPC Configuration
+vpc_cidr              = "10.0.0.0/16"
+public_subnet_cidrs   = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+private_subnet_cidrs  = ["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24"]
+
+# EKS Configuration
+eks_cluster_version    = "1.28"
+node_group_min_size    = 3
+node_group_max_size    = 10
+node_group_desired_size = 3
+node_instance_types    = ["t3.medium", "t3.large"]
+
+# EKS Admin Users (update with your actual IAM user ARNs)
+eks_admin_users = [
+  {
+    userarn  = "arn:aws:iam::123456789012:user/admin"
+    username = "admin"
+    groups   = ["system:masters"]
+  }
+]
+
+# RDS Configuration
+rds_engine_version          = "16.1"
+rds_instance_class          = "db.t3.small"  # Upgrade from micro for production
+rds_allocated_storage       = 20
+rds_max_allocated_storage   = 100
+rds_database_name           = "gk_nexus_prod"
+rds_username                = "postgres"
+rds_password                = "your-secure-database-password-here"
+rds_backup_retention_period = 30
+rds_backup_window          = "03:00-04:00"
+rds_maintenance_window     = "sun:04:00-sun:05:00"
+
+# Redis Configuration
+redis_node_type        = "cache.t3.micro"
+redis_num_cache_nodes  = 2
+redis_auth_token       = "your-secure-redis-auth-token-here"
+
+# Monitoring Configuration
+enable_detailed_monitoring = true
+log_retention_days         = 30
+
+# Security Configuration
+allowed_cidr_blocks = ["0.0.0.0/0"]  # Restrict this to your office/VPN IPs
+enable_vpc_flow_logs = true
+enable_guardduty     = true
+
+# Backup Configuration
+backup_retention_period        = 30
+enable_point_in_time_recovery = true
+
+# Cost Optimization
+enable_cost_optimization   = true
+instance_scheduler_enabled = false
+
+# Feature Flags
+enable_waf              = true
+enable_cloudfront       = true
+enable_backup_automation = true
+
+# Additional Tags
+additional_tags = {
+  "Owner"       = "GK-Nexus-DevOps"
+  "CostCenter"  = "Engineering"
+  "Compliance"  = "Required"
+  "DataClass"   = "Confidential"
+}

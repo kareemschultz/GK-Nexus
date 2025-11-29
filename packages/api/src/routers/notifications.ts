@@ -1,10 +1,41 @@
-import { db, notificationsSchema } from "@gk-nexus/db";
+import { db, notificationsSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 import { z } from "zod";
-
 import { protectedProcedure } from "../index";
-import { generateId } from "../lib/id";
+
+// Helper functions for notification system
+function generateNotificationId(): string {
+  return nanoid();
+}
+
+function renderEmailTemplate(
+  template: string,
+  variables: Record<string, any>
+): string {
+  let rendered = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{\\s*${key}\\s*}}`, "g");
+    rendered = rendered.replace(regex, String(value));
+  }
+  return rendered;
+}
+
+function calculatePriorityScore(priority: string): number {
+  switch (priority) {
+    case "urgent":
+      return 4;
+    case "high":
+      return 3;
+    case "normal":
+      return 2;
+    case "low":
+      return 1;
+    default:
+      return 2;
+  }
+}
 
 const {
   notifications,

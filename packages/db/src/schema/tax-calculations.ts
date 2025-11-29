@@ -11,6 +11,7 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 import { clients } from "./clients";
+import { organizations } from "./organizations";
 import { users } from "./users";
 
 // Enums for tax calculations
@@ -147,6 +148,23 @@ export const payeCalculations = pgTable(
     index("paye_calculations_pay_period_idx").on(table.payPeriod),
     index("paye_calculations_status_idx").on(table.status),
     index("paye_calculations_due_date_idx").on(table.dueDate),
+    // Composite indexes for common query patterns
+    index("paye_calculations_org_year_idx").on(
+      table.organizationId,
+      table.taxYear
+    ),
+    index("paye_calculations_org_status_idx").on(
+      table.organizationId,
+      table.status
+    ),
+    index("paye_calculations_client_year_idx").on(
+      table.clientId,
+      table.taxYear
+    ),
+    index("paye_calculations_status_due_date_idx").on(
+      table.status,
+      table.dueDate
+    ),
   ]
 );
 
@@ -228,6 +246,23 @@ export const nisCalculations = pgTable(
     index("nis_calculations_status_idx").on(table.status),
     index("nis_calculations_due_date_idx").on(table.dueDate),
     index("nis_calculations_nis_class_idx").on(table.nisClass),
+    // Composite indexes for common query patterns
+    index("nis_calculations_org_year_idx").on(
+      table.organizationId,
+      table.contributionYear
+    ),
+    index("nis_calculations_org_status_idx").on(
+      table.organizationId,
+      table.status
+    ),
+    index("nis_calculations_client_year_idx").on(
+      table.clientId,
+      table.contributionYear
+    ),
+    index("nis_calculations_class_year_idx").on(
+      table.nisClass,
+      table.contributionYear
+    ),
   ]
 );
 
@@ -329,6 +364,24 @@ export const vatCalculations = pgTable(
     index("vat_calculations_due_date_idx").on(table.dueDate),
     index("vat_calculations_registration_number_idx").on(
       table.vatRegistrationNumber
+    ),
+    // Composite indexes for common query patterns
+    index("vat_calculations_org_year_idx").on(
+      table.organizationId,
+      table.taxYear
+    ),
+    index("vat_calculations_org_status_idx").on(
+      table.organizationId,
+      table.status
+    ),
+    index("vat_calculations_client_year_idx").on(table.clientId, table.taxYear),
+    index("vat_calculations_year_quarter_idx").on(
+      table.taxYear,
+      table.taxQuarter
+    ),
+    index("vat_calculations_period_range_idx").on(
+      table.periodStart,
+      table.periodEnd
     ),
   ]
 );

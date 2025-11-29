@@ -1,0 +1,188 @@
+# Backend Server Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gk-nexus-server
+  namespace: production
+  labels:
+    app: gk-nexus-server
+    component: backend
+    environment: production
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: gk-nexus-server
+  template:
+    metadata:
+      labels:
+        app: gk-nexus-server
+        component: backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+      - name: server
+        image: IMAGE_TAG_SERVER  # This will be replaced by CI/CD pipeline
+        imagePullPolicy: Always
+        envFrom:
+        - configMapRef:
+            name: gk-nexus-config
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@gk-nexus-postgres:5432/$(POSTGRES_DB)"
+        - name: REDIS_URL
+          value: "redis://:$(REDIS_PASSWORD)@gk-nexus-redis:6379"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: POSTGRES_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: REDIS_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: JWT_SECRET
+        - name: ENCRYPTION_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: ENCRYPTION_KEY
+        - name: GRA_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: GRA_API_KEY
+        - name: EMAIL_SERVICE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: EMAIL_SERVICE_API_KEY
+        - name: SMS_SERVICE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: SMS_SERVICE_API_KEY
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: gk-nexus-secrets
+              key: SESSION_SECRET
+        ports:
+        - containerPort: 3000
+          name: http
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: uploads
+          mountPath: /tmp/uploads
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gk-nexus-server
+  namespace: production
+  labels:
+    app: gk-nexus-server
+    component: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    name: http
+  selector:
+    app: gk-nexus-server
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: production
+  labels:
+    app: gk-nexus-server
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: efs-sc
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gk-nexus-server-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gk-nexus-server
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

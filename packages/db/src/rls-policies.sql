@@ -48,6 +48,20 @@ ALTER TABLE audit_retention_policies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE organization_settings ENABLE ROW LEVEL SECURITY;
 
+-- Additional core multi-tenant tables
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE compliance_filings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE compliance_requirements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tax_rates ENABLE ROW LEVEL SECURITY;
+
+-- RBAC tables (organization-scoped)
+ALTER TABLE roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE permissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_permissions ENABLE ROW LEVEL SECURITY;
+
 -- ============================================================================
 -- HELPER FUNCTIONS FOR RLS POLICIES
 -- ============================================================================
@@ -335,6 +349,109 @@ CREATE POLICY "audit_retention_policies_organization_policy" ON audit_retention_
     FOR ALL USING (
         can_access_organization(organization_id)
         OR organization_id IS NULL  -- Global policies
+        OR is_super_admin()
+    );
+
+-- ============================================================================
+-- ADDITIONAL CORE TABLE POLICIES
+-- ============================================================================
+
+-- Appointments: Organization-based access
+CREATE POLICY "appointments_organization_policy" ON appointments
+    FOR ALL USING (
+        can_access_organization(organization_id)
+        OR is_super_admin()
+    );
+
+-- Compliance Filings: Organization-based access
+CREATE POLICY "compliance_filings_organization_policy" ON compliance_filings
+    FOR ALL USING (
+        can_access_organization(organization_id)
+        OR is_super_admin()
+    );
+
+-- Compliance Requirements: Organization-based access
+CREATE POLICY "compliance_requirements_organization_policy" ON compliance_requirements
+    FOR ALL USING (
+        can_access_organization(organization_id)
+        OR is_super_admin()
+    );
+
+-- Documents: Organization-based access
+CREATE POLICY "documents_organization_policy" ON documents
+    FOR ALL USING (
+        can_access_organization(organization_id)
+        OR is_super_admin()
+    );
+
+-- Notifications: User-specific or organization-based access
+CREATE POLICY "notifications_access_policy" ON notifications
+    FOR ALL USING (
+        user_id = current_setting('app.current_user_id', TRUE)
+        OR can_access_organization(organization_id)
+        OR is_super_admin()
+    );
+
+-- Tax Rates: Global access for active rates, organization-specific for custom rates
+CREATE POLICY "tax_rates_access_policy" ON tax_rates
+    FOR ALL USING (
+        is_active = TRUE  -- Global access to active rates
+        OR organization_id IS NULL  -- Global rates
+        OR can_access_organization(organization_id)  -- Organization-specific rates
+        OR is_super_admin()
+    );
+
+-- ============================================================================
+-- RBAC TABLE POLICIES
+-- ============================================================================
+
+-- Roles: Organization-scoped or system roles
+CREATE POLICY "roles_access_policy" ON roles
+    FOR ALL USING (
+        organization_id IS NULL  -- System roles accessible to all
+        OR can_access_organization(organization_id)  -- Organization-specific roles
+        OR is_super_admin()
+    );
+
+-- Permissions: System permissions accessible to all, organization-specific restricted
+CREATE POLICY "permissions_access_policy" ON permissions
+    FOR ALL USING (
+        organization_id IS NULL  -- System permissions
+        OR can_access_organization(organization_id)  -- Organization-specific permissions
+        OR is_super_admin()
+    );
+
+-- User Roles: Users can see their own roles and organization members' roles
+CREATE POLICY "user_roles_access_policy" ON user_roles
+    FOR ALL USING (
+        user_id = current_setting('app.current_user_id', TRUE)
+        OR EXISTS (
+            SELECT 1 FROM organization_users ou
+            WHERE ou.user_id = current_setting('app.current_user_id', TRUE)
+            AND ou.organization_id IN (
+                SELECT ou2.organization_id FROM organization_users ou2
+                WHERE ou2.user_id = user_roles.user_id
+                AND ou2.is_active = TRUE
+            )
+            AND ou.is_active = TRUE
+        )
+        OR is_super_admin()
+    );
+
+-- User Permissions: Users can see their own permissions and organization members' permissions
+CREATE POLICY "user_permissions_access_policy" ON user_permissions
+    FOR ALL USING (
+        user_id = current_setting('app.current_user_id', TRUE)
+        OR EXISTS (
+            SELECT 1 FROM organization_users ou
+            WHERE ou.user_id = current_setting('app.current_user_id', TRUE)
+            AND ou.organization_id IN (
+                SELECT ou2.organization_id FROM organization_users ou2
+                WHERE ou2.user_id = user_permissions.user_id
+                AND ou2.is_active = TRUE
+            )
+            AND ou.is_active = TRUE
+        )
         OR is_super_admin()
     );
 

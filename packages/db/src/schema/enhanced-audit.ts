@@ -392,6 +392,29 @@ export const enhancedAuditLogs = pgTable(
     index("enhanced_audit_logs_requires_review_idx").on(table.requiresReview),
     index("enhanced_audit_logs_legal_hold_idx").on(table.legalHold),
     index("enhanced_audit_logs_is_archived_idx").on(table.isArchived),
+    // Composite indexes for audit analysis and reporting
+    index("enhanced_audit_logs_org_action_idx").on(
+      table.organizationId,
+      table.action
+    ),
+    index("enhanced_audit_logs_org_entity_idx").on(
+      table.organizationId,
+      table.entity
+    ),
+    index("enhanced_audit_logs_user_action_idx").on(table.userId, table.action),
+    index("enhanced_audit_logs_risk_alert_idx").on(
+      table.riskLevel,
+      table.alertTriggered
+    ),
+    index("enhanced_audit_logs_time_range_idx").on(
+      table.organizationId,
+      table.occurredAt
+    ),
+    index("enhanced_audit_logs_entity_action_time_idx").on(
+      table.entity,
+      table.action,
+      table.occurredAt
+    ),
   ]
 );
 

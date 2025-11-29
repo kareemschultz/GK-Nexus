@@ -39,6 +39,34 @@ const createDocumentSchema = z.object({
 
 const updateDocumentSchema = createDocumentSchema.partial().extend({
   id: z.string().uuid(),
+  version: z.string().optional(),
+  previousVersionId: z.string().uuid().optional(),
+  isLatestVersion: z.boolean().optional(),
+});
+
+const createDocumentVersionSchema = z.object({
+  documentId: z.string().uuid(),
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).optional(),
+  fileName: z.string().min(1).max(255),
+  fileSize: z.number().min(1),
+  mimeType: z.string().min(1),
+  fileUrl: z.string().url(),
+  versionNotes: z.string().max(500).optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+const documentSearchSchema = z.object({
+  query: z.string().min(1),
+  clientId: z.string().uuid().optional(),
+  category: z.string().optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  fileTypes: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  includeContent: z.boolean().default(false),
+  page: z.number().min(1).default(1),
+  limit: z.number().min(1).max(100).default(20),
 });
 
 const documentQuerySchema = z.object({
@@ -100,6 +128,24 @@ const moveDocumentSchema = z.object({
   folderId: z.string().uuid().optional(), // null for root folder
 });
 
+// Helper functions
+function generateDocumentVersion(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = nanoid(4).toUpperCase();
+  return `v${timestamp}-${random}`;
+}
+
+function getDocumentHash(content: string): string {
+  // Simple hash function - in production, use crypto.createHash
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
 export const documentsRouter = {
   // Create new document record
   create: protectedProcedure
@@ -136,10 +182,43 @@ export const documentsRouter = {
       }
 
       try {
+        // Check for duplicate documents by content hash
+        const contentHash = getDocumentHash(
+          input.fileUrl + input.fileName + input.fileSize
+        );
+
+        // Check if similar document exists for the same client
+        const [existingDoc] = await db
+          .select({
+            id: businessSchema.document.id,
+            name: businessSchema.document.name,
+          })
+          .from(businessSchema.document)
+          .where(
+            and(
+              eq(businessSchema.document.clientId, input.clientId),
+              eq(businessSchema.document.fileName, input.fileName),
+              eq(businessSchema.document.fileSize, input.fileSize),
+              eq(businessSchema.document.status, "ACTIVE")
+            )
+          )
+          .limit(1);
+
+        if (existingDoc) {
+          throw new ORPCError(
+            "CONFLICT",
+            `A document with the same name and size already exists: ${existingDoc.name}`
+          );
+        }
+
         const [document] = await db
           .insert(businessSchema.document)
           .values({
+            id: nanoid(),
             ...input,
+            version: "v1.0",
+            contentHash,
+            isLatestVersion: true,
             tags: input.tags ? JSON.stringify(input.tags) : null,
             metadata: input.metadata ? JSON.stringify(input.metadata) : null,
             uploadedBy: user?.id!,
@@ -151,6 +230,7 @@ export const documentsRouter = {
             category: businessSchema.document.category,
             fileName: businessSchema.document.fileName,
             fileSize: businessSchema.document.fileSize,
+            version: businessSchema.document.version,
             uploadedAt: businessSchema.document.uploadedAt,
             status: businessSchema.document.status,
           });
@@ -308,6 +388,62 @@ export const documentsRouter = {
       };
     }),
 
+  // Get document versions
+  getVersions: protectedProcedure
+    .use(requirePermission("documents.read"))
+    .input(z.object({ documentId: z.string().uuid() }))
+    .handler(async ({ input, context }) => {
+      const { db } = context;
+
+      // Get the original document to find all versions
+      const [originalDoc] = await db
+        .select({
+          id: businessSchema.document.id,
+          name: businessSchema.document.name,
+          rootDocumentId: businessSchema.document.rootDocumentId,
+        })
+        .from(businessSchema.document)
+        .where(eq(businessSchema.document.id, input.documentId))
+        .limit(1);
+
+      if (!originalDoc) {
+        throw new ORPCError("NOT_FOUND", "Document not found");
+      }
+
+      // Find all versions of this document
+      const rootId = originalDoc.rootDocumentId || originalDoc.id;
+      const versions = await db
+        .select({
+          id: businessSchema.document.id,
+          name: businessSchema.document.name,
+          version: businessSchema.document.version,
+          fileName: businessSchema.document.fileName,
+          fileSize: businessSchema.document.fileSize,
+          mimeType: businessSchema.document.mimeType,
+          isLatestVersion: businessSchema.document.isLatestVersion,
+          uploadedBy: businessSchema.document.uploadedBy,
+          uploadedAt: businessSchema.document.uploadedAt,
+          status: businessSchema.document.status,
+        })
+        .from(businessSchema.document)
+        .where(
+          sql`(
+            ${businessSchema.document.id} = ${rootId} OR
+            ${businessSchema.document.rootDocumentId} = ${rootId}
+          ) AND ${businessSchema.document.status} = 'ACTIVE'`
+        )
+        .orderBy(desc(businessSchema.document.uploadedAt));
+
+      return {
+        success: true,
+        data: {
+          rootDocumentId: rootId,
+          versions,
+          totalVersions: versions.length,
+        },
+      };
+    }),
+
   // Get document by ID
   getById: protectedProcedure
     .use(requirePermission("documents.read"))
@@ -393,6 +529,91 @@ export const documentsRouter = {
         throw new ORPCError(
           "INTERNAL_SERVER_ERROR",
           "Failed to update document"
+        );
+      }
+    }),
+
+  // Create new document version
+  createVersion: protectedProcedure
+    .use(requirePermission("documents.update"))
+    .input(createDocumentVersionSchema)
+    .handler(async ({ input, context }) => {
+      const { db, user } = context;
+      const { documentId, versionNotes, ...versionData } = input;
+
+      try {
+        // Get the original document
+        const [originalDoc] = await db
+          .select()
+          .from(businessSchema.document)
+          .where(eq(businessSchema.document.id, documentId))
+          .limit(1);
+
+        if (!originalDoc) {
+          throw new ORPCError("NOT_FOUND", "Original document not found");
+        }
+
+        // Mark previous version as not latest
+        await db
+          .update(businessSchema.document)
+          .set({ isLatestVersion: false })
+          .where(
+            sql`(
+              ${businessSchema.document.id} = ${originalDoc.rootDocumentId || documentId} OR
+              ${businessSchema.document.rootDocumentId} = ${originalDoc.rootDocumentId || documentId}
+            )`
+          );
+
+        // Generate new version number
+        const newVersion = generateDocumentVersion();
+        const contentHash = getDocumentHash(
+          versionData.fileUrl + versionData.fileName + versionData.fileSize
+        );
+
+        // Create new version
+        const [newVersionDoc] = await db
+          .insert(businessSchema.document)
+          .values({
+            id: nanoid(),
+            clientId: originalDoc.clientId,
+            name: versionData.name || originalDoc.name,
+            description: versionData.description || originalDoc.description,
+            category: originalDoc.category,
+            subcategory: originalDoc.subcategory,
+            ...versionData,
+            version: newVersion,
+            rootDocumentId: originalDoc.rootDocumentId || documentId,
+            previousVersionId: documentId,
+            isLatestVersion: true,
+            contentHash,
+            tags: originalDoc.tags,
+            isConfidential: originalDoc.isConfidential,
+            folderId: originalDoc.folderId,
+            metadata: versionData.metadata
+              ? JSON.stringify(versionData.metadata)
+              : originalDoc.metadata,
+            uploadedBy: user?.id!,
+            status: "ACTIVE",
+          })
+          .returning({
+            id: businessSchema.document.id,
+            name: businessSchema.document.name,
+            version: businessSchema.document.version,
+            fileName: businessSchema.document.fileName,
+            fileSize: businessSchema.document.fileSize,
+            uploadedAt: businessSchema.document.uploadedAt,
+          });
+
+        return {
+          success: true,
+          data: newVersionDoc,
+          message: "Document version created successfully",
+        };
+      } catch (error) {
+        if (error instanceof ORPCError) throw error;
+        throw new ORPCError(
+          "INTERNAL_SERVER_ERROR",
+          "Failed to create document version"
         );
       }
     }),
@@ -698,6 +919,148 @@ export const documentsRouter = {
           overview: overallStats,
           byCategory: categoryStats,
           byMonth: monthlyStats,
+        },
+      };
+    }),
+
+  // Advanced document search
+  search: protectedProcedure
+    .use(requirePermission("documents.read"))
+    .input(documentSearchSchema)
+    .handler(async ({ input, context }) => {
+      const { db } = context;
+      const {
+        query,
+        clientId,
+        category,
+        startDate,
+        endDate,
+        fileTypes,
+        tags,
+        includeContent,
+        page,
+        limit,
+      } = input;
+
+      const offset = (page - 1) * limit;
+      const conditions = [eq(businessSchema.document.status, "ACTIVE")];
+
+      // Add search conditions
+      if (query) {
+        conditions.push(
+          sql`(
+            ${ilike(businessSchema.document.name, `%${query}%`)} OR
+            ${ilike(businessSchema.document.description, `%${query}%`)} OR
+            ${ilike(businessSchema.document.fileName, `%${query}%`)}
+          )`
+        );
+      }
+
+      if (clientId) {
+        conditions.push(eq(businessSchema.document.clientId, clientId));
+      }
+
+      if (category) {
+        conditions.push(eq(businessSchema.document.category, category));
+      }
+
+      if (startDate) {
+        conditions.push(
+          gte(businessSchema.document.uploadedAt, new Date(startDate))
+        );
+      }
+
+      if (endDate) {
+        conditions.push(
+          lte(businessSchema.document.uploadedAt, new Date(endDate))
+        );
+      }
+
+      if (fileTypes && fileTypes.length > 0) {
+        const mimeTypeConditions = fileTypes.map(
+          (type) => sql`${businessSchema.document.mimeType} LIKE ${`%${type}%`}`
+        );
+        conditions.push(sql`(${sql.join(mimeTypeConditions, sql` OR `)})`);
+      }
+
+      if (tags && tags.length > 0) {
+        const tagConditions = tags.map(
+          (tag) => sql`${businessSchema.document.tags} LIKE ${`%"${tag}"%`}`
+        );
+        conditions.push(sql`(${sql.join(tagConditions, sql` OR `)})`);
+      }
+
+      const whereClause = and(...conditions);
+
+      // Get total count
+      const [totalResult] = await db
+        .select({ count: count() })
+        .from(businessSchema.document)
+        .where(whereClause);
+
+      // Get search results
+      const searchResults = await db
+        .select({
+          id: businessSchema.document.id,
+          name: businessSchema.document.name,
+          description: businessSchema.document.description,
+          category: businessSchema.document.category,
+          subcategory: businessSchema.document.subcategory,
+          fileName: businessSchema.document.fileName,
+          fileSize: businessSchema.document.fileSize,
+          mimeType: businessSchema.document.mimeType,
+          tags: businessSchema.document.tags,
+          version: businessSchema.document.version,
+          isLatestVersion: businessSchema.document.isLatestVersion,
+          clientId: businessSchema.document.clientId,
+          uploadedBy: businessSchema.document.uploadedBy,
+          uploadedAt: businessSchema.document.uploadedAt,
+        })
+        .from(businessSchema.document)
+        .where(whereClause)
+        .orderBy(desc(businessSchema.document.uploadedAt))
+        .limit(limit)
+        .offset(offset);
+
+      // Parse JSON fields and calculate relevance scores
+      const parsedResults = searchResults.map((doc) => ({
+        ...doc,
+        tags: doc.tags ? JSON.parse(doc.tags) : [],
+        relevanceScore: query
+          ? (doc.name.toLowerCase().includes(query.toLowerCase()) ? 50 : 0) +
+            (doc.fileName.toLowerCase().includes(query.toLowerCase())
+              ? 30
+              : 0) +
+            (doc.description?.toLowerCase().includes(query.toLowerCase())
+              ? 20
+              : 0)
+          : 0,
+      }));
+
+      // Sort by relevance if there's a query
+      if (query) {
+        parsedResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+      }
+
+      const total = totalResult.count;
+      const pages = Math.ceil(total / limit);
+
+      return {
+        success: true,
+        data: {
+          query,
+          results: parsedResults,
+          pagination: {
+            page,
+            limit,
+            total,
+            pages,
+          },
+          searchMetadata: {
+            totalMatches: total,
+            searchTime: new Date().toISOString(),
+            includesContent: includeContent,
+          },
         },
       };
     }),

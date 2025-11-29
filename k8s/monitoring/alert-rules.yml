@@ -1,0 +1,198 @@
+# Prometheus Alert Rules for GK-Nexus
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: monitoring
+data:
+  gk-nexus-alerts.yml: |
+    groups:
+    - name: gk-nexus-application
+      rules:
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }} seconds"
+
+      # Application Down
+      - alert: ApplicationDown
+        expr: up{job="gk-nexus-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "GK-Nexus application is down"
+          description: "GK-Nexus server instance {{ $labels.instance }} is down"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{container="server"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }} on {{ $labels.instance }}"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (container_memory_working_set_bytes{container="server"} / container_spec_memory_limit_bytes{container="server"}) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }} on {{ $labels.instance }}"
+
+    - name: gk-nexus-database
+      rules:
+      # Database Down
+      - alert: PostgreSQLDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+
+      # High Database Connections
+      - alert: HighDatabaseConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database connection usage"
+          description: "Database connection usage is {{ $value }}"
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: rate(pg_stat_statements_mean_time_seconds[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Average query time is {{ $value }} seconds"
+
+      # Database Storage Usage
+      - alert: DatabaseStorageUsage
+        expr: (node_filesystem_size_bytes{mountpoint="/var/lib/postgresql"} - node_filesystem_free_bytes{mountpoint="/var/lib/postgresql"}) / node_filesystem_size_bytes{mountpoint="/var/lib/postgresql"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database storage usage"
+          description: "Database storage usage is {{ $value }}"
+
+    - name: gk-nexus-redis
+      rules:
+      # Redis Down
+      - alert: RedisDown
+        expr: up{job="redis-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache is not responding"
+
+      # High Redis Memory Usage
+      - alert: HighRedisMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value }}"
+
+    - name: gk-nexus-infrastructure
+      rules:
+      # Node Down
+      - alert: NodeDown
+        expr: up{job="kubernetes-nodes"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kubernetes node is down"
+          description: "Node {{ $labels.instance }} is down"
+
+      # High Node CPU Usage
+      - alert: HighNodeCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High node CPU usage"
+          description: "Node {{ $labels.instance }} CPU usage is {{ $value }}%"
+
+      # High Node Memory Usage
+      - alert: HighNodeMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High node memory usage"
+          description: "Node {{ $labels.instance }} memory usage is {{ $value }}"
+
+      # Disk Space Usage
+      - alert: DiskSpaceUsage
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk space usage"
+          description: "Disk usage on {{ $labels.instance }} is {{ $value }}"
+
+    - name: gk-nexus-business
+      rules:
+      # Low Login Success Rate
+      - alert: LowLoginSuccessRate
+        expr: rate(login_attempts_total{status="success"}[10m]) / rate(login_attempts_total[10m]) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low login success rate"
+          description: "Login success rate is {{ $value }} - possible security issue"
+
+      # High Failed Login Attempts
+      - alert: HighFailedLoginAttempts
+        expr: rate(login_attempts_total{status="failed"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed login attempts"
+          description: "Failed login rate is {{ $value }} attempts per second"
+
+      # Tax Calculation Errors
+      - alert: TaxCalculationErrors
+        expr: rate(tax_calculations_total{status="error"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tax calculation errors detected"
+          description: "Tax calculation error rate is {{ $value }} errors per second"

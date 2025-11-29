@@ -9,9 +9,19 @@
     }
   },
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "test:integration": "vitest --config vitest.integration.config.ts"
+  },
   "devDependencies": {
-    "@GK-Nexus/config": "workspace:*"
+    "@GK-Nexus/config": "workspace:*",
+    "vitest": "^4.0.14",
+    "@vitest/coverage-v8": "^4.0.14",
+    "@types/node": "^22.13.13",
+    "testcontainers": "^10.17.1",
+    "postgres": "^3.4.6"
   },
   "peerDependencies": {
     "typescript": "^5"

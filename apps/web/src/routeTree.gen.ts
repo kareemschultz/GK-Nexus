@@ -17,6 +17,7 @@ import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as ImmigrationRouteImport } from './routes/immigration'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ComplianceRouteImport } from './routes/compliance'
@@ -47,6 +48,8 @@ import { Route as InvoicesIdRouteImport } from './routes/invoices/[id]'
 import { Route as DocumentsUploadRouteImport } from './routes/documents/upload'
 import { Route as DocumentsTemplatesRouteImport } from './routes/documents/templates'
 import { Route as DocumentsSearchRouteImport } from './routes/documents/search'
+import { Route as DocumentsRequirementsRouteImport } from './routes/documents/requirements'
+import { Route as DocumentsAdvancedRouteImport } from './routes/documents/advanced'
 import { Route as DocumentsIdRouteImport } from './routes/documents/$id'
 import { Route as ClientsNewRouteImport } from './routes/clients/new'
 import { Route as ClientsIdRouteImport } from './routes/clients/$id'
@@ -97,6 +100,11 @@ const LoginRoute = LoginRouteImport.update({
 const InvoicesRoute = InvoicesRouteImport.update({
   id: '/invoices',
   path: '/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImmigrationRoute = ImmigrationRouteImport.update({
+  id: '/immigration',
+  path: '/immigration',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentsRoute = DocumentsRouteImport.update({
@@ -249,6 +257,16 @@ const DocumentsSearchRoute = DocumentsSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => DocumentsRoute,
 } as any)
+const DocumentsRequirementsRoute = DocumentsRequirementsRouteImport.update({
+  id: '/requirements',
+  path: '/requirements',
+  getParentRoute: () => DocumentsRoute,
+} as any)
+const DocumentsAdvancedRoute = DocumentsAdvancedRouteImport.update({
+  id: '/advanced',
+  path: '/advanced',
+  getParentRoute: () => DocumentsRoute,
+} as any)
 const DocumentsIdRoute = DocumentsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -313,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
   '/payroll': typeof PayrollRouteWithChildren
@@ -330,6 +349,8 @@ export interface FileRoutesByFullPath {
   '/clients/$id': typeof ClientsIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/documents/advanced': typeof DocumentsAdvancedRoute
+  '/documents/requirements': typeof DocumentsRequirementsRoute
   '/documents/search': typeof DocumentsSearchRoute
   '/documents/templates': typeof DocumentsTemplatesRoute
   '/documents/upload': typeof DocumentsUploadRoute
@@ -364,6 +385,7 @@ export interface FileRoutesByTo {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
   '/payroll': typeof PayrollRouteWithChildren
@@ -380,6 +402,8 @@ export interface FileRoutesByTo {
   '/clients/$id': typeof ClientsIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/documents/advanced': typeof DocumentsAdvancedRoute
+  '/documents/requirements': typeof DocumentsRequirementsRoute
   '/documents/search': typeof DocumentsSearchRoute
   '/documents/templates': typeof DocumentsTemplatesRoute
   '/documents/upload': typeof DocumentsUploadRoute
@@ -415,6 +439,7 @@ export interface FileRoutesById {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
   '/payroll': typeof PayrollRouteWithChildren
@@ -432,6 +457,8 @@ export interface FileRoutesById {
   '/clients/$id': typeof ClientsIdRouteWithChildren
   '/clients/new': typeof ClientsNewRoute
   '/documents/$id': typeof DocumentsIdRoute
+  '/documents/advanced': typeof DocumentsAdvancedRoute
+  '/documents/requirements': typeof DocumentsRequirementsRoute
   '/documents/search': typeof DocumentsSearchRoute
   '/documents/templates': typeof DocumentsTemplatesRoute
   '/documents/upload': typeof DocumentsUploadRoute
@@ -468,6 +495,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/immigration'
     | '/invoices'
     | '/login'
     | '/payroll'
@@ -485,6 +513,8 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/clients/new'
     | '/documents/$id'
+    | '/documents/advanced'
+    | '/documents/requirements'
     | '/documents/search'
     | '/documents/templates'
     | '/documents/upload'
@@ -519,6 +549,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/immigration'
     | '/invoices'
     | '/login'
     | '/payroll'
@@ -535,6 +566,8 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/clients/new'
     | '/documents/$id'
+    | '/documents/advanced'
+    | '/documents/requirements'
     | '/documents/search'
     | '/documents/templates'
     | '/documents/upload'
@@ -569,6 +602,7 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/immigration'
     | '/invoices'
     | '/login'
     | '/payroll'
@@ -586,6 +620,8 @@ export interface FileRouteTypes {
     | '/clients/$id'
     | '/clients/new'
     | '/documents/$id'
+    | '/documents/advanced'
+    | '/documents/requirements'
     | '/documents/search'
     | '/documents/templates'
     | '/documents/upload'
@@ -621,6 +657,7 @@ export interface RootRouteChildren {
   ComplianceRoute: typeof ComplianceRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
+  ImmigrationRoute: typeof ImmigrationRoute
   InvoicesRoute: typeof InvoicesRouteWithChildren
   LoginRoute: typeof LoginRoute
   PayrollRoute: typeof PayrollRouteWithChildren
@@ -690,6 +727,13 @@ declare module '@tanstack/react-router' {
       path: '/invoices'
       fullPath: '/invoices'
       preLoaderRoute: typeof InvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/immigration': {
+      id: '/immigration'
+      path: '/immigration'
+      fullPath: '/immigration'
+      preLoaderRoute: typeof ImmigrationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/documents': {
@@ -902,6 +946,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsSearchRouteImport
       parentRoute: typeof DocumentsRoute
     }
+    '/documents/requirements': {
+      id: '/documents/requirements'
+      path: '/requirements'
+      fullPath: '/documents/requirements'
+      preLoaderRoute: typeof DocumentsRequirementsRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
+    '/documents/advanced': {
+      id: '/documents/advanced'
+      path: '/advanced'
+      fullPath: '/documents/advanced'
+      preLoaderRoute: typeof DocumentsAdvancedRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
     '/documents/$id': {
       id: '/documents/$id'
       path: '/$id'
@@ -1043,6 +1101,8 @@ const ClientsRouteWithChildren =
 
 interface DocumentsRouteChildren {
   DocumentsIdRoute: typeof DocumentsIdRoute
+  DocumentsAdvancedRoute: typeof DocumentsAdvancedRoute
+  DocumentsRequirementsRoute: typeof DocumentsRequirementsRoute
   DocumentsSearchRoute: typeof DocumentsSearchRoute
   DocumentsTemplatesRoute: typeof DocumentsTemplatesRoute
   DocumentsUploadRoute: typeof DocumentsUploadRoute
@@ -1050,6 +1110,8 @@ interface DocumentsRouteChildren {
 
 const DocumentsRouteChildren: DocumentsRouteChildren = {
   DocumentsIdRoute: DocumentsIdRoute,
+  DocumentsAdvancedRoute: DocumentsAdvancedRoute,
+  DocumentsRequirementsRoute: DocumentsRequirementsRoute,
   DocumentsSearchRoute: DocumentsSearchRoute,
   DocumentsTemplatesRoute: DocumentsTemplatesRoute,
   DocumentsUploadRoute: DocumentsUploadRoute,
@@ -1157,6 +1219,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComplianceRoute: ComplianceRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
+  ImmigrationRoute: ImmigrationRoute,
   InvoicesRoute: InvoicesRouteWithChildren,
   LoginRoute: LoginRoute,
   PayrollRoute: PayrollRouteWithChildren,

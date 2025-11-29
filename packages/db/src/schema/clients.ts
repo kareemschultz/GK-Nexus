@@ -9,6 +9,7 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
+import { organizations } from "./organizations";
 import { users } from "./users";
 
 // Enums for client entity types and status (Guyana-specific)
@@ -143,6 +144,21 @@ export const clients = pgTable(
     index("clients_first_name_idx").on(table.firstName),
     index("clients_last_name_idx").on(table.lastName),
     index("clients_local_content_qualified_idx").on(
+      table.isLocalContentQualified
+    ),
+    // Composite indexes for common query patterns
+    index("clients_org_status_idx").on(table.organizationId, table.status),
+    index("clients_org_entity_type_idx").on(
+      table.organizationId,
+      table.entityType
+    ),
+    index("clients_status_compliance_idx").on(
+      table.status,
+      table.complianceStatus
+    ),
+    index("clients_risk_level_idx").on(table.riskLevel),
+    index("clients_entity_local_content_idx").on(
+      table.entityType,
       table.isLocalContentQualified
     ),
   ]

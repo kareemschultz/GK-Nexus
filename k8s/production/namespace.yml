@@ -1,0 +1,9 @@
+# Production Namespace for GK-Nexus
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    name: production
+    app: gk-nexus
+    environment: production

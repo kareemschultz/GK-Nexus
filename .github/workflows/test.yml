@@ -1,0 +1,390 @@
+name: "Comprehensive Test Suite"
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  BUN_VERSION: "1.2.18"
+  REGISTRY_URL: ghcr.io
+  POSTGRES_VERSION: "15"
+
+jobs:
+  # Code Quality and Linting
+  quality:
+    name: "Code Quality"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🔍 Run linting"
+        run: bun run check
+
+      - name: "📊 Type checking"
+        run: bun run check-types
+
+      - name: "🔧 Check formatting"
+        run: bun x ultracite check --no-fix
+
+  # Unit Tests
+  unit-tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        package: ['web', 'api']
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🧪 Run unit tests - ${{ matrix.package }}"
+        run: |
+          if [ "${{ matrix.package }}" = "web" ]; then
+            turbo -F web test
+          else
+            turbo -F @GK-Nexus/api test
+          fi
+
+      - name: "📊 Generate coverage report - ${{ matrix.package }}"
+        run: |
+          if [ "${{ matrix.package }}" = "web" ]; then
+            turbo -F web test:coverage
+          else
+            turbo -F @GK-Nexus/api test:coverage
+          fi
+
+      - name: "📤 Upload coverage to Codecov"
+        uses: codecov/codecov-action@v3
+        with:
+          flags: ${{ matrix.package }}
+          name: ${{ matrix.package }}-coverage
+          fail_ci_if_error: false
+
+  # Integration Tests
+  integration-tests:
+    name: "Integration Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_DB: gk_nexus_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgres://test:test@localhost:5432/gk_nexus_test
+      TEST_DATABASE_URL: postgres://test:test@localhost:5432/gk_nexus_test
+      NODE_ENV: test
+
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🗄️ Run database migrations"
+        run: bun run db:push
+
+      - name: "🧪 Run integration tests"
+        run: turbo -F @GK-Nexus/api test:integration
+
+  # End-to-End Tests
+  e2e-tests:
+    name: "E2E Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        browser: ['chromium', 'firefox', 'webkit']
+        shard: [1, 2, 3]
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🎭 Install Playwright Browsers"
+        run: bunx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: "🏗️ Build application"
+        run: bun run build
+
+      - name: "🧪 Run E2E tests"
+        run: |
+          bunx playwright test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}/3
+        env:
+          CI: true
+
+      - name: "📤 Upload Playwright Report"
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # Accessibility Tests
+  accessibility-tests:
+    name: "Accessibility Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "♿ Run accessibility tests"
+        run: bun run test:accessibility
+
+      - name: "🧪 Run axe-core E2E accessibility tests"
+        run: |
+          bunx playwright install --with-deps chromium
+          bunx playwright test --grep="Accessibility" --project=chromium
+
+  # Performance Tests
+  performance-tests:
+    name: "Performance Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🎭 Install Playwright Browsers"
+        run: bunx playwright install --with-deps chromium
+
+      - name: "🏗️ Build application"
+        run: bun run build
+
+      - name: "⚡ Run performance tests"
+        run: bun run test:performance
+
+      - name: "📊 Run Lighthouse audit"
+        run: |
+          # Start servers in background
+          bun run dev:server &
+          bun run dev:web &
+
+          # Wait for servers to be ready
+          sleep 30
+
+          # Run Lighthouse audit
+          bunx lighthouse http://localhost:3001 --output=json --output-path=./lighthouse-report.json --chrome-flags="--headless --no-sandbox"
+
+          # Stop background processes
+          pkill -f "bun run"
+
+      - name: "📤 Upload Lighthouse Report"
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-report
+          path: lighthouse-report.json
+
+  # Security Tests
+  security-tests:
+    name: "Security Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🔒 Run security audit"
+        run: bun audit
+
+      - name: "🎭 Install Playwright for security tests"
+        run: bunx playwright install --with-deps chromium
+
+      - name: "🔐 Run security E2E tests"
+        run: bun run test:security
+
+      - name: "🕵️ Scan for secrets"
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+
+  # Build Test
+  build-test:
+    name: "Build Test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🏗️ Build all packages"
+        run: bun run build
+
+      - name: "✅ Verify build outputs"
+        run: |
+          # Check that build outputs exist
+          test -d "apps/web/dist" || { echo "Web build failed"; exit 1; }
+          test -f "apps/server/dist/index.js" || { echo "Server build failed"; exit 1; }
+          echo "✅ All builds successful"
+
+  # Test Matrix Summary
+  test-summary:
+    name: "Test Summary"
+    runs-on: ubuntu-latest
+    needs: [quality, unit-tests, integration-tests, e2e-tests, accessibility-tests, performance-tests, security-tests, build-test]
+    if: always()
+    steps:
+      - name: "📊 Test Results Summary"
+        run: |
+          echo "## 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.quality.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility Tests | ${{ needs.accessibility-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Performance Tests | ${{ needs.performance-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Tests | ${{ needs.security-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Test | ${{ needs.build-test.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: "🎯 Overall Result"
+        run: |
+          if [[ "${{ needs.quality.result }}" == "success" && \
+                "${{ needs.unit-tests.result }}" == "success" && \
+                "${{ needs.integration-tests.result }}" == "success" && \
+                "${{ needs.e2e-tests.result }}" == "success" && \
+                "${{ needs.build-test.result }}" == "success" ]]; then
+            echo "🎉 All critical tests passed!"
+            exit 0
+          else
+            echo "❌ Some tests failed. Check the individual job results."
+            exit 1
+          fi
+
+# Separate workflow for nightly comprehensive testing
+  nightly-comprehensive:
+    name: "Nightly Comprehensive Tests"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    timeout-minutes: 60
+    steps:
+      - name: "📥 Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "🏗️ Setup Bun"
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: "📦 Install dependencies"
+        run: bun install --frozen-lockfile
+
+      - name: "🧪 Run complete test suite"
+        run: bun run test:ci
+
+      - name: "📊 Generate comprehensive coverage report"
+        run: bun run test:coverage
+
+      - name: "🔄 Run load testing"
+        run: |
+          # Start application
+          bun run dev:server &
+          bun run dev:web &
+
+          # Wait for startup
+          sleep 30
+
+          # Run load tests (using artillery or k6 if configured)
+          echo "Load testing would run here"
+
+      - name: "📧 Send notification on failure"
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#dev-alerts'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

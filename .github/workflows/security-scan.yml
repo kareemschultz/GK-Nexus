@@ -1,0 +1,153 @@
+# Security Scanning Workflow for GK-Nexus
+# ========================================
+#
+# Scheduled security scanning for continuous monitoring
+# of dependencies and container images
+
+name: Security Scan
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main, production]
+    paths:
+      - 'package.json'
+      - 'bun.lockb'
+      - '**/package.json'
+      - 'apps/*/Dockerfile'
+
+jobs:
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.2.18'
+
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+
+    - name: Run dependency audit
+      run: bun audit --json > audit-results.json || true
+
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high --file=package.json
+
+    - name: Upload audit results
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-audit-results
+        path: |
+          audit-results.json
+          snyk.sarif
+
+  filesystem-scan:
+    name: Filesystem Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy filesystem scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-fs-results.sarif'
+
+    - name: Upload Trivy results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-fs-results.sarif'
+
+    - name: Run Semgrep security scan
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/javascript
+          p/typescript
+
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Run GitLeaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run TruffleHog
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+
+  license-compliance:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.2.18'
+
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+
+    - name: Check license compliance
+      run: |
+        npx license-checker --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD" \
+          --excludePrivatePackages \
+          --json > license-report.json
+
+    - name: Upload license report
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-compliance-report
+        path: license-report.json
+
+  notify-security-issues:
+    name: Notify Security Issues
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, filesystem-scan, secrets-scan]
+    if: failure()
+
+    steps:
+    - name: Notify security team
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#security'
+        text: 'Security scan failed for GK-Nexus! Please review immediately. 🚨'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

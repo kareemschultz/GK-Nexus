@@ -228,6 +228,13 @@ export const userRoles = pgTable(
     index("user_roles_valid_from_idx").on(table.validFrom),
     index("user_roles_valid_until_idx").on(table.validUntil),
     index("user_roles_assigned_by_idx").on(table.assignedBy),
+    // Composite indexes for permission resolution performance
+    index("user_roles_user_active_idx").on(table.userId, table.isActive),
+    index("user_roles_active_valid_idx").on(
+      table.isActive,
+      table.validFrom,
+      table.validUntil
+    ),
     unique("user_roles_user_role_unique").on(table.userId, table.roleId),
   ]
 );
