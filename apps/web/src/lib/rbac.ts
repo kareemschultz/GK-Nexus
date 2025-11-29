@@ -521,8 +521,8 @@ export function getRequiredPermissionForEndpoint(
 // Authorization decorator for API methods
 export function authorize(requiredPermission: Permission) {
   return (
-    target: any,
-    propertyName: string,
+    _target: any,
+    _propertyName: string,
     descriptor: PropertyDescriptor
   ) => {
     const method = descriptor.value;

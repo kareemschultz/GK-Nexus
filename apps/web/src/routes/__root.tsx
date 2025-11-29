@@ -10,16 +10,19 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { useState } from "react";
-import Header from "@/components/header";
+import { EnterpriseSidebar } from "@/components/enterprise-sidebar";
+import SkipLinks from "@/components/skip-links";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { useReducedMotionClass } from "@/hooks/use-reduced-motion";
+import { ScreenReaderAnnouncements } from "@/hooks/use-screen-reader";
 import { link, type orpc } from "@/utils/orpc";
 import "../index.css";
 
-export interface RouterAppContext {
+export type RouterAppContext = {
   orpc: typeof orpc;
   queryClient: QueryClient;
-}
+};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
   component: RootComponent,
@@ -44,7 +47,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootComponent() {
   const [client] = useState<AppRouterClient>(() => createORPCClient(link));
-  const [orpcUtils] = useState(() => createTanstackQueryUtils(client));
+  const [_orpcUtils] = useState(() => createTanstackQueryUtils(client));
+
+  // Apply reduced motion class to body
+  useReducedMotionClass();
 
   return (
     <>
@@ -55,9 +61,17 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="grid h-svh grid-rows-[auto_1fr]">
-          <Header />
-          <Outlet />
+        <SkipLinks />
+        <ScreenReaderAnnouncements />
+        <div className="flex h-svh">
+          <EnterpriseSidebar />
+          <main
+            className="flex-1 overflow-auto"
+            id="main-content"
+            tabIndex={-1}
+          >
+            <Outlet />
+          </main>
         </div>
         <Toaster richColors />
       </ThemeProvider>

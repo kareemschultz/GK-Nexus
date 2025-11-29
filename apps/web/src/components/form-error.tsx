@@ -1,17 +1,25 @@
 import { AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface FormErrorProps {
+type FormErrorProps = {
   message?: string;
   className?: string;
-}
+  id?: string;
+};
 
-export function FormError({ message, className }: FormErrorProps) {
-  if (!message) return null;
+export function FormError({ message, className, id }: FormErrorProps) {
+  if (!message) {
+    return null;
+  }
 
   return (
-    <div className={cn("flex items-center gap-2 text-destructive", className)}>
-      <AlertCircle className="h-4 w-4" />
+    <div
+      aria-live="polite"
+      className={cn("flex items-center gap-2 text-destructive", className)}
+      id={id}
+      role="alert"
+    >
+      <AlertCircle aria-hidden="true" className="h-4 w-4" />
       <p className="text-sm">{message}</p>
     </div>
   );

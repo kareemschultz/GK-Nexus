@@ -1,25 +1,46 @@
-# GK-Nexus
+# GK-Nexus Enterprise Suite
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, ORPC, and more.
+**A comprehensive enterprise business management application for Guyana, built with modern TypeScript stack.**
 
-## Features
+GK-Nexus is inspired by GK-Enterprise-Suite and provides a complete solution for managing clients, appointments, documents, tax calculations, compliance monitoring, and government integrations - all tailored specifically for the Guyanese business environment.
 
-- **TypeScript** - For type safety and improved developer experience
+## 🚀 Enterprise Features
+
+### Core Business Management
+- **Client Management** - Complete client lifecycle with multi-step onboarding wizard
+- **Appointment System** - Full booking system with public client portal access
+- **Document Management** - Organized file storage with categorization and sharing
+- **User Management** - Invite-based registration with comprehensive RBAC (8 enterprise roles)
+- **Enterprise Dashboard** - Real-time KPIs, compliance tracking, and analytics
+
+### Guyana Tax & Compliance
+- **PAYE Tax Calculations** - Complete implementation of Guyana tax brackets (0%, 28%, 30%, 33%, 40%)
+- **NIS Contributions** - Automated NIS calculations with proper rates and thresholds
+- **VAT Management** - VAT calculations and reporting for Guyana's 12.5% rate
+- **GRA E-Services Integration** - Direct integration with Guyana Revenue Authority
+- **NIS Electronic Submissions** - Automated schedule submissions to National Insurance Scheme
+- **Compliance Monitoring** - Automated alerts and tracking for regulatory compliance
+
+### Technical Architecture
+- **TypeScript** - Full type safety across frontend and backend
 - **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **Hono** - Lightweight, performant server framework
-- **oRPC** - End-to-end type-safe APIs with OpenAPI integration
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **PostgreSQL** - Database engine
-- **Authentication** - Better-Auth
-- **Biome** - Linting and formatting
-- **Husky** - Git hooks for code quality
-- **PWA** - Progressive Web App support
-- **Starlight** - Documentation site with Astro
-- **Tauri** - Build native desktop applications
-- **Turborepo** - Optimized monorepo build system
+- **TailwindCSS & shadcn/ui** - Modern, responsive UI components
+- **Hono & oRPC** - High-performance backend with end-to-end type safety
+- **Drizzle & PostgreSQL** - Enterprise-grade database with comprehensive business schema
+- **Better Auth** - Secure authentication with role-based access control
+- **PWA Support** - Progressive Web App for offline functionality
+- **WCAG 2.1 AA Compliance** - Full accessibility standards implementation
+
+## 🏗️ Architecture Stack
+
+- **Frontend**: React 19+ with TanStack Router and React Query
+- **Backend**: Hono server with oRPC for type-safe APIs
+- **Database**: PostgreSQL with Drizzle ORM
+- **Auth**: Better Auth with invite-based user management
+- **Styling**: TailwindCSS with shadcn/ui components
+- **Development**: Bun runtime with Turborepo monorepo
+- **Quality**: Ultracite (Biome) for linting and formatting
+- **Deployment**: Docker containerization support
 
 ## Getting Started
 

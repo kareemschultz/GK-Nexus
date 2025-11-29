@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 
-interface Notification {
+type Notification = {
   id: string;
   title: string;
   message: string;
@@ -17,7 +17,7 @@ interface Notification {
     action: () => void;
     variant?: "default" | "destructive" | "outline";
   }>;
-}
+};
 
 const mockNotifications: Notification[] = [
   {

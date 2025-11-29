@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 import { authClient } from "@/lib/auth-client";
+import FormError from "./form-error";
 import Loader from "./loader";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -59,30 +60,45 @@ export default function SignInForm({
       <h1 className="mb-6 text-center font-bold text-3xl">Welcome Back</h1>
 
       <form
+        aria-describedby="signin-description"
         className="space-y-4"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           form.handleSubmit();
         }}
       >
+        <p className="sr-only" id="signin-description">
+          Sign in to your account using your email and password
+        </p>
         <div>
           <form.Field name="email">
             {(field) => (
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Email</Label>
                 <Input
+                  aria-describedby={
+                    field.state.meta.errors.length > 0
+                      ? `${field.name}-error`
+                      : undefined
+                  }
+                  aria-invalid={field.state.meta.errors.length > 0}
+                  autoComplete="email"
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  required
                   type="email"
                   value={field.state.value}
                 />
-                {field.state.meta.errors.map((error) => (
-                  <p className="text-red-500" key={error?.message}>
-                    {error?.message}
-                  </p>
+                {field.state.meta.errors.map((error, index) => (
+                  <FormError
+                    id={index === 0 ? `${field.name}-error` : undefined}
+                    key={error?.message}
+                    message={error?.message}
+                  />
                 ))}
               </div>
             )}
@@ -95,17 +111,27 @@ export default function SignInForm({
               <div className="space-y-2">
                 <Label htmlFor={field.name}>Password</Label>
                 <Input
+                  aria-describedby={
+                    field.state.meta.errors.length > 0
+                      ? `${field.name}-error`
+                      : undefined
+                  }
+                  aria-invalid={field.state.meta.errors.length > 0}
+                  autoComplete="current-password"
                   id={field.name}
                   name={field.name}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
+                  required
                   type="password"
                   value={field.state.value}
                 />
-                {field.state.meta.errors.map((error) => (
-                  <p className="text-red-500" key={error?.message}>
-                    {error?.message}
-                  </p>
+                {field.state.meta.errors.map((error, index) => (
+                  <FormError
+                    id={index === 0 ? `${field.name}-error` : undefined}
+                    key={error?.message}
+                    message={error?.message}
+                  />
                 ))}
               </div>
             )}

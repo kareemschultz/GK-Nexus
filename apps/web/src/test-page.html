@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+    body {
+      font-family: monospace;
+      padding: 40px;
+      background: #f0f0f0;
+    }
+    .test-box {
+      background: white;
+      border: 2px solid #007acc;
+      padding: 30px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="test-box">
+      <h1>🎯 GK-Nexus Test Page</h1>
+      <p>
+        <strong
+          >This page should display properly if the server is working</strong
+        >
+      </p>
+      <p>
+        If you can see this content, the web server is functioning correctly.
+      </p>
+
+      <h2>Debug Information:</h2>
+      <ul>
+        <li>✅ Web server running on port 3001</li>
+        <li>✅ HTML serving correctly</li>
+        <li>✅ Static files loading</li>
+      </ul>
+
+      <h2>Next Steps:</h2>
+      <ol>
+        <li>
+          Go back to <a href="/">http://localhost:3001</a>
+        </li>
+        <li>Open Developer Tools (F12)</li>
+        <li>Check the Console tab for errors or debug messages</li>
+        <li>Check Network tab for failed requests</li>
+      </ol>
+
+      <div
+        style="background: #e8f4f8; padding: 20px; margin: 20px 0; border-left: 4px solid #007acc;"
+      >
+        <strong>Expected Console Messages:</strong>
+        <br>🚀 Starting application...
+        <br>✅ All imports successful
+        <br>🔧 Creating router...
+        <br>✅ Router created successfully
+        <br>🔍 Looking for root element...
+        <br>✅ Root element found
+        <br>🎯 Rendering React application...
+        <br>✅ React application rendered successfully
+      </div>
+    </div>
+
+    <script>
+    "use strict";
+    console.log("🧪 Test page loaded successfully");
+    console.log("Server timestamp:", new Date().toISOString());
+    </script>
+  </body>
+</html>

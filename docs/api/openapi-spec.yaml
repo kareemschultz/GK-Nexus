@@ -1,0 +1,1487 @@
+openapi: 3.0.3
+info:
+  title: GK-Nexus Suite API
+  description: |
+    Comprehensive tax calculation and client management API for Guyana Revenue Authority (GRA) compliance.
+
+    **Key Features:**
+    - GRA-compliant tax calculations (PAYE, VAT, Corporate Tax)
+    - Real-time GRA eServices integration
+    - Immigration workflow management
+    - OCR document processing with 99%+ accuracy
+    - Multi-channel notification system (Email/SMS/In-App)
+    - Multi-tenant architecture with RBAC
+
+    **Authentication:**
+    All endpoints require Bearer token authentication unless specified otherwise.
+
+    **Rate Limiting:**
+    - Standard endpoints: 1000 requests/hour per user
+    - OCR processing: 100 requests/hour per user
+    - GRA integration: 50 requests/hour per client
+
+    **Error Handling:**
+    All errors follow RFC 7807 format with detailed error codes and messages.
+  version: 1.0.0
+  contact:
+    name: GK-Nexus API Support
+    email: api-support@gk-nexus.com
+    url: https://docs.gk-nexus.com
+  license:
+    name: Proprietary
+    url: https://gk-nexus.com/license
+  termsOfService: https://gk-nexus.com/terms
+
+servers:
+  - url: https://api.gk-nexus.com/v1
+    description: Production server
+  - url: https://staging-api.gk-nexus.com/v1
+    description: Staging server
+  - url: http://localhost:3001/v1
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Health Check
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      description: Returns the health status of the API
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  # Tax Calculations
+  /tax/calculate-paye:
+    post:
+      tags:
+        - Tax Calculations
+      summary: Calculate PAYE tax
+      description: Calculate Pay As You Earn (PAYE) tax using Guyana Revenue Authority rates and brackets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PAYECalculationRequest'
+            examples:
+              monthly_salary:
+                summary: Monthly salary calculation
+                value:
+                  monthlyGrossSalary: 150000
+                  personalAllowances: 10000
+                  dependentAllowances: 5000
+      responses:
+        '200':
+          description: PAYE calculation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PAYECalculationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /tax/calculate-vat:
+    post:
+      tags:
+        - Tax Calculations
+      summary: Calculate VAT
+      description: Calculate Value Added Tax (VAT) using Guyana's 14% standard rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VATCalculationRequest'
+      responses:
+        '200':
+          description: VAT calculation successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VATCalculationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /tax/submit-vat-return:
+    post:
+      tags:
+        - GRA Integration
+      summary: Submit VAT return to GRA
+      description: Submit VAT return directly to GRA eServices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VATReturnSubmission'
+      responses:
+        '200':
+          description: VAT return submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRASubmissionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tax/deadlines:
+    get:
+      tags:
+        - Tax Calculations
+      summary: Get tax filing deadlines
+      description: Retrieve upcoming tax filing deadlines and obligations
+      parameters:
+        - name: clientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2030
+        - name: upcomingOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Tax deadlines retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaxDeadlinesResponse'
+
+  # Client Management
+  /clients:
+    get:
+      tags:
+        - Client Management
+      summary: List clients
+      description: Retrieve a paginated list of clients with filtering options
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: entityType
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EntityType'
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ClientStatus'
+      responses:
+        '200':
+          description: Clients retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientListResponse'
+
+    post:
+      tags:
+        - Client Management
+      summary: Create client
+      description: Create a new client in the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClientRequest'
+      responses:
+        '201':
+          description: Client created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /clients/{clientId}/immigration-status:
+    get:
+      tags:
+        - Immigration Management
+      summary: Get immigration status
+      description: Retrieve current immigration status and workflow progress for a client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Immigration status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImmigrationStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Immigration Management
+      summary: Update immigration status
+      description: Update the immigration status and workflow progress for a client
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateImmigrationStatusRequest'
+      responses:
+        '200':
+          description: Immigration status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImmigrationStatusResponse'
+
+  # OCR Processing
+  /ocr/process:
+    post:
+      tags:
+        - OCR Processing
+      summary: Submit document for OCR processing
+      description: Submit a document for OCR processing with 99%+ accuracy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OCRProcessRequest'
+      responses:
+        '200':
+          description: Document submitted for OCR processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OCRProcessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /ocr/status/{processingId}:
+    get:
+      tags:
+        - OCR Processing
+      summary: Get OCR processing status
+      description: Check the status of an OCR processing job
+      parameters:
+        - name: processingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: includeResults
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OCR processing status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OCRStatusResponse'
+
+  /ocr/batch:
+    post:
+      tags:
+        - OCR Processing
+      summary: Batch process documents
+      description: Submit multiple documents for batch OCR processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchProcessRequest'
+      responses:
+        '200':
+          description: Batch processing initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchProcessResponse'
+
+  # GRA Integration
+  /gra/authenticate:
+    post:
+      tags:
+        - GRA Integration
+      summary: Authenticate with GRA eServices
+      description: Establish authentication session with Guyana Revenue Authority eServices
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GRAAuthRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRAAuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /gra/sync/{clientId}:
+    post:
+      tags:
+        - GRA Integration
+      summary: Sync client data with GRA
+      description: Synchronize client information with GRA records
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GRASyncRequest'
+      responses:
+        '200':
+          description: Data synchronized successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRASyncResponse'
+
+  /gra/filing-calendar:
+    get:
+      tags:
+        - GRA Integration
+      summary: Get GRA filing calendar
+      description: Retrieve official GRA filing calendar with deadlines and penalties
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2030
+        - name: clientId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Filing calendar retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GRAFilingCalendarResponse'
+
+  # Notifications
+  /notifications/send:
+    post:
+      tags:
+        - Notifications
+      summary: Send notification
+      description: Send multi-channel notifications (Email/SMS/In-App/Push)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationRequest'
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationResponse'
+
+  /notifications/{notificationId}/status:
+    get:
+      tags:
+        - Notifications
+      summary: Get notification status
+      description: Check the delivery status of a notification
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationStatusResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Basic Types
+    EntityType:
+      type: string
+      enum:
+        - INDIVIDUAL
+        - SOLE_PROPRIETORSHIP
+        - PARTNERSHIP
+        - LIMITED_LIABILITY
+        - CORPORATION
+        - NON_PROFIT
+        - GOVERNMENT
+
+    ClientStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - SUSPENDED
+        - ARCHIVED
+
+    Priority:
+      type: string
+      enum:
+        - LOW
+        - NORMAL
+        - HIGH
+        - URGENT
+
+    # Tax Calculation Schemas
+    PAYECalculationRequest:
+      type: object
+      required:
+        - monthlyGrossSalary
+      properties:
+        monthlyGrossSalary:
+          type: number
+          minimum: 0
+          description: Monthly gross salary in GYD
+          example: 150000
+        personalAllowances:
+          type: number
+          minimum: 0
+          description: Personal allowances in GYD
+          example: 10000
+        dependentAllowances:
+          type: number
+          minimum: 0
+          description: Dependent allowances in GYD
+          example: 5000
+        pensionContributions:
+          type: number
+          minimum: 0
+          description: Pension contributions in GYD
+        insurancePremiums:
+          type: number
+          minimum: 0
+          description: Insurance premiums in GYD
+
+    PAYECalculationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            grossSalary:
+              type: number
+              description: Monthly gross salary in GYD
+            totalAllowances:
+              type: number
+              description: Total allowances in GYD
+            taxableIncome:
+              type: number
+              description: Taxable income after allowances
+            payeTax:
+              type: number
+              description: Calculated PAYE tax
+            netSalary:
+              type: number
+              description: Net salary after deductions
+            breakdown:
+              type: array
+              items:
+                $ref: '#/components/schemas/PAYETaxBracket'
+
+    PAYETaxBracket:
+      type: object
+      properties:
+        bracket:
+          type: string
+          description: Tax bracket description
+        taxableAmount:
+          type: number
+          description: Amount taxable in this bracket
+        rate:
+          type: number
+          description: Tax rate for this bracket
+        tax:
+          type: number
+          description: Tax amount for this bracket
+
+    VATCalculationRequest:
+      type: object
+      required:
+        - netAmount
+      properties:
+        netAmount:
+          type: number
+          minimum: 0
+          description: Net amount before VAT in GYD
+        category:
+          type: string
+          description: VAT category
+          enum:
+            - STANDARD
+            - ZERO_RATED
+            - EXEMPT
+        isExport:
+          type: boolean
+          description: Whether this is an export transaction
+        vatInclusive:
+          type: boolean
+          description: Whether the amount includes VAT
+
+    VATCalculationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            netAmount:
+              type: number
+              description: Net amount in GYD
+            vatAmount:
+              type: number
+              description: VAT amount in GYD
+            grossAmount:
+              type: number
+              description: Gross amount including VAT
+            vatRate:
+              type: number
+              description: Applied VAT rate (0.14 for standard)
+            category:
+              type: string
+              description: VAT category applied
+            isExempt:
+              type: boolean
+            isZeroRated:
+              type: boolean
+
+    # Client Management Schemas
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientNumber:
+          type: string
+          description: Auto-generated client number
+        name:
+          type: string
+          description: Client name or business name
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        status:
+          $ref: '#/components/schemas/ClientStatus'
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        taxIdNumber:
+          type: string
+          description: TIN or NIS number
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            city:
+              type: string
+            region:
+              type: string
+            postalCode:
+              type: string
+            country:
+              type: string
+              default: "Guyana"
+        assignedAccountant:
+          type: string
+          format: uuid
+        assignedManager:
+          type: string
+          format: uuid
+        clientSince:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateClientRequest:
+      type: object
+      required:
+        - name
+        - entityType
+        - email
+      properties:
+        name:
+          type: string
+          minLength: 1
+        entityType:
+          $ref: '#/components/schemas/EntityType'
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        taxIdNumber:
+          type: string
+        address:
+          type: object
+
+    ClientListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Client'
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+
+    # Immigration Management Schemas
+    ImmigrationStatus:
+      type: string
+      enum:
+        - APPLICATION_SUBMITTED
+        - UNDER_REVIEW
+        - ADDITIONAL_DOCS_REQUESTED
+        - INTERVIEW_SCHEDULED
+        - APPROVED
+        - REJECTED
+        - APPEAL_IN_PROGRESS
+        - VISA_ISSUED
+        - RENEWAL_REQUIRED
+        - EXPIRED
+
+    VisaType:
+      type: string
+      enum:
+        - WORK_PERMIT
+        - STUDENT_VISA
+        - BUSINESS_VISA
+        - INVESTOR_VISA
+        - FAMILY_REUNIFICATION
+        - PERMANENT_RESIDENCE
+        - CITIZENSHIP
+        - OTHER
+
+    ImmigrationStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            currentStatus:
+              $ref: '#/components/schemas/ImmigrationStatus'
+            visaType:
+              $ref: '#/components/schemas/VisaType'
+            applicationDate:
+              type: string
+              format: date
+            expiryDate:
+              type: string
+              format: date
+            documents:
+              type: array
+              items:
+                type: object
+                properties:
+                  documentType:
+                    type: string
+                  documentId:
+                    type: string
+                  isRequired:
+                    type: boolean
+                  submittedAt:
+                    type: string
+                    format: date-time
+            timeline:
+              type: array
+              items:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/ImmigrationStatus'
+                  changedAt:
+                    type: string
+                    format: date-time
+                  changedBy:
+                    type: string
+                  notes:
+                    type: string
+            daysUntilExpiry:
+              type: integer
+              nullable: true
+
+    UpdateImmigrationStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/ImmigrationStatus'
+        visaType:
+          $ref: '#/components/schemas/VisaType'
+        expiryDate:
+          type: string
+          format: date-time
+        nextAction:
+          type: string
+          maxLength: 500
+        nextActionDate:
+          type: string
+          format: date-time
+        notes:
+          type: string
+          maxLength: 1000
+
+    # OCR Processing Schemas
+    DocumentType:
+      type: string
+      enum:
+        - INVOICE
+        - RECEIPT
+        - BANK_STATEMENT
+        - TAX_FORM
+        - PASSPORT
+        - BIRTH_CERTIFICATE
+        - DRIVER_LICENSE
+        - UTILITY_BILL
+        - FINANCIAL_STATEMENT
+        - CONTRACT
+        - OTHER
+
+    OCRProcessRequest:
+      type: object
+      required:
+        - documentId
+        - documentType
+        - clientId
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        documentType:
+          $ref: '#/components/schemas/DocumentType'
+        clientId:
+          type: string
+          format: uuid
+        priority:
+          $ref: '#/components/schemas/Priority'
+        extractionOptions:
+          type: object
+          properties:
+            extractText:
+              type: boolean
+              default: true
+            extractTables:
+              type: boolean
+              default: false
+            extractSignatures:
+              type: boolean
+              default: false
+            detectLanguage:
+              type: boolean
+              default: true
+            confidenceThreshold:
+              type: number
+              minimum: 0
+              maximum: 1
+              default: 0.85
+
+    OCRProcessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            processingId:
+              type: string
+            status:
+              type: string
+              enum:
+                - QUEUED
+                - PROCESSING
+                - COMPLETED
+                - FAILED
+            priority:
+              $ref: '#/components/schemas/Priority'
+            estimatedCompletion:
+              type: string
+              format: date-time
+            documentInfo:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  $ref: '#/components/schemas/DocumentType'
+                size:
+                  type: number
+
+    OCRStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string
+            confidenceScore:
+              type: number
+              nullable: true
+            processingDuration:
+              type: number
+              nullable: true
+            results:
+              type: array
+              nullable: true
+              items:
+                type: object
+                properties:
+                  extractedText:
+                    type: string
+                    nullable: true
+                  extractedData:
+                    type: object
+                    nullable: true
+                  confidenceScore:
+                    type: number
+                    nullable: true
+
+    BatchProcessRequest:
+      type: object
+      required:
+        - documents
+        - clientId
+      properties:
+        documents:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - documentId
+              - documentType
+            properties:
+              documentId:
+                type: string
+                format: uuid
+              documentType:
+                $ref: '#/components/schemas/DocumentType'
+        clientId:
+          type: string
+          format: uuid
+        priority:
+          type: string
+          enum:
+            - LOW
+            - NORMAL
+            - HIGH
+
+    BatchProcessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            batchId:
+              type: string
+            totalDocuments:
+              type: number
+            status:
+              type: string
+            estimatedCompletion:
+              type: string
+              format: date-time
+
+    # GRA Integration Schemas
+    GRAAuthRequest:
+      type: object
+      required:
+        - clientId
+        - tin
+        - username
+        - password
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        tin:
+          type: string
+          description: Tax Identification Number
+        username:
+          type: string
+        password:
+          type: string
+
+    GRAAuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            authenticated:
+              type: boolean
+            sessionExpiry:
+              type: string
+              format: date-time
+            supportedForms:
+              type: array
+              items:
+                type: string
+                enum:
+                  - VAT_RETURN
+                  - PAYE_RETURN
+                  - CORPORATE_TAX
+                  - BUSINESS_REGISTRATION
+
+    GRASyncRequest:
+      type: object
+      required:
+        - tin
+        - syncType
+      properties:
+        tin:
+          type: string
+        syncType:
+          type: string
+          enum:
+            - BASIC_INFO
+            - TAX_HISTORY
+            - COMPLIANCE_STATUS
+
+    GRASyncResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          additionalProperties: true
+
+    VATReturnSubmission:
+      type: object
+      required:
+        - clientId
+        - period
+        - vatTransactions
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        period:
+          type: string
+          description: Tax period (e.g., "2024-Q1")
+        vatTransactions:
+          type: array
+          items:
+            type: object
+            required:
+              - invoiceNumber
+              - customerName
+              - date
+              - netAmount
+              - vatAmount
+              - grossAmount
+              - category
+            properties:
+              invoiceNumber:
+                type: string
+              customerName:
+                type: string
+              customerTin:
+                type: string
+              date:
+                type: string
+                format: date-time
+              netAmount:
+                type: number
+                minimum: 0
+              vatAmount:
+                type: number
+                minimum: 0
+              grossAmount:
+                type: number
+                minimum: 0
+              category:
+                type: string
+                enum:
+                  - STANDARD
+                  - ZERO_RATED
+                  - EXEMPT
+              description:
+                type: string
+        declarationDate:
+          type: string
+          format: date-time
+
+    GRASubmissionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            submissionId:
+              type: string
+            graReference:
+              type: string
+            status:
+              type: string
+            vatSummary:
+              type: object
+              properties:
+                totalSales:
+                  type: number
+                totalOutput:
+                  type: number
+                vatInputCredit:
+                  type: number
+                finalVatPayable:
+                  type: number
+            nextDueDate:
+              type: string
+              format: date-time
+
+    TaxDeadlinesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            deadlines:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                    enum:
+                      - VAT_RETURN
+                      - PAYE_RETURN
+                      - CORPORATE_TAX
+                  title:
+                    type: string
+                  dueDate:
+                    type: string
+                    format: date-time
+                  priority:
+                    type: string
+                    enum:
+                      - CRITICAL
+                      - HIGH
+                      - MEDIUM
+                      - LOW
+                  daysUntilDue:
+                    type: number
+                  warningLevel:
+                    type: string
+                    enum:
+                      - CRITICAL
+                      - WARNING
+                      - NORMAL
+            summary:
+              type: object
+              properties:
+                total:
+                  type: number
+                critical:
+                  type: number
+                warning:
+                  type: number
+                overdue:
+                  type: number
+
+    GRAFilingCalendarResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            year:
+              type: number
+            calendar:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  type:
+                    type: string
+                  title:
+                    type: string
+                  dueDate:
+                    type: string
+                    format: date-time
+                  lateFilingPenalty:
+                    type: number
+                  applicableToAll:
+                    type: boolean
+
+    # Notification Schemas
+    SendNotificationRequest:
+      type: object
+      required:
+        - recipients
+        - channels
+        - template
+        - subject
+        - message
+      properties:
+        recipients:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+                format: uuid
+              email:
+                type: string
+                format: email
+              phone:
+                type: string
+              name:
+                type: string
+        channels:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            enum:
+              - EMAIL
+              - SMS
+              - IN_APP
+              - PUSH
+        template:
+          type: string
+          enum:
+            - TAX_DEADLINE_REMINDER
+            - FILING_STATUS_UPDATE
+            - DOCUMENT_UPLOADED
+            - IMMIGRATION_STATUS_CHANGE
+            - PAYMENT_DUE
+            - COMPLIANCE_ALERT
+            - WELCOME_MESSAGE
+            - CUSTOM
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        priority:
+          $ref: '#/components/schemas/Priority'
+        scheduledFor:
+          type: string
+          format: date-time
+
+    NotificationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            notificationId:
+              type: string
+            totalNotifications:
+              type: number
+            status:
+              type: string
+              enum:
+                - SCHEDULED
+                - PROCESSING
+                - COMPLETED
+
+    NotificationStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            notificationId:
+              type: string
+            overallStatus:
+              type: string
+              enum:
+                - PROCESSING
+                - SENT
+                - DELIVERED
+                - FAILED
+            totalNotifications:
+              type: number
+            statusBreakdown:
+              type: object
+              additionalProperties:
+                type: number
+
+    # Common Schemas
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          minimum: 0
+        pages:
+          type: integer
+          minimum: 0
+
+    Error:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Error type URI
+        title:
+          type: string
+          description: Short error description
+        status:
+          type: integer
+          description: HTTP status code
+        detail:
+          type: string
+          description: Detailed error message
+        instance:
+          type: string
+          description: URI reference to specific error occurrence
+        errors:
+          type: array
+          description: Validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: "https://gk-nexus.com/errors/bad-request"
+            title: "Bad Request"
+            status: 400
+            detail: "The request could not be processed due to invalid parameters"
+            instance: "/v1/tax/calculate-paye"
+            errors:
+              - field: "monthlyGrossSalary"
+                message: "Monthly gross salary must be a positive number"
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: "https://gk-nexus.com/errors/unauthorized"
+            title: "Unauthorized"
+            status: 401
+            detail: "Authentication required"
+            instance: "/v1/tax/calculate-paye"
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: "https://gk-nexus.com/errors/forbidden"
+            title: "Forbidden"
+            status: 403
+            detail: "Insufficient permissions to access this resource"
+            instance: "/v1/tax/calculate-paye"
+
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: "https://gk-nexus.com/errors/not-found"
+            title: "Not Found"
+            status: 404
+            detail: "The requested resource was not found"
+            instance: "/v1/clients/123"
+
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            type: "https://gk-nexus.com/errors/internal-error"
+            title: "Internal Server Error"
+            status: 500
+            detail: "An unexpected error occurred"
+            instance: "/v1/tax/calculate-paye"
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Tax Calculations
+    description: GRA-compliant tax calculations (PAYE, VAT, Corporate)
+  - name: Client Management
+    description: Multi-tenant client management with RBAC
+  - name: Immigration Management
+    description: Immigration workflow and document management
+  - name: OCR Processing
+    description: Document OCR processing with 99%+ accuracy
+  - name: GRA Integration
+    description: Direct integration with Guyana Revenue Authority eServices
+  - name: Notifications
+    description: Multi-channel notification system (Email/SMS/In-App/Push)
+
+externalDocs:
+  description: Complete API documentation and integration guides
+  url: https://docs.gk-nexus.com

@@ -9,12 +9,66 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsersRouteImport } from './routes/users'
+import { Route as TimeTrackingRouteImport } from './routes/time-tracking'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PortalRouteImport } from './routes/portal'
+import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as ClientsRouteImport } from './routes/clients'
+import { Route as AutomationRouteImport } from './routes/automation'
+import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as UsersRolesRouteImport } from './routes/users/roles'
+import { Route as UsersInviteRouteImport } from './routes/users/invite'
+import { Route as TimeTrackingTimerRouteImport } from './routes/time-tracking.timer'
+import { Route as TimeTrackingReportsRouteImport } from './routes/time-tracking.reports'
+import { Route as TimeTrackingProjectsRouteImport } from './routes/time-tracking.projects'
+import { Route as TimeTrackingEntriesRouteImport } from './routes/time-tracking.entries'
+import { Route as TaxVatRouteImport } from './routes/tax/vat'
+import { Route as TaxPayeRouteImport } from './routes/tax/paye'
+import { Route as TaxNisRouteImport } from './routes/tax/nis'
+import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as PortalProfileRouteImport } from './routes/portal/profile'
+import { Route as PortalPaymentsRouteImport } from './routes/portal/payments'
+import { Route as PortalFilingsRouteImport } from './routes/portal/filings'
+import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
+import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointments'
+import { Route as PayrollRunRouteImport } from './routes/payroll/run'
+import { Route as PayrollEmployeesRouteImport } from './routes/payroll/employees'
+import { Route as InvoicesNewRouteImport } from './routes/invoices/new'
+import { Route as InvoicesIdRouteImport } from './routes/invoices/[id]'
+import { Route as DocumentsUploadRouteImport } from './routes/documents/upload'
+import { Route as DocumentsTemplatesRouteImport } from './routes/documents/templates'
+import { Route as DocumentsSearchRouteImport } from './routes/documents/search'
+import { Route as DocumentsIdRouteImport } from './routes/documents/$id'
+import { Route as ClientsNewRouteImport } from './routes/clients/new'
+import { Route as ClientsIdRouteImport } from './routes/clients/$id'
+import { Route as AutomationTemplatesRouteImport } from './routes/automation.templates'
+import { Route as AutomationRulesRouteImport } from './routes/automation.rules'
+import { Route as AutomationHistoryRouteImport } from './routes/automation.history'
+import { Route as AppointmentsNewRouteImport } from './routes/appointments/new'
+import { Route as AppointmentsCalendarRouteImport } from './routes/appointments/calendar'
+import { Route as AppointmentsIdRouteImport } from './routes/appointments/$id'
+import { Route as ClientsIdEditRouteImport } from './routes/clients/$id/edit'
+import { Route as ClientsIdDocumentsRouteImport } from './routes/clients/$id/documents'
 
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimeTrackingRoute = TimeTrackingRouteImport.update({
+  id: '/time-tracking',
+  path: '/time-tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -25,9 +79,29 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayrollRoute = PayrollRouteImport.update({
+  id: '/payroll',
+  path: '/payroll',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -35,52 +109,547 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientsRoute = ClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutomationRoute = AutomationRouteImport.update({
+  id: '/automation',
+  path: '/automation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppointmentsRoute = AppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalIndexRoute = PortalIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortalRoute,
+} as any)
+const UsersRolesRoute = UsersRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => UsersRoute,
+} as any)
+const UsersInviteRoute = UsersInviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => UsersRoute,
+} as any)
+const TimeTrackingTimerRoute = TimeTrackingTimerRouteImport.update({
+  id: '/timer',
+  path: '/timer',
+  getParentRoute: () => TimeTrackingRoute,
+} as any)
+const TimeTrackingReportsRoute = TimeTrackingReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => TimeTrackingRoute,
+} as any)
+const TimeTrackingProjectsRoute = TimeTrackingProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => TimeTrackingRoute,
+} as any)
+const TimeTrackingEntriesRoute = TimeTrackingEntriesRouteImport.update({
+  id: '/entries',
+  path: '/entries',
+  getParentRoute: () => TimeTrackingRoute,
+} as any)
+const TaxVatRoute = TaxVatRouteImport.update({
+  id: '/tax/vat',
+  path: '/tax/vat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaxPayeRoute = TaxPayeRouteImport.update({
+  id: '/tax/paye',
+  path: '/tax/paye',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaxNisRoute = TaxNisRouteImport.update({
+  id: '/tax/nis',
+  path: '/tax/nis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const PortalProfileRoute = PortalProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalPaymentsRoute = PortalPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalFilingsRoute = PortalFilingsRouteImport.update({
+  id: '/filings',
+  path: '/filings',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalDocumentsRoute = PortalDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PortalAppointmentsRoute = PortalAppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
+  getParentRoute: () => PortalRoute,
+} as any)
+const PayrollRunRoute = PayrollRunRouteImport.update({
+  id: '/run',
+  path: '/run',
+  getParentRoute: () => PayrollRoute,
+} as any)
+const PayrollEmployeesRoute = PayrollEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => PayrollRoute,
+} as any)
+const InvoicesNewRoute = InvoicesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const InvoicesIdRoute = InvoicesIdRouteImport.update({
+  id: '/id',
+  path: '/id',
+  getParentRoute: () => InvoicesRoute,
+} as any)
+const DocumentsUploadRoute = DocumentsUploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => DocumentsRoute,
+} as any)
+const DocumentsTemplatesRoute = DocumentsTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => DocumentsRoute,
+} as any)
+const DocumentsSearchRoute = DocumentsSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => DocumentsRoute,
+} as any)
+const DocumentsIdRoute = DocumentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => DocumentsRoute,
+} as any)
+const ClientsNewRoute = ClientsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ClientsRoute,
+} as any)
+const ClientsIdRoute = ClientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ClientsRoute,
+} as any)
+const AutomationTemplatesRoute = AutomationTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => AutomationRoute,
+} as any)
+const AutomationRulesRoute = AutomationRulesRouteImport.update({
+  id: '/rules',
+  path: '/rules',
+  getParentRoute: () => AutomationRoute,
+} as any)
+const AutomationHistoryRoute = AutomationHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AutomationRoute,
+} as any)
+const AppointmentsNewRoute = AppointmentsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppointmentsRoute,
+} as any)
+const AppointmentsCalendarRoute = AppointmentsCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppointmentsRoute,
+} as any)
+const AppointmentsIdRoute = AppointmentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppointmentsRoute,
+} as any)
+const ClientsIdEditRoute = ClientsIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ClientsIdRoute,
+} as any)
+const ClientsIdDocumentsRoute = ClientsIdDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => ClientsIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/appointments': typeof AppointmentsRouteWithChildren
+  '/automation': typeof AutomationRouteWithChildren
+  '/clients': typeof ClientsRouteWithChildren
+  '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
+  '/payroll': typeof PayrollRouteWithChildren
+  '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/users': typeof UsersRouteWithChildren
+  '/appointments/$id': typeof AppointmentsIdRoute
+  '/appointments/calendar': typeof AppointmentsCalendarRoute
+  '/appointments/new': typeof AppointmentsNewRoute
+  '/automation/history': typeof AutomationHistoryRoute
+  '/automation/rules': typeof AutomationRulesRoute
+  '/automation/templates': typeof AutomationTemplatesRoute
+  '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/new': typeof ClientsNewRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/documents/search': typeof DocumentsSearchRoute
+  '/documents/templates': typeof DocumentsTemplatesRoute
+  '/documents/upload': typeof DocumentsUploadRoute
+  '/invoices/id': typeof InvoicesIdRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/run': typeof PayrollRunRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/filings': typeof PortalFilingsRoute
+  '/portal/payments': typeof PortalPaymentsRoute
+  '/portal/profile': typeof PortalProfileRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/tax/nis': typeof TaxNisRoute
+  '/tax/paye': typeof TaxPayeRoute
+  '/tax/vat': typeof TaxVatRoute
+  '/time-tracking/entries': typeof TimeTrackingEntriesRoute
+  '/time-tracking/projects': typeof TimeTrackingProjectsRoute
+  '/time-tracking/reports': typeof TimeTrackingReportsRoute
+  '/time-tracking/timer': typeof TimeTrackingTimerRoute
+  '/users/invite': typeof UsersInviteRoute
+  '/users/roles': typeof UsersRolesRoute
+  '/portal/': typeof PortalIndexRoute
+  '/clients/$id/documents': typeof ClientsIdDocumentsRoute
+  '/clients/$id/edit': typeof ClientsIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/appointments': typeof AppointmentsRouteWithChildren
+  '/automation': typeof AutomationRouteWithChildren
+  '/clients': typeof ClientsRouteWithChildren
+  '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
+  '/payroll': typeof PayrollRouteWithChildren
   '/profile': typeof ProfileRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/users': typeof UsersRouteWithChildren
+  '/appointments/$id': typeof AppointmentsIdRoute
+  '/appointments/calendar': typeof AppointmentsCalendarRoute
+  '/appointments/new': typeof AppointmentsNewRoute
+  '/automation/history': typeof AutomationHistoryRoute
+  '/automation/rules': typeof AutomationRulesRoute
+  '/automation/templates': typeof AutomationTemplatesRoute
+  '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/new': typeof ClientsNewRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/documents/search': typeof DocumentsSearchRoute
+  '/documents/templates': typeof DocumentsTemplatesRoute
+  '/documents/upload': typeof DocumentsUploadRoute
+  '/invoices/id': typeof InvoicesIdRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/run': typeof PayrollRunRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/filings': typeof PortalFilingsRoute
+  '/portal/payments': typeof PortalPaymentsRoute
+  '/portal/profile': typeof PortalProfileRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/tax/nis': typeof TaxNisRoute
+  '/tax/paye': typeof TaxPayeRoute
+  '/tax/vat': typeof TaxVatRoute
+  '/time-tracking/entries': typeof TimeTrackingEntriesRoute
+  '/time-tracking/projects': typeof TimeTrackingProjectsRoute
+  '/time-tracking/reports': typeof TimeTrackingReportsRoute
+  '/time-tracking/timer': typeof TimeTrackingTimerRoute
+  '/users/invite': typeof UsersInviteRoute
+  '/users/roles': typeof UsersRolesRoute
+  '/portal': typeof PortalIndexRoute
+  '/clients/$id/documents': typeof ClientsIdDocumentsRoute
+  '/clients/$id/edit': typeof ClientsIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/appointments': typeof AppointmentsRouteWithChildren
+  '/automation': typeof AutomationRouteWithChildren
+  '/clients': typeof ClientsRouteWithChildren
+  '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/login': typeof LoginRoute
+  '/payroll': typeof PayrollRouteWithChildren
+  '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/users': typeof UsersRouteWithChildren
+  '/appointments/$id': typeof AppointmentsIdRoute
+  '/appointments/calendar': typeof AppointmentsCalendarRoute
+  '/appointments/new': typeof AppointmentsNewRoute
+  '/automation/history': typeof AutomationHistoryRoute
+  '/automation/rules': typeof AutomationRulesRoute
+  '/automation/templates': typeof AutomationTemplatesRoute
+  '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/new': typeof ClientsNewRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/documents/search': typeof DocumentsSearchRoute
+  '/documents/templates': typeof DocumentsTemplatesRoute
+  '/documents/upload': typeof DocumentsUploadRoute
+  '/invoices/id': typeof InvoicesIdRoute
+  '/invoices/new': typeof InvoicesNewRoute
+  '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/run': typeof PayrollRunRoute
+  '/portal/appointments': typeof PortalAppointmentsRoute
+  '/portal/documents': typeof PortalDocumentsRoute
+  '/portal/filings': typeof PortalFilingsRoute
+  '/portal/payments': typeof PortalPaymentsRoute
+  '/portal/profile': typeof PortalProfileRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/tax/nis': typeof TaxNisRoute
+  '/tax/paye': typeof TaxPayeRoute
+  '/tax/vat': typeof TaxVatRoute
+  '/time-tracking/entries': typeof TimeTrackingEntriesRoute
+  '/time-tracking/projects': typeof TimeTrackingProjectsRoute
+  '/time-tracking/reports': typeof TimeTrackingReportsRoute
+  '/time-tracking/timer': typeof TimeTrackingTimerRoute
+  '/users/invite': typeof UsersInviteRoute
+  '/users/roles': typeof UsersRolesRoute
+  '/portal/': typeof PortalIndexRoute
+  '/clients/$id/documents': typeof ClientsIdDocumentsRoute
+  '/clients/$id/edit': typeof ClientsIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/profile' | '/settings'
+  fullPaths:
+    | '/'
+    | '/appointments'
+    | '/automation'
+    | '/clients'
+    | '/compliance'
+    | '/dashboard'
+    | '/documents'
+    | '/invoices'
+    | '/login'
+    | '/payroll'
+    | '/portal'
+    | '/profile'
+    | '/settings'
+    | '/time-tracking'
+    | '/users'
+    | '/appointments/$id'
+    | '/appointments/calendar'
+    | '/appointments/new'
+    | '/automation/history'
+    | '/automation/rules'
+    | '/automation/templates'
+    | '/clients/$id'
+    | '/clients/new'
+    | '/documents/$id'
+    | '/documents/search'
+    | '/documents/templates'
+    | '/documents/upload'
+    | '/invoices/id'
+    | '/invoices/new'
+    | '/payroll/employees'
+    | '/payroll/run'
+    | '/portal/appointments'
+    | '/portal/documents'
+    | '/portal/filings'
+    | '/portal/payments'
+    | '/portal/profile'
+    | '/settings/profile'
+    | '/tax/nis'
+    | '/tax/paye'
+    | '/tax/vat'
+    | '/time-tracking/entries'
+    | '/time-tracking/projects'
+    | '/time-tracking/reports'
+    | '/time-tracking/timer'
+    | '/users/invite'
+    | '/users/roles'
+    | '/portal/'
+    | '/clients/$id/documents'
+    | '/clients/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/profile' | '/settings'
-  id: '__root__' | '/' | '/dashboard' | '/login' | '/profile' | '/settings'
+  to:
+    | '/'
+    | '/appointments'
+    | '/automation'
+    | '/clients'
+    | '/compliance'
+    | '/dashboard'
+    | '/documents'
+    | '/invoices'
+    | '/login'
+    | '/payroll'
+    | '/profile'
+    | '/settings'
+    | '/time-tracking'
+    | '/users'
+    | '/appointments/$id'
+    | '/appointments/calendar'
+    | '/appointments/new'
+    | '/automation/history'
+    | '/automation/rules'
+    | '/automation/templates'
+    | '/clients/$id'
+    | '/clients/new'
+    | '/documents/$id'
+    | '/documents/search'
+    | '/documents/templates'
+    | '/documents/upload'
+    | '/invoices/id'
+    | '/invoices/new'
+    | '/payroll/employees'
+    | '/payroll/run'
+    | '/portal/appointments'
+    | '/portal/documents'
+    | '/portal/filings'
+    | '/portal/payments'
+    | '/portal/profile'
+    | '/settings/profile'
+    | '/tax/nis'
+    | '/tax/paye'
+    | '/tax/vat'
+    | '/time-tracking/entries'
+    | '/time-tracking/projects'
+    | '/time-tracking/reports'
+    | '/time-tracking/timer'
+    | '/users/invite'
+    | '/users/roles'
+    | '/portal'
+    | '/clients/$id/documents'
+    | '/clients/$id/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/appointments'
+    | '/automation'
+    | '/clients'
+    | '/compliance'
+    | '/dashboard'
+    | '/documents'
+    | '/invoices'
+    | '/login'
+    | '/payroll'
+    | '/portal'
+    | '/profile'
+    | '/settings'
+    | '/time-tracking'
+    | '/users'
+    | '/appointments/$id'
+    | '/appointments/calendar'
+    | '/appointments/new'
+    | '/automation/history'
+    | '/automation/rules'
+    | '/automation/templates'
+    | '/clients/$id'
+    | '/clients/new'
+    | '/documents/$id'
+    | '/documents/search'
+    | '/documents/templates'
+    | '/documents/upload'
+    | '/invoices/id'
+    | '/invoices/new'
+    | '/payroll/employees'
+    | '/payroll/run'
+    | '/portal/appointments'
+    | '/portal/documents'
+    | '/portal/filings'
+    | '/portal/payments'
+    | '/portal/profile'
+    | '/settings/profile'
+    | '/tax/nis'
+    | '/tax/paye'
+    | '/tax/vat'
+    | '/time-tracking/entries'
+    | '/time-tracking/projects'
+    | '/time-tracking/reports'
+    | '/time-tracking/timer'
+    | '/users/invite'
+    | '/users/roles'
+    | '/portal/'
+    | '/clients/$id/documents'
+    | '/clients/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppointmentsRoute: typeof AppointmentsRouteWithChildren
+  AutomationRoute: typeof AutomationRouteWithChildren
+  ClientsRoute: typeof ClientsRouteWithChildren
+  ComplianceRoute: typeof ComplianceRoute
   DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRouteWithChildren
+  InvoicesRoute: typeof InvoicesRouteWithChildren
   LoginRoute: typeof LoginRoute
+  PayrollRoute: typeof PayrollRouteWithChildren
+  PortalRoute: typeof PortalRouteWithChildren
   ProfileRoute: typeof ProfileRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
+  TimeTrackingRoute: typeof TimeTrackingRouteWithChildren
+  UsersRoute: typeof UsersRouteWithChildren
+  TaxNisRoute: typeof TaxNisRoute
+  TaxPayeRoute: typeof TaxPayeRoute
+  TaxVatRoute: typeof TaxVatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/time-tracking': {
+      id: '/time-tracking'
+      path: '/time-tracking'
+      fullPath: '/time-tracking'
+      preLoaderRoute: typeof TimeTrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -95,11 +664,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payroll': {
+      id: '/payroll'
+      path: '/payroll'
+      fullPath: '/payroll'
+      preLoaderRoute: typeof PayrollRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -109,6 +706,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clients': {
+      id: '/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/automation': {
+      id: '/automation'
+      path: '/automation'
+      fullPath: '/automation'
+      preLoaderRoute: typeof AutomationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/appointments': {
+      id: '/appointments'
+      path: '/appointments'
+      fullPath: '/appointments'
+      preLoaderRoute: typeof AppointmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -116,15 +741,433 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/': {
+      id: '/portal/'
+      path: '/'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/users/roles': {
+      id: '/users/roles'
+      path: '/roles'
+      fullPath: '/users/roles'
+      preLoaderRoute: typeof UsersRolesRouteImport
+      parentRoute: typeof UsersRoute
+    }
+    '/users/invite': {
+      id: '/users/invite'
+      path: '/invite'
+      fullPath: '/users/invite'
+      preLoaderRoute: typeof UsersInviteRouteImport
+      parentRoute: typeof UsersRoute
+    }
+    '/time-tracking/timer': {
+      id: '/time-tracking/timer'
+      path: '/timer'
+      fullPath: '/time-tracking/timer'
+      preLoaderRoute: typeof TimeTrackingTimerRouteImport
+      parentRoute: typeof TimeTrackingRoute
+    }
+    '/time-tracking/reports': {
+      id: '/time-tracking/reports'
+      path: '/reports'
+      fullPath: '/time-tracking/reports'
+      preLoaderRoute: typeof TimeTrackingReportsRouteImport
+      parentRoute: typeof TimeTrackingRoute
+    }
+    '/time-tracking/projects': {
+      id: '/time-tracking/projects'
+      path: '/projects'
+      fullPath: '/time-tracking/projects'
+      preLoaderRoute: typeof TimeTrackingProjectsRouteImport
+      parentRoute: typeof TimeTrackingRoute
+    }
+    '/time-tracking/entries': {
+      id: '/time-tracking/entries'
+      path: '/entries'
+      fullPath: '/time-tracking/entries'
+      preLoaderRoute: typeof TimeTrackingEntriesRouteImport
+      parentRoute: typeof TimeTrackingRoute
+    }
+    '/tax/vat': {
+      id: '/tax/vat'
+      path: '/tax/vat'
+      fullPath: '/tax/vat'
+      preLoaderRoute: typeof TaxVatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tax/paye': {
+      id: '/tax/paye'
+      path: '/tax/paye'
+      fullPath: '/tax/paye'
+      preLoaderRoute: typeof TaxPayeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tax/nis': {
+      id: '/tax/nis'
+      path: '/tax/nis'
+      fullPath: '/tax/nis'
+      preLoaderRoute: typeof TaxNisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/portal/profile': {
+      id: '/portal/profile'
+      path: '/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PortalProfileRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/payments': {
+      id: '/portal/payments'
+      path: '/payments'
+      fullPath: '/portal/payments'
+      preLoaderRoute: typeof PortalPaymentsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/filings': {
+      id: '/portal/filings'
+      path: '/filings'
+      fullPath: '/portal/filings'
+      preLoaderRoute: typeof PortalFilingsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/documents': {
+      id: '/portal/documents'
+      path: '/documents'
+      fullPath: '/portal/documents'
+      preLoaderRoute: typeof PortalDocumentsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/portal/appointments': {
+      id: '/portal/appointments'
+      path: '/appointments'
+      fullPath: '/portal/appointments'
+      preLoaderRoute: typeof PortalAppointmentsRouteImport
+      parentRoute: typeof PortalRoute
+    }
+    '/payroll/run': {
+      id: '/payroll/run'
+      path: '/run'
+      fullPath: '/payroll/run'
+      preLoaderRoute: typeof PayrollRunRouteImport
+      parentRoute: typeof PayrollRoute
+    }
+    '/payroll/employees': {
+      id: '/payroll/employees'
+      path: '/employees'
+      fullPath: '/payroll/employees'
+      preLoaderRoute: typeof PayrollEmployeesRouteImport
+      parentRoute: typeof PayrollRoute
+    }
+    '/invoices/new': {
+      id: '/invoices/new'
+      path: '/new'
+      fullPath: '/invoices/new'
+      preLoaderRoute: typeof InvoicesNewRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/invoices/id': {
+      id: '/invoices/id'
+      path: '/id'
+      fullPath: '/invoices/id'
+      preLoaderRoute: typeof InvoicesIdRouteImport
+      parentRoute: typeof InvoicesRoute
+    }
+    '/documents/upload': {
+      id: '/documents/upload'
+      path: '/upload'
+      fullPath: '/documents/upload'
+      preLoaderRoute: typeof DocumentsUploadRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
+    '/documents/templates': {
+      id: '/documents/templates'
+      path: '/templates'
+      fullPath: '/documents/templates'
+      preLoaderRoute: typeof DocumentsTemplatesRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
+    '/documents/search': {
+      id: '/documents/search'
+      path: '/search'
+      fullPath: '/documents/search'
+      preLoaderRoute: typeof DocumentsSearchRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
+    '/documents/$id': {
+      id: '/documents/$id'
+      path: '/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof DocumentsIdRouteImport
+      parentRoute: typeof DocumentsRoute
+    }
+    '/clients/new': {
+      id: '/clients/new'
+      path: '/new'
+      fullPath: '/clients/new'
+      preLoaderRoute: typeof ClientsNewRouteImport
+      parentRoute: typeof ClientsRoute
+    }
+    '/clients/$id': {
+      id: '/clients/$id'
+      path: '/$id'
+      fullPath: '/clients/$id'
+      preLoaderRoute: typeof ClientsIdRouteImport
+      parentRoute: typeof ClientsRoute
+    }
+    '/automation/templates': {
+      id: '/automation/templates'
+      path: '/templates'
+      fullPath: '/automation/templates'
+      preLoaderRoute: typeof AutomationTemplatesRouteImport
+      parentRoute: typeof AutomationRoute
+    }
+    '/automation/rules': {
+      id: '/automation/rules'
+      path: '/rules'
+      fullPath: '/automation/rules'
+      preLoaderRoute: typeof AutomationRulesRouteImport
+      parentRoute: typeof AutomationRoute
+    }
+    '/automation/history': {
+      id: '/automation/history'
+      path: '/history'
+      fullPath: '/automation/history'
+      preLoaderRoute: typeof AutomationHistoryRouteImport
+      parentRoute: typeof AutomationRoute
+    }
+    '/appointments/new': {
+      id: '/appointments/new'
+      path: '/new'
+      fullPath: '/appointments/new'
+      preLoaderRoute: typeof AppointmentsNewRouteImport
+      parentRoute: typeof AppointmentsRoute
+    }
+    '/appointments/calendar': {
+      id: '/appointments/calendar'
+      path: '/calendar'
+      fullPath: '/appointments/calendar'
+      preLoaderRoute: typeof AppointmentsCalendarRouteImport
+      parentRoute: typeof AppointmentsRoute
+    }
+    '/appointments/$id': {
+      id: '/appointments/$id'
+      path: '/$id'
+      fullPath: '/appointments/$id'
+      preLoaderRoute: typeof AppointmentsIdRouteImport
+      parentRoute: typeof AppointmentsRoute
+    }
+    '/clients/$id/edit': {
+      id: '/clients/$id/edit'
+      path: '/edit'
+      fullPath: '/clients/$id/edit'
+      preLoaderRoute: typeof ClientsIdEditRouteImport
+      parentRoute: typeof ClientsIdRoute
+    }
+    '/clients/$id/documents': {
+      id: '/clients/$id/documents'
+      path: '/documents'
+      fullPath: '/clients/$id/documents'
+      preLoaderRoute: typeof ClientsIdDocumentsRouteImport
+      parentRoute: typeof ClientsIdRoute
+    }
   }
 }
 
+interface AppointmentsRouteChildren {
+  AppointmentsIdRoute: typeof AppointmentsIdRoute
+  AppointmentsCalendarRoute: typeof AppointmentsCalendarRoute
+  AppointmentsNewRoute: typeof AppointmentsNewRoute
+}
+
+const AppointmentsRouteChildren: AppointmentsRouteChildren = {
+  AppointmentsIdRoute: AppointmentsIdRoute,
+  AppointmentsCalendarRoute: AppointmentsCalendarRoute,
+  AppointmentsNewRoute: AppointmentsNewRoute,
+}
+
+const AppointmentsRouteWithChildren = AppointmentsRoute._addFileChildren(
+  AppointmentsRouteChildren,
+)
+
+interface AutomationRouteChildren {
+  AutomationHistoryRoute: typeof AutomationHistoryRoute
+  AutomationRulesRoute: typeof AutomationRulesRoute
+  AutomationTemplatesRoute: typeof AutomationTemplatesRoute
+}
+
+const AutomationRouteChildren: AutomationRouteChildren = {
+  AutomationHistoryRoute: AutomationHistoryRoute,
+  AutomationRulesRoute: AutomationRulesRoute,
+  AutomationTemplatesRoute: AutomationTemplatesRoute,
+}
+
+const AutomationRouteWithChildren = AutomationRoute._addFileChildren(
+  AutomationRouteChildren,
+)
+
+interface ClientsIdRouteChildren {
+  ClientsIdDocumentsRoute: typeof ClientsIdDocumentsRoute
+  ClientsIdEditRoute: typeof ClientsIdEditRoute
+}
+
+const ClientsIdRouteChildren: ClientsIdRouteChildren = {
+  ClientsIdDocumentsRoute: ClientsIdDocumentsRoute,
+  ClientsIdEditRoute: ClientsIdEditRoute,
+}
+
+const ClientsIdRouteWithChildren = ClientsIdRoute._addFileChildren(
+  ClientsIdRouteChildren,
+)
+
+interface ClientsRouteChildren {
+  ClientsIdRoute: typeof ClientsIdRouteWithChildren
+  ClientsNewRoute: typeof ClientsNewRoute
+}
+
+const ClientsRouteChildren: ClientsRouteChildren = {
+  ClientsIdRoute: ClientsIdRouteWithChildren,
+  ClientsNewRoute: ClientsNewRoute,
+}
+
+const ClientsRouteWithChildren =
+  ClientsRoute._addFileChildren(ClientsRouteChildren)
+
+interface DocumentsRouteChildren {
+  DocumentsIdRoute: typeof DocumentsIdRoute
+  DocumentsSearchRoute: typeof DocumentsSearchRoute
+  DocumentsTemplatesRoute: typeof DocumentsTemplatesRoute
+  DocumentsUploadRoute: typeof DocumentsUploadRoute
+}
+
+const DocumentsRouteChildren: DocumentsRouteChildren = {
+  DocumentsIdRoute: DocumentsIdRoute,
+  DocumentsSearchRoute: DocumentsSearchRoute,
+  DocumentsTemplatesRoute: DocumentsTemplatesRoute,
+  DocumentsUploadRoute: DocumentsUploadRoute,
+}
+
+const DocumentsRouteWithChildren = DocumentsRoute._addFileChildren(
+  DocumentsRouteChildren,
+)
+
+interface InvoicesRouteChildren {
+  InvoicesIdRoute: typeof InvoicesIdRoute
+  InvoicesNewRoute: typeof InvoicesNewRoute
+}
+
+const InvoicesRouteChildren: InvoicesRouteChildren = {
+  InvoicesIdRoute: InvoicesIdRoute,
+  InvoicesNewRoute: InvoicesNewRoute,
+}
+
+const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
+  InvoicesRouteChildren,
+)
+
+interface PayrollRouteChildren {
+  PayrollEmployeesRoute: typeof PayrollEmployeesRoute
+  PayrollRunRoute: typeof PayrollRunRoute
+}
+
+const PayrollRouteChildren: PayrollRouteChildren = {
+  PayrollEmployeesRoute: PayrollEmployeesRoute,
+  PayrollRunRoute: PayrollRunRoute,
+}
+
+const PayrollRouteWithChildren =
+  PayrollRoute._addFileChildren(PayrollRouteChildren)
+
+interface PortalRouteChildren {
+  PortalAppointmentsRoute: typeof PortalAppointmentsRoute
+  PortalDocumentsRoute: typeof PortalDocumentsRoute
+  PortalFilingsRoute: typeof PortalFilingsRoute
+  PortalPaymentsRoute: typeof PortalPaymentsRoute
+  PortalProfileRoute: typeof PortalProfileRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+}
+
+const PortalRouteChildren: PortalRouteChildren = {
+  PortalAppointmentsRoute: PortalAppointmentsRoute,
+  PortalDocumentsRoute: PortalDocumentsRoute,
+  PortalFilingsRoute: PortalFilingsRoute,
+  PortalPaymentsRoute: PortalPaymentsRoute,
+  PortalProfileRoute: PortalProfileRoute,
+  PortalIndexRoute: PortalIndexRoute,
+}
+
+const PortalRouteWithChildren =
+  PortalRoute._addFileChildren(PortalRouteChildren)
+
+interface SettingsRouteChildren {
+  SettingsProfileRoute: typeof SettingsProfileRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsProfileRoute: SettingsProfileRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
+interface TimeTrackingRouteChildren {
+  TimeTrackingEntriesRoute: typeof TimeTrackingEntriesRoute
+  TimeTrackingProjectsRoute: typeof TimeTrackingProjectsRoute
+  TimeTrackingReportsRoute: typeof TimeTrackingReportsRoute
+  TimeTrackingTimerRoute: typeof TimeTrackingTimerRoute
+}
+
+const TimeTrackingRouteChildren: TimeTrackingRouteChildren = {
+  TimeTrackingEntriesRoute: TimeTrackingEntriesRoute,
+  TimeTrackingProjectsRoute: TimeTrackingProjectsRoute,
+  TimeTrackingReportsRoute: TimeTrackingReportsRoute,
+  TimeTrackingTimerRoute: TimeTrackingTimerRoute,
+}
+
+const TimeTrackingRouteWithChildren = TimeTrackingRoute._addFileChildren(
+  TimeTrackingRouteChildren,
+)
+
+interface UsersRouteChildren {
+  UsersInviteRoute: typeof UsersInviteRoute
+  UsersRolesRoute: typeof UsersRolesRoute
+}
+
+const UsersRouteChildren: UsersRouteChildren = {
+  UsersInviteRoute: UsersInviteRoute,
+  UsersRolesRoute: UsersRolesRoute,
+}
+
+const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppointmentsRoute: AppointmentsRouteWithChildren,
+  AutomationRoute: AutomationRouteWithChildren,
+  ClientsRoute: ClientsRouteWithChildren,
+  ComplianceRoute: ComplianceRoute,
   DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRouteWithChildren,
+  InvoicesRoute: InvoicesRouteWithChildren,
   LoginRoute: LoginRoute,
+  PayrollRoute: PayrollRouteWithChildren,
+  PortalRoute: PortalRouteWithChildren,
   ProfileRoute: ProfileRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
+  TimeTrackingRoute: TimeTrackingRouteWithChildren,
+  UsersRoute: UsersRouteWithChildren,
+  TaxNisRoute: TaxNisRoute,
+  TaxPayeRoute: TaxPayeRoute,
+  TaxVatRoute: TaxVatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

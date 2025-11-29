@@ -6,7 +6,6 @@ import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -29,7 +28,8 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 export const apiHandler = new OpenAPIHandler(appRouter, {
   plugins: [
     new OpenAPIReferencePlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
+      // Temporarily disabled due to Zod v4 compatibility issue
+      // schemaConverters: [new ZodToJsonSchemaConverter()],
     }),
   ],
   interceptors: [
