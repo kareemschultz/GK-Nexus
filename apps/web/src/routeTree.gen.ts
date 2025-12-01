@@ -10,14 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as TrainingRouteImport } from './routes/training'
 import { Route as TimeTrackingRouteImport } from './routes/time-tracking'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ServiceCatalogRouteImport } from './routes/service-catalog'
+import { Route as PropertyManagementRouteImport } from './routes/property-management'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PayrollRouteImport } from './routes/payroll'
+import { Route as PartnerNetworkRouteImport } from './routes/partner-network'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LocalContentRouteImport } from './routes/local-content'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as ImmigrationRouteImport } from './routes/immigration'
+import { Route as ExpeditingRouteImport } from './routes/expediting'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ComplianceRouteImport } from './routes/compliance'
@@ -67,6 +73,11 @@ const UsersRoute = UsersRouteImport.update({
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TimeTrackingRoute = TimeTrackingRouteImport.update({
   id: '/time-tracking',
   path: '/time-tracking',
@@ -75,6 +86,16 @@ const TimeTrackingRoute = TimeTrackingRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServiceCatalogRoute = ServiceCatalogRouteImport.update({
+  id: '/service-catalog',
+  path: '/service-catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropertyManagementRoute = PropertyManagementRouteImport.update({
+  id: '/property-management',
+  path: '/property-management',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -92,9 +113,19 @@ const PayrollRoute = PayrollRouteImport.update({
   path: '/payroll',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartnerNetworkRoute = PartnerNetworkRouteImport.update({
+  id: '/partner-network',
+  path: '/partner-network',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocalContentRoute = LocalContentRouteImport.update({
+  id: '/local-content',
+  path: '/local-content',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesRoute = InvoicesRouteImport.update({
@@ -105,6 +136,11 @@ const InvoicesRoute = InvoicesRouteImport.update({
 const ImmigrationRoute = ImmigrationRouteImport.update({
   id: '/immigration',
   path: '/immigration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpeditingRoute = ExpeditingRouteImport.update({
+  id: '/expediting',
+  path: '/expediting',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocumentsRoute = DocumentsRouteImport.update({
@@ -331,14 +367,20 @@ export interface FileRoutesByFullPath {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/expediting': typeof ExpeditingRoute
   '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
+  '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/property-management': typeof PropertyManagementRoute
+  '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
@@ -385,13 +427,19 @@ export interface FileRoutesByTo {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/expediting': typeof ExpeditingRoute
   '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
+  '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/property-management': typeof PropertyManagementRoute
+  '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
@@ -439,14 +487,20 @@ export interface FileRoutesById {
   '/compliance': typeof ComplianceRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
+  '/expediting': typeof ExpeditingRoute
   '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
+  '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
+  '/property-management': typeof PropertyManagementRoute
+  '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
+  '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
@@ -495,14 +549,20 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/expediting'
     | '/immigration'
     | '/invoices'
+    | '/local-content'
     | '/login'
+    | '/partner-network'
     | '/payroll'
     | '/portal'
     | '/profile'
+    | '/property-management'
+    | '/service-catalog'
     | '/settings'
     | '/time-tracking'
+    | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
@@ -549,13 +609,19 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/expediting'
     | '/immigration'
     | '/invoices'
+    | '/local-content'
     | '/login'
+    | '/partner-network'
     | '/payroll'
     | '/profile'
+    | '/property-management'
+    | '/service-catalog'
     | '/settings'
     | '/time-tracking'
+    | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
@@ -602,14 +668,20 @@ export interface FileRouteTypes {
     | '/compliance'
     | '/dashboard'
     | '/documents'
+    | '/expediting'
     | '/immigration'
     | '/invoices'
+    | '/local-content'
     | '/login'
+    | '/partner-network'
     | '/payroll'
     | '/portal'
     | '/profile'
+    | '/property-management'
+    | '/service-catalog'
     | '/settings'
     | '/time-tracking'
+    | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
@@ -657,14 +729,20 @@ export interface RootRouteChildren {
   ComplianceRoute: typeof ComplianceRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
+  ExpeditingRoute: typeof ExpeditingRoute
   ImmigrationRoute: typeof ImmigrationRoute
   InvoicesRoute: typeof InvoicesRouteWithChildren
+  LocalContentRoute: typeof LocalContentRoute
   LoginRoute: typeof LoginRoute
+  PartnerNetworkRoute: typeof PartnerNetworkRoute
   PayrollRoute: typeof PayrollRouteWithChildren
   PortalRoute: typeof PortalRouteWithChildren
   ProfileRoute: typeof ProfileRoute
+  PropertyManagementRoute: typeof PropertyManagementRoute
+  ServiceCatalogRoute: typeof ServiceCatalogRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   TimeTrackingRoute: typeof TimeTrackingRouteWithChildren
+  TrainingRoute: typeof TrainingRoute
   UsersRoute: typeof UsersRouteWithChildren
   TaxNisRoute: typeof TaxNisRoute
   TaxPayeRoute: typeof TaxPayeRoute
@@ -680,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/time-tracking': {
       id: '/time-tracking'
       path: '/time-tracking'
@@ -692,6 +777,20 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/service-catalog': {
+      id: '/service-catalog'
+      path: '/service-catalog'
+      fullPath: '/service-catalog'
+      preLoaderRoute: typeof ServiceCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/property-management': {
+      id: '/property-management'
+      path: '/property-management'
+      fullPath: '/property-management'
+      preLoaderRoute: typeof PropertyManagementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -715,11 +814,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayrollRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/partner-network': {
+      id: '/partner-network'
+      path: '/partner-network'
+      fullPath: '/partner-network'
+      preLoaderRoute: typeof PartnerNetworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/local-content': {
+      id: '/local-content'
+      path: '/local-content'
+      fullPath: '/local-content'
+      preLoaderRoute: typeof LocalContentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invoices': {
@@ -734,6 +847,13 @@ declare module '@tanstack/react-router' {
       path: '/immigration'
       fullPath: '/immigration'
       preLoaderRoute: typeof ImmigrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expediting': {
+      id: '/expediting'
+      path: '/expediting'
+      fullPath: '/expediting'
+      preLoaderRoute: typeof ExpeditingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/documents': {
@@ -1219,14 +1339,20 @@ const rootRouteChildren: RootRouteChildren = {
   ComplianceRoute: ComplianceRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
+  ExpeditingRoute: ExpeditingRoute,
   ImmigrationRoute: ImmigrationRoute,
   InvoicesRoute: InvoicesRouteWithChildren,
+  LocalContentRoute: LocalContentRoute,
   LoginRoute: LoginRoute,
+  PartnerNetworkRoute: PartnerNetworkRoute,
   PayrollRoute: PayrollRouteWithChildren,
   PortalRoute: PortalRouteWithChildren,
   ProfileRoute: ProfileRoute,
+  PropertyManagementRoute: PropertyManagementRoute,
+  ServiceCatalogRoute: ServiceCatalogRoute,
   SettingsRoute: SettingsRouteWithChildren,
   TimeTrackingRoute: TimeTrackingRouteWithChildren,
+  TrainingRoute: TrainingRoute,
   UsersRoute: UsersRouteWithChildren,
   TaxNisRoute: TaxNisRoute,
   TaxPayeRoute: TaxPayeRoute,
