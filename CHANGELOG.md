@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🏢 **v1.1.0 - Phase 5 Extended Business Modules** (2025-12-01)
+
+#### **New Modules Added**
+- 🏠 **Property Management** - Complete property and tenant management with lease tracking
+- 📋 **Expediting Services** - Government agency relationship and document expediting
+- 🎓 **Training & Development** - Course management with registrations and certifications
+- 🇬🇾 **Local Content Compliance** - LCA tracking with supplier and employment metrics
+- 🤝 **Partner Network** - Partner relationships, referrals, and agreement management
+- 📦 **Service Catalog** - Service offerings with pricing models and packages
+
+#### **Frontend Enhancements**
+- ✅ All 6 Phase 5 routes connected to real API backends with full CRUD operations
+- ✅ Real-time data fetching with TanStack Query (useQuery hooks)
+- ✅ Mutation hooks for create/update/delete operations
+- ✅ Loading skeletons and error states with retry functionality
+- ✅ Empty states with contextual action buttons
+- ✅ Toast notifications for user feedback (sonner)
+- ✅ Tooltip component for helper text on stat cards
+- ✅ Search and filter functionality across all modules
+
+#### **API & Backend**
+- ✅ Complete oRPC routers for all Phase 5 modules
+- ✅ Database schemas with proper relationships and indexes
+- ✅ Type-safe API contracts with Zod validation
+- ✅ Multi-tenant data isolation
+
+#### **Database Schema Additions**
+- Properties, Leases, Tenants, Maintenance Requests
+- Expedite Requests, Government Agencies
+- Training Courses, Sessions, Registrations, Certificates
+- Local Content Plans, Suppliers, Reports
+- Partners, Referrals, Agreements
+- Services, Projects, Packages
+
+---
+
 ### 🔧 **v1.0.1 - Bug Fixes & Improvements** (2025-12-01)
 
 #### **Fixed**
