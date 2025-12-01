@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   BarChart3,
@@ -27,8 +27,11 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 interface SidebarSection {
@@ -275,7 +278,33 @@ interface EnterpriseSidebarProps {
 export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      await authClient.signOut();
+      toast.success("Logged out successfully");
+      navigate({ to: "/login" });
+    } catch {
+      toast.error("Failed to log out");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const getUserInitials = (name: string | undefined) => {
+    if (!name) return "??";
+    const parts = name.split(" ");
+    if (parts.length >= 2) {
+      return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   const toggleExpanded = (itemTitle: string) => {
     setExpandedItems((prev) =>
@@ -417,23 +446,51 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
       {/* Footer */}
       <div className="border-t p-4">
         {isCollapsed ? (
-          <Button className="mx-auto h-8 w-8 p-0" size="sm" variant="ghost">
+          <Button
+            aria-label="Log out"
+            className="mx-auto h-8 w-8 p-0"
+            disabled={isLoggingOut}
+            onClick={handleLogout}
+            size="sm"
+            variant="ghost"
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         ) : (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                <span className="font-medium text-primary-foreground text-xs">
-                  JD
-                </span>
+            {isSessionLoading ? (
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
               </div>
-              <div className="text-sm">
-                <p className="font-medium">John Doe</p>
-                <p className="text-muted-foreground text-xs">Administrator</p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                  <span className="font-medium text-primary-foreground text-xs">
+                    {getUserInitials(session?.user?.name)}
+                  </span>
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium">
+                    {session?.user?.name ?? "Unknown User"}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {session?.user?.email ?? "No email"}
+                  </p>
+                </div>
               </div>
-            </div>
-            <Button className="h-8 w-8 p-0" size="sm" variant="ghost">
+            )}
+            <Button
+              aria-label="Log out"
+              className="h-8 w-8 p-0"
+              disabled={isLoggingOut}
+              onClick={handleLogout}
+              size="sm"
+              variant="ghost"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

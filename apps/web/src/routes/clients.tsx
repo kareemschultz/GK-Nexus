@@ -23,7 +23,6 @@ import {
   Phone,
   Plus,
   Tag,
-  Timeline,
   Trash2,
   UserPlus,
   Users,
@@ -665,7 +664,7 @@ function RouteComponent() {
                     size="sm"
                     variant={viewMode === "timeline" ? "default" : "ghost"}
                   >
-                    <Timeline className="h-4 w-4" />
+                    <Calendar className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -984,7 +983,7 @@ function RouteComponent() {
         </Card>
       )}
 
-      {/* Client List/Grid/Timeline */}
+      {/* Client List/Grid/Calendar */}
       <section aria-label="Client listing">
         <Card>
           <CardHeader>

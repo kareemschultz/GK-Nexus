@@ -3,8 +3,6 @@ import crypto from "node:crypto";
 import { AIDocumentIntelligenceService } from "./ai-document-intelligence";
 import { BusinessIntelligenceAnalyticsService } from "./business-intelligence-analytics";
 import { EnhancedGRAIntegrationService } from "./enhanced-gra-integration";
-// Import our AI services
-import { OCRProcessingService } from "./ocr-processing";
 
 export interface WorkflowExecution {
   workflowId: string;
@@ -185,13 +183,13 @@ export interface MLModelOrchestration {
 }
 
 export class AIIntegrationOrchestratorService {
-  private ocrService: OCRProcessingService;
+  private ocrService: OcrProcessingService;
   private documentIntelligence: AIDocumentIntelligenceService;
   private graIntegration: EnhancedGRAIntegrationService;
   private analyticsService: BusinessIntelligenceAnalyticsService;
 
   constructor(private ctx: Context) {
-    this.ocrService = new OCRProcessingService(ctx);
+    this.ocrService = new OcrProcessingService(ctx);
     this.documentIntelligence = new AIDocumentIntelligenceService(ctx);
     this.graIntegration = new EnhancedGRAIntegrationService(ctx);
     this.analyticsService = new BusinessIntelligenceAnalyticsService(ctx);

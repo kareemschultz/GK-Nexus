@@ -236,6 +236,106 @@ export const clientServices = pgTable(
   ]
 );
 
+// Immigration Status enum
+export const immigrationStatusTypeEnum = pgEnum("immigration_status_type", [
+  "PENDING",
+  "IN_PROGRESS",
+  "APPROVED",
+  "DENIED",
+  "EXPIRED",
+  "RENEWAL_REQUIRED",
+]);
+
+// Visa Type enum
+export const visaTypeEnum = pgEnum("visa_type", [
+  "H1B",
+  "L1",
+  "O1",
+  "EB1",
+  "EB2",
+  "EB3",
+  "F1",
+  "J1",
+  "B1",
+  "B2",
+  "E2",
+  "TN",
+  "PERM",
+  "GREEN_CARD",
+  "CITIZENSHIP",
+  "OTHER",
+]);
+
+// Immigration Status tracking for clients
+export const immigrationStatus = pgTable(
+  "immigration_status",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    currentStatus: immigrationStatusTypeEnum("current_status")
+      .default("PENDING")
+      .notNull(),
+    visaType: visaTypeEnum("visa_type"),
+    applicationDate: timestamp("application_date"),
+    expiryDate: timestamp("expiry_date"),
+    documents: text("documents"), // JSON array of document references
+    notes: text("notes"), // JSON array of notes
+    nextAction: text("next_action"),
+    nextActionDate: timestamp("next_action_date"),
+    assignedOfficer: text("assigned_officer").references(() => users.id),
+    caseNumber: text("case_number"),
+    priority: text("priority").default("medium"),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    createdBy: text("created_by").references(() => users.id),
+    updatedBy: text("updated_by").references(() => users.id),
+  },
+  (table) => [
+    index("immigration_status_organization_id_idx").on(table.organizationId),
+    index("immigration_status_client_id_idx").on(table.clientId),
+    index("immigration_status_current_status_idx").on(table.currentStatus),
+    index("immigration_status_visa_type_idx").on(table.visaType),
+    index("immigration_status_expiry_date_idx").on(table.expiryDate),
+    index("immigration_status_assigned_officer_idx").on(table.assignedOfficer),
+  ]
+);
+
+// Relations
+export const immigrationStatusRelations = relations(
+  immigrationStatus,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [immigrationStatus.organizationId],
+      references: [organizations.id],
+    }),
+    client: one(clients, {
+      fields: [immigrationStatus.clientId],
+      references: [clients.id],
+    }),
+    assignedOfficerUser: one(users, {
+      fields: [immigrationStatus.assignedOfficer],
+      references: [users.id],
+    }),
+    createdByUser: one(users, {
+      fields: [immigrationStatus.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [immigrationStatus.updatedBy],
+      references: [users.id],
+    }),
+  })
+);
+
 // Relations
 export const clientsRelations = relations(clients, ({ many, one }) => ({
   organization: one(organizations, {

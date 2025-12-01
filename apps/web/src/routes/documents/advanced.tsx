@@ -24,7 +24,6 @@ import {
   Users,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +42,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-states";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {

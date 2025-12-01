@@ -147,6 +147,7 @@ export const document = pgTable(
     clientId: uuid("client_id")
       .notNull()
       .references(() => client.id, { onDelete: "cascade" }),
+    folderId: uuid("folder_id"), // Reference to document folder
     name: varchar("name", { length: 255 }).notNull(),
     type: documentTypeEnum("type").notNull(),
     description: text("description"),
@@ -172,6 +173,7 @@ export const document = pgTable(
   },
   (table) => [
     index("document_client_idx").on(table.clientId),
+    index("document_folder_idx").on(table.folderId),
     index("document_type_idx").on(table.type),
     index("document_expiry_idx").on(table.expiryDate),
     index("document_reference_idx").on(table.referenceNumber),
@@ -362,6 +364,115 @@ export const clientService = pgTable(
     index("client_service_staff_idx").on(table.assignedStaffId),
     index("client_service_status_idx").on(table.status),
   ]
+);
+
+// OCR Processing Job Status
+export const ocrJobStatusEnum = pgEnum("ocr_job_status", [
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "FAILED",
+  "CANCELLED",
+]);
+
+// OCR Processing Job
+export const ocrProcessingJob = pgTable(
+  "ocr_processing_job",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => document.id, { onDelete: "cascade" }),
+    status: ocrJobStatusEnum("status").default("PENDING").notNull(),
+    priority: integer("priority").default(5), // 1-10 priority
+    extractedText: text("extracted_text"),
+    confidence: numeric("confidence", { precision: 5, scale: 4 }),
+    metadata: text("metadata"), // JSON metadata
+    errorMessage: text("error_message"),
+    startedAt: timestamp("started_at"),
+    completedAt: timestamp("completed_at"),
+    processedBy: text("processed_by").references(() => user.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("ocr_job_document_idx").on(table.documentId),
+    index("ocr_job_status_idx").on(table.status),
+    index("ocr_job_priority_idx").on(table.priority),
+    index("ocr_job_created_idx").on(table.createdAt),
+  ]
+);
+
+// Document Folder for organizing documents
+export const documentFolder = pgTable(
+  "document_folder",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    parentFolderId: uuid("parent_folder_id"),
+    path: text("path"), // Full path like /root/subfolder/folder
+    color: varchar("color", { length: 7 }), // Hex color for UI
+    icon: varchar("icon", { length: 50 }),
+    isSystemFolder: boolean("is_system_folder").default(false),
+    sortOrder: integer("sort_order").default(0),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("document_folder_client_idx").on(table.clientId),
+    index("document_folder_parent_idx").on(table.parentFolderId),
+    index("document_folder_path_idx").on(table.path),
+    index("document_folder_name_idx").on(table.name),
+  ]
+);
+
+// Add folderId to document table - we need to handle this separately
+
+// Relations for OCR and Folder
+export const ocrProcessingJobRelations = relations(
+  ocrProcessingJob,
+  ({ one }) => ({
+    document: one(document, {
+      fields: [ocrProcessingJob.documentId],
+      references: [document.id],
+    }),
+    processedByUser: one(user, {
+      fields: [ocrProcessingJob.processedBy],
+      references: [user.id],
+    }),
+  })
+);
+
+export const documentFolderRelations = relations(
+  documentFolder,
+  ({ one, many }) => ({
+    client: one(client, {
+      fields: [documentFolder.clientId],
+      references: [client.id],
+    }),
+    parentFolder: one(documentFolder, {
+      fields: [documentFolder.parentFolderId],
+      references: [documentFolder.id],
+    }),
+    childFolders: many(documentFolder),
+    createdByUser: one(user, {
+      fields: [documentFolder.createdBy],
+      references: [user.id],
+    }),
+  })
 );
 
 // Relations

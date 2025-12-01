@@ -1,5 +1,6 @@
 import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
+import { aiRouter } from "./ai";
 import { appointmentsRouter } from "./appointments";
 import { clientsRouter } from "./clients";
 import { complianceRouter } from "./compliance";

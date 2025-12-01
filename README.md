@@ -88,11 +88,23 @@ cp .env.example .env
 # Push schema to database
 bun run db:push
 
-# Initialize system (roles, permissions, super admin)
-bun run init:system
+# Seed database with super admin user
+cd packages/db && bun run db:seed
 
 # Optional: Open database studio
 bun run db:studio
+```
+
+### **Default Super Admin Credentials**
+After running the seed script, you can login with:
+- **Email:** `admin@gk-nexus.com`
+- **Password:** `Admin123!@#`
+
+You can customize these with environment variables:
+```bash
+SUPER_ADMIN_EMAIL=youremail@domain.com
+SUPER_ADMIN_PASSWORD=YourSecurePassword123!
+SUPER_ADMIN_NAME="Your Name"
 ```
 
 ### **Development**
@@ -113,8 +125,8 @@ bun run build
 # Run database migrations
 bun run db:migrate
 
-# Initialize system for production
-NODE_ENV=production bun run init:system
+# Seed super admin for production (customize env vars)
+cd packages/db && bun run db:seed
 ```
 
 

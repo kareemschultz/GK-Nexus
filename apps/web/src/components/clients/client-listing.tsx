@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   Building2,
+  Calendar,
   CheckCircle,
   Download,
   Edit,
@@ -16,7 +17,6 @@ import {
   MoreHorizontal,
   Phone,
   Tag,
-  Timeline,
   Trash2,
   TrendingUp,
   UserPlus,
@@ -559,7 +559,7 @@ export function ClientListing({
                   size="sm"
                   variant={viewMode === "timeline" ? "default" : "ghost"}
                 >
-                  <Timeline className="h-4 w-4" />
+                  <Calendar className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -1135,7 +1135,7 @@ export function ClientListing({
                   ))}
                 </div>
               ) : (
-                // Timeline view
+                // Calendar view
                 <div className="space-y-4">
                   {filteredClients
                     .sort(

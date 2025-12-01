@@ -2,7 +2,6 @@ import { ORPCError } from "@orpc/server";
 import { z } from "zod";
 import { protectedProcedure, requirePermission } from "../index";
 import { AIDocumentIntelligenceService } from "../services/ai-document-intelligence";
-import { AIIntegrationOrchestrator } from "../services/ai-integration-orchestrator";
 import { BusinessIntelligenceAnalyticsService } from "../services/business-intelligence-analytics";
 import { EnhancedGRAIntegrationService } from "../services/enhanced-gra-integration";
 
@@ -440,7 +439,7 @@ export const aiRouter = {
     .input(smartIntegrationSchema)
     .handler(async ({ input, context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
         const result = await orchestrator.executeSmartIntegration(input);
 
         return {
@@ -477,7 +476,7 @@ export const aiRouter = {
     )
     .handler(async ({ input, context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
         const result = await orchestrator.processDocumentsIntelligently(input);
 
         return {
@@ -514,7 +513,7 @@ export const aiRouter = {
     )
     .handler(async ({ input, context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
         const result = await orchestrator.executeSmartFiling(input);
 
         return {
@@ -535,7 +534,7 @@ export const aiRouter = {
     .input(insightsGenerationSchema)
     .handler(async ({ input, context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
         const result = await orchestrator.generateRealTimeInsights(input);
 
         return {
@@ -556,7 +555,7 @@ export const aiRouter = {
     .input(mlModelManagementSchema)
     .handler(async ({ input, context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
         const result = await orchestrator.manageMLModels(input);
 
         return {
@@ -577,7 +576,7 @@ export const aiRouter = {
     .use(requirePermission("ai.system.monitor"))
     .handler(async ({ context }) => {
       try {
-        const orchestrator = new AIIntegrationOrchestrator(context);
+        const orchestrator = new AIIntegrationOrchestratorService(context);
 
         // Get system health status from all AI services
         const healthCheck = {

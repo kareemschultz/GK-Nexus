@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 **v1.0.1 - Bug Fixes & Improvements** (2025-12-01)
+
+#### **Fixed**
+- 🔐 Fixed root route (`/`) to redirect to dashboard or login based on auth status
+- 🚪 Fixed sidebar logout button - now properly signs out and redirects to login
+- 👤 Fixed sidebar user info - now shows real user data from session instead of hardcoded values
+- 📦 Fixed PWA bundle size issue by increasing workbox cache limit and adding code splitting
+- 📝 Fixed login page to show Sign In form by default instead of Sign Up
+- 🗄️ Added missing database schema tables: `immigrationStatus`, `ocrProcessingJob`, `documentFolder`
+- 🔗 Added `folderId` column to documents table for folder organization
+
+#### **Added**
+- 🌱 Database seed script (`packages/db/src/seed.ts`) for creating super admin user
+- 🔑 Password hashing utilities in `packages/db/src/utils.ts`
+- 📊 Manual chunk splitting for better bundle performance (vendor, router, query, charts, ui)
+
+#### **Documentation**
+- 📖 Updated README with super admin credentials and seed script instructions
+- 🔧 Updated database setup instructions in README
+
+---
+
 ### 🚀 **Major Release: GK-Nexus Suite v1.0 - Comprehensive Business Platform**
 
 #### **🌟 Comprehensive Platform Implementation**

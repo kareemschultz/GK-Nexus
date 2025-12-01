@@ -1,4 +1,30 @@
-import { randomBytes } from "crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+
+const scryptAsync = promisify(scrypt);
+
+/**
+ * Hash a password using scrypt (same method as better-auth)
+ */
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString("hex");
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${salt}:${derivedKey.toString("hex")}`;
+}
+
+/**
+ * Verify a password against a hash
+ */
+export async function verifyPassword(
+  password: string,
+  storedHash: string
+): Promise<boolean> {
+  const [salt, key] = storedHash.split(":");
+  if (!salt || !key) return false;
+
+  const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
+  return timingSafeEqual(Buffer.from(key, "hex"), derivedKey);
+}
 
 /**
  * Generate a unique ID for database records
@@ -196,7 +222,7 @@ export function convertAmountToWords(amount: number): string {
     return result.trim();
   }
 
-  const dollars = Math.floor(amount);
+  let dollars = Math.floor(amount);
   const cents = Math.round((amount - dollars) * 100);
 
   let result = "";

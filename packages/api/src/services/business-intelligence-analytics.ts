@@ -923,8 +923,8 @@ export class BusinessIntelligenceAnalyticsService {
 
   private async generateRiskHeatmap(
     scope: string,
-    targetId?: string,
-    tolerance: string
+    tolerance: string,
+    targetId?: string
   ) {
     return [
       {
