@@ -1,14 +1,23 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { config } from "dotenv";
 import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { resolve } from "path";
 import postgres from "postgres";
-import { users } from "./schema/users";
-import { userAccounts } from "./schema/users";
+import { userAccounts, users } from "./schema/users";
 import { hashPassword } from "./utils";
+
+// Load environment variables from root .env file
+config({ path: resolve(__dirname, "../../../.env") });
 
 async function seed() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL environment variable is not set");
+    console.error("DATABASE_URL environment variable is not set.");
+    console.error("Please create a .env file in the project root with:");
+    console.error(
+      'DATABASE_URL="postgresql://username:password@localhost:5432/gk_nexus"'
+    );
+    process.exit(1);
   }
 
   const client = postgres(connectionString);
@@ -32,10 +41,8 @@ async function seed() {
   // Create super admin user
   const superAdminId = crypto.randomUUID();
   const accountId = crypto.randomUUID();
-  const superAdminEmail =
-    process.env.SUPER_ADMIN_EMAIL || "admin@gk-nexus.com";
-  const superAdminPassword =
-    process.env.SUPER_ADMIN_PASSWORD || "Admin123!@#";
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@gk-nexus.com";
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || "Admin123!@#";
   const superAdminName = process.env.SUPER_ADMIN_NAME || "Super Admin";
 
   // Hash password using the same method as better-auth

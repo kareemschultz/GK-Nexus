@@ -13,8 +13,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
-// Enums
-export const roleEnum = pgEnum("role", [
+// Enums - Using unique names to avoid conflicts with other schema files
+export const businessRoleEnum = pgEnum("business_role", [
   "SUPER_ADMIN",
   "ADMIN",
   "MANAGER",
@@ -25,7 +25,7 @@ export const roleEnum = pgEnum("role", [
   "VIEWER",
 ]);
 
-export const entityTypeEnum = pgEnum("entity_type", [
+export const businessEntityTypeEnum = pgEnum("business_entity_type", [
   "INDIVIDUAL",
   "COMPANY",
   "PARTNERSHIP",
@@ -34,14 +34,12 @@ export const entityTypeEnum = pgEnum("entity_type", [
   "NON_PROFIT",
 ]);
 
-export const complianceStatusEnum = pgEnum("compliance_status", [
-  "GOOD",
-  "WARNING",
-  "EXPIRED",
-  "PENDING",
-]);
+export const businessComplianceStatusEnum = pgEnum(
+  "business_compliance_status",
+  ["GOOD", "WARNING", "EXPIRED", "PENDING"]
+);
 
-export const documentTypeEnum = pgEnum("document_type", [
+export const businessDocumentTypeEnum = pgEnum("business_document_type", [
   "IDENTIFICATION",
   "TAX_COMPLIANCE",
   "NIS_COMPLIANCE",
@@ -52,16 +50,12 @@ export const documentTypeEnum = pgEnum("document_type", [
   "OTHER",
 ]);
 
-export const appointmentStatusEnum = pgEnum("appointment_status", [
-  "SCHEDULED",
-  "CONFIRMED",
-  "IN_PROGRESS",
-  "COMPLETED",
-  "CANCELLED",
-  "NO_SHOW",
-]);
+export const businessAppointmentStatusEnum = pgEnum(
+  "business_appointment_status",
+  ["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"]
+);
 
-export const taxTypeEnum = pgEnum("tax_type", [
+export const businessTaxTypeEnum = pgEnum("business_tax_type", [
   "VAT",
   "PAYE",
   "NIS",
@@ -77,7 +71,7 @@ export const userProfile = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    role: roleEnum("role").notNull().default("CLIENT"),
+    role: businessRoleEnum("role").notNull().default("CLIENT"),
     phone: varchar("phone", { length: 20 }),
     address: text("address"),
     department: varchar("department", { length: 100 }),
@@ -104,7 +98,7 @@ export const client = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
-    entityType: entityTypeEnum("entity_type").notNull(),
+    entityType: businessEntityTypeEnum("entity_type").notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     phone: varchar("phone", { length: 20 }),
     address: text("address"),
@@ -117,7 +111,8 @@ export const client = pgTable(
     isLocalContentQualified: boolean("is_local_content_qualified").default(
       false
     ),
-    complianceStatus: complianceStatusEnum("compliance_status").default("GOOD"),
+    complianceStatus:
+      businessComplianceStatusEnum("compliance_status").default("GOOD"),
     complianceScore: integer("compliance_score").default(100),
     assignedStaffId: text("assigned_staff_id").references(() => user.id),
     isActive: boolean("is_active").notNull().default(true),
@@ -149,7 +144,7 @@ export const document = pgTable(
       .references(() => client.id, { onDelete: "cascade" }),
     folderId: uuid("folder_id"), // Reference to document folder
     name: varchar("name", { length: 255 }).notNull(),
-    type: documentTypeEnum("type").notNull(),
+    type: businessDocumentTypeEnum("type").notNull(),
     description: text("description"),
     fileName: varchar("file_name", { length: 255 }),
     filePath: text("file_path"),
@@ -197,7 +192,7 @@ export const appointment = pgTable(
     duration: integer("duration").default(60), // minutes
     location: varchar("location", { length: 255 }),
     meetingLink: text("meeting_link"),
-    status: appointmentStatusEnum("status").default("SCHEDULED"),
+    status: businessAppointmentStatusEnum("status").default("SCHEDULED"),
     notes: text("notes"),
     reminderSent: boolean("reminder_sent").default(false),
     createdBy: text("created_by")
@@ -225,7 +220,7 @@ export const taxCalculation = pgTable(
     clientId: uuid("client_id")
       .notNull()
       .references(() => client.id, { onDelete: "cascade" }),
-    taxType: taxTypeEnum("tax_type").notNull(),
+    taxType: businessTaxTypeEnum("tax_type").notNull(),
     calculationPeriod: varchar("calculation_period", { length: 50 }), // e.g., "2024-Q1", "2024-01"
     grossAmount: numeric("gross_amount", { precision: 15, scale: 2 }),
     taxableAmount: numeric("taxable_amount", { precision: 15, scale: 2 }),
@@ -264,7 +259,7 @@ export const complianceItem = pgTable(
     category: varchar("category", { length: 100 }), // e.g., "GRA", "NIS", "Business Registration"
     dueDate: timestamp("due_date"),
     renewalDate: timestamp("renewal_date"),
-    status: complianceStatusEnum("status").default("PENDING"),
+    status: businessComplianceStatusEnum("status").default("PENDING"),
     isRecurring: boolean("is_recurring").default(false),
     recurringInterval: varchar("recurring_interval", { length: 50 }), // "monthly", "quarterly", "annually"
     lastUpdatedBy: text("last_updated_by").references(() => user.id),

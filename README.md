@@ -67,55 +67,121 @@ GK-Nexus Suite is a complete multi-tenant business management solution that prov
 
 ### **Prerequisites**
 - [Bun](https://bun.sh/) runtime (v1.2+)
-- [PostgreSQL](https://www.postgresql.org/) (v14+)
+- Docker (see platform-specific instructions below)
 - [Git](https://git-scm.com/)
 
-### **Installation**
+### **One-Command Setup**
 ```bash
-# Clone the repository
+# Clone and setup everything
 git clone https://github.com/kareemschultz/GK-Nexus.git
 cd GK-Nexus
-
-# Install dependencies
-bun install
-
-# Environment setup
-cp .env.example .env
-# Edit .env with your database and API keys
+bun run setup
 ```
-### **Database Setup**
+
+This will:
+1. Start PostgreSQL & Redis via Docker
+2. Install all dependencies
+3. Push database schema
+4. Create super admin user
+
+### **Platform-Specific Docker Setup**
+
+#### **Windows (Native or with Docker Desktop)**
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+2. Run the one-command setup above
+
+#### **Ubuntu WSL (Windows Subsystem for Linux)**
+```bash
+# Install Docker directly in WSL (one-time setup)
+sudo bash scripts/install-docker-wsl.sh
+
+# After installation, start Docker service
+sudo service docker start
+
+# Then proceed with setup
+docker compose up -d
+bun install
+bun run db:push
+bun run db:seed
+bun run dev
+```
+
+#### **Linux (Ubuntu/Debian)**
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+
+# Log out and back in, then run setup
+bun run setup
+```
+
+#### **macOS**
+1. Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+2. Run the one-command setup above
+
+### **Manual Setup**
+
+#### **1. Clone & Install**
+```bash
+git clone https://github.com/kareemschultz/GK-Nexus.git
+cd GK-Nexus
+bun install
+```
+
+#### **2. Start Database (Docker)**
+```bash
+# Start PostgreSQL and Redis containers
+bun run docker:up
+
+# Or manually with docker compose
+docker compose up -d
+```
+
+#### **3. Setup Database**
 ```bash
 # Push schema to database
 bun run db:push
 
-# Seed database with super admin user
-cd packages/db && bun run db:seed
-
-# Optional: Open database studio
-bun run db:studio
+# Seed super admin user
+bun run db:seed
 ```
 
+#### **4. Start Development Server**
+```bash
+bun run dev
+```
+
+Open http://localhost:3001 and login!
+
 ### **Default Super Admin Credentials**
-After running the seed script, you can login with:
 - **Email:** `admin@gk-nexus.com`
 - **Password:** `Admin123!@#`
 
-You can customize these with environment variables:
+### **Docker Commands**
 ```bash
+bun run docker:up      # Start containers
+bun run docker:down    # Stop containers
+bun run docker:logs    # View container logs
+bun run db:studio      # Open database GUI
+```
+
+### **Environment Variables**
+The `.env` file is automatically created. Key variables:
+```bash
+DATABASE_URL="postgresql://postgres:postgres123@localhost:5432/gk_nexus"
+BETTER_AUTH_SECRET="your-secret-key"
+CORS_ORIGIN="http://localhost:3001"
+
+# Customize super admin (optional)
 SUPER_ADMIN_EMAIL=youremail@domain.com
 SUPER_ADMIN_PASSWORD=YourSecurePassword123!
-SUPER_ADMIN_NAME="Your Name"
 ```
 
-### **Development**
-```bash
-# Start all services
-bun run dev
-
-# Or start individually
-bun run dev:web     # Frontend (http://localhost:3001)
-bun run dev:server  # Backend API (http://localhost:3000)
-```
+### **Development URLs**
+- **Web App:** http://localhost:3001
+- **API Server:** http://localhost:3000
+- **Documentation:** http://localhost:4321
 
 ### **Production Deployment**
 ```bash
@@ -125,8 +191,8 @@ bun run build
 # Run database migrations
 bun run db:migrate
 
-# Seed super admin for production (customize env vars)
-cd packages/db && bun run db:seed
+# Seed super admin (customize env vars first)
+bun run db:seed
 ```
 
 

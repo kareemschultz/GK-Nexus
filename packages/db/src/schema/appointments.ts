@@ -47,8 +47,8 @@ export const serviceTypeEnum = pgEnum("service_type", [
   "LEGAL_CONSULTATION",
 ]);
 
-// Priority levels
-export const priorityEnum = pgEnum("priority", [
+// Priority levels for appointments
+export const appointmentPriorityEnum = pgEnum("appointment_priority", [
   "LOW",
   "MEDIUM",
   "HIGH",
@@ -122,7 +122,7 @@ export const appointments = pgTable(
 
     // Status and priority
     status: appointmentStatusEnum("status").default("SCHEDULED").notNull(),
-    priority: priorityEnum("priority").default("MEDIUM").notNull(),
+    priority: appointmentPriorityEnum("priority").default("MEDIUM").notNull(),
 
     // Details
     title: text("title").notNull(),

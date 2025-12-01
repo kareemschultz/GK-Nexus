@@ -89,7 +89,7 @@ export const clients = pgTable(
     // Status and compliance
     status: clientStatusEnum("status").default("pending_approval").notNull(),
     complianceStatus: complianceStatusEnum("compliance_status")
-      .default("pending_review")
+      .default("PENDING_REVIEW")
       .notNull(),
     riskLevel: riskLevelEnum("risk_level").default("medium").notNull(),
 
@@ -156,7 +156,6 @@ export const clients = pgTable(
       table.status,
       table.complianceStatus
     ),
-    index("clients_risk_level_idx").on(table.riskLevel),
     index("clients_entity_local_content_idx").on(
       table.entityType,
       table.isLocalContentQualified

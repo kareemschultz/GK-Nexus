@@ -68,7 +68,7 @@ export const immigrationCaseTypeEnum = pgEnum("immigration_case_type", [
 ]);
 
 // Case status tracking
-export const immigrationStatusEnum = pgEnum("immigration_status", [
+export const immigrationCaseStatusEnum = pgEnum("immigration_case_status", [
   "draft",
   "submitted",
   "under_review",
@@ -148,7 +148,7 @@ export const immigrationCases = pgTable(
     caseType: immigrationCaseTypeEnum("case_type").notNull(),
     subCategory: text("sub_category"), // Specific subcategory within case type
     priority: casePriorityEnum("priority").default("routine").notNull(),
-    status: immigrationStatusEnum("status").default("draft").notNull(),
+    status: immigrationCaseStatusEnum("status").default("draft").notNull(),
 
     // Case description and context
     title: text("title").notNull(),
@@ -429,8 +429,8 @@ export const immigrationTimeline = pgTable(
     eventDescription: text("event_description"),
 
     // Status tracking
-    previousStatus: immigrationStatusEnum("previous_status"),
-    newStatus: immigrationStatusEnum("new_status"),
+    previousStatus: immigrationCaseStatusEnum("previous_status"),
+    newStatus: immigrationCaseStatusEnum("new_status"),
     statusReason: text("status_reason"),
 
     // Event metadata

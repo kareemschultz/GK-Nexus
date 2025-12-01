@@ -7,7 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
-  vector,
+  // vector, // Requires pgvector extension - uncomment when available
 } from "drizzle-orm/pg-core";
 
 import { users } from "./users";
@@ -40,7 +40,7 @@ export const searchIndex = pgTable(
 
     // Search metadata
     searchableText: text("searchable_text").notNull(), // Combined searchable content
-    contentVector: vector("content_vector", { dimensions: 384 }), // For semantic search
+    // contentVector: vector("content_vector", { dimensions: 384 }), // For semantic search - requires pgvector
 
     // Additional metadata for filtering and sorting
     metadata: jsonb("metadata"), // Additional searchable metadata
@@ -79,11 +79,8 @@ export const searchIndex = pgTable(
     index("search_index_tags_idx").on(table.tags),
     index("search_index_is_indexed_idx").on(table.isIndexed),
     index("search_index_last_modified_idx").on(table.lastModifiedAt),
-    // Full-text search index
-    index("search_index_searchable_text_idx").using(
-      "gin",
-      table.searchableText
-    ),
+    // Full-text search index - requires pg_trgm extension or use btree instead
+    // index("search_index_searchable_text_idx").using("gin", table.searchableText), // Needs pg_trgm
   ]
 );
 

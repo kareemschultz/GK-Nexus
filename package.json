@@ -18,6 +18,10 @@
     }
   },
   "scripts": {
+    "setup": "bash scripts/setup.sh",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
     "check": "biome check --write .",
     "prepare": "husky",
     "ruler:apply": "bunx @intellectronica/ruler@latest apply --local-only",
@@ -31,6 +35,7 @@
     "db:studio": "turbo -F @GK-Nexus/db db:studio",
     "db:generate": "turbo -F @GK-Nexus/db db:generate",
     "db:migrate": "turbo -F @GK-Nexus/db db:migrate",
+    "db:seed": "turbo -F @GK-Nexus/db db:seed",
     "db:start": "turbo -F @GK-Nexus/db db:start",
     "db:watch": "turbo -F @GK-Nexus/db db:watch",
     "db:stop": "turbo -F @GK-Nexus/db db:stop",

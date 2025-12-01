@@ -20,7 +20,7 @@ export async function verifyPassword(
   storedHash: string
 ): Promise<boolean> {
   const [salt, key] = storedHash.split(":");
-  if (!salt || !key) return false;
+  if (!(salt && key)) return false;
 
   const derivedKey = (await scryptAsync(password, salt, 64)) as Buffer;
   return timingSafeEqual(Buffer.from(key, "hex"), derivedKey);
