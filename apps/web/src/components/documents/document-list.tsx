@@ -298,9 +298,10 @@ export const DocumentList = ({
       <div className={cn("space-y-6", className)}>
         <div className="flex items-center gap-4">
           <Checkbox
-            checked={allSelected}
-            indeterminate={someSelected}
-            onChange={(checked) => onSelectAll(!!checked)}
+            checked={
+              allSelected ? true : someSelected ? "indeterminate" : false
+            }
+            onCheckedChange={(checked) => onSelectAll(!!checked)}
           />
           <span className="text-muted-foreground text-sm">
             {selectedDocuments.length} of {documents.length} selected
@@ -326,9 +327,8 @@ export const DocumentList = ({
     <div className={cn("space-y-4", className)}>
       <div className="flex items-center gap-4">
         <Checkbox
-          checked={allSelected}
-          indeterminate={someSelected}
-          onChange={(checked) => onSelectAll(!!checked)}
+          checked={allSelected ? true : someSelected ? "indeterminate" : false}
+          onCheckedChange={(checked) => onSelectAll(!!checked)}
         />
         <span className="text-muted-foreground text-sm">
           {selectedDocuments.length} of {documents.length} selected

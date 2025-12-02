@@ -7,6 +7,7 @@ import {
   FileText,
   Upload,
 } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import TaxFilingWizard from "@/components/wizards/tax-filing-wizard";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/tax/filing")({
@@ -100,6 +103,8 @@ const statusConfig = {
 };
 
 function TaxFilingPage() {
+  const [showWizard, setShowWizard] = useState(false);
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <header className="mb-8">
@@ -175,7 +180,7 @@ function TaxFilingPage() {
                 Track upcoming tax submission deadlines
               </CardDescription>
             </div>
-            <Button disabled>
+            <Button onClick={() => setShowWizard(true)}>
               <Upload className="mr-2 h-4 w-4" />
               New Filing
             </Button>
@@ -254,6 +259,15 @@ function TaxFilingPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog onOpenChange={setShowWizard} open={showWizard}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <TaxFilingWizard
+            onCancel={() => setShowWizard(false)}
+            onComplete={() => setShowWizard(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

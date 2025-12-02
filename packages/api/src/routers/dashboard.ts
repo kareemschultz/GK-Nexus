@@ -107,6 +107,13 @@ export const dashboardRouter = {
           .where(clientCondition);
 
         // Revenue statistics
+        const revenueConditions = [
+          gte(businessSchema.invoice.issueDate, startDate),
+          lte(businessSchema.invoice.issueDate, endDate),
+        ];
+        if (clientId) {
+          revenueConditions.push(eq(businessSchema.invoice.clientId, clientId));
+        }
         const [revenueStats] = await db
           .select({
             totalRevenue: sql<number>`COALESCE(SUM(total), 0)`,
@@ -116,17 +123,18 @@ export const dashboardRouter = {
             invoiceCount: count(),
           })
           .from(businessSchema.invoice)
-          .where(
-            and(
-              gte(businessSchema.invoice.issueDate, startDate),
-              lte(businessSchema.invoice.issueDate, endDate),
-              clientId
-                ? eq(businessSchema.invoice.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          );
+          .where(and(...revenueConditions));
 
         // Tax statistics
+        const taxConditions = [
+          sql`period >= ${startDate.substring(0, 7)}`, // YYYY-MM format
+          sql`period <= ${endDate.substring(0, 7)}`,
+        ];
+        if (clientId) {
+          taxConditions.push(
+            eq(businessSchema.payrollRecord.clientId, clientId)
+          );
+        }
         const [taxStats] = await db
           .select({
             totalPayroll: sql<number>`COALESCE(SUM(gross_salary), 0)`,
@@ -135,17 +143,18 @@ export const dashboardRouter = {
             payrollRecords: count(),
           })
           .from(businessSchema.payrollRecord)
-          .where(
-            and(
-              sql`period >= ${startDate.substring(0, 7)}`, // YYYY-MM format
-              sql`period <= ${endDate.substring(0, 7)}`,
-              clientId
-                ? eq(businessSchema.payrollRecord.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          );
+          .where(and(...taxConditions));
 
         // Appointment statistics
+        const appointmentConditions = [
+          gte(businessSchema.appointment.createdAt, startDate),
+          lte(businessSchema.appointment.createdAt, endDate),
+        ];
+        if (clientId) {
+          appointmentConditions.push(
+            eq(businessSchema.appointment.clientId, clientId)
+          );
+        }
         const [appointmentStats] = await db
           .select({
             total: count(),
@@ -154,17 +163,19 @@ export const dashboardRouter = {
             cancelled: sql<number>`COUNT(*) FILTER (WHERE status = 'CANCELLED')`,
           })
           .from(businessSchema.appointment)
-          .where(
-            and(
-              gte(businessSchema.appointment.createdAt, startDate),
-              lte(businessSchema.appointment.createdAt, endDate),
-              clientId
-                ? eq(businessSchema.appointment.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          );
+          .where(and(...appointmentConditions));
 
         // Document statistics
+        const documentConditions = [
+          gte(businessSchema.document.uploadedAt, startDate),
+          lte(businessSchema.document.uploadedAt, endDate),
+          eq(businessSchema.document.status, "ACTIVE"),
+        ];
+        if (clientId) {
+          documentConditions.push(
+            eq(businessSchema.document.clientId, clientId)
+          );
+        }
         const [documentStats] = await db
           .select({
             total: count(),
@@ -172,18 +183,21 @@ export const dashboardRouter = {
             totalSize: sql<number>`COALESCE(SUM(file_size), 0)`,
           })
           .from(businessSchema.document)
-          .where(
-            and(
-              gte(businessSchema.document.uploadedAt, startDate),
-              lte(businessSchema.document.uploadedAt, endDate),
-              eq(businessSchema.document.status, "ACTIVE"),
-              clientId
-                ? eq(businessSchema.document.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          );
+          .where(and(...documentConditions));
 
         // Compliance alerts
+        const alertConditions = [
+          eq(businessSchema.complianceAlert.status, "ACTIVE"),
+          lte(
+            businessSchema.complianceAlert.dueDate,
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          ),
+        ];
+        if (clientId) {
+          alertConditions.push(
+            eq(businessSchema.complianceAlert.clientId, clientId)
+          );
+        }
         const complianceAlerts = await db
           .select({
             id: businessSchema.complianceAlert.id,
@@ -194,18 +208,7 @@ export const dashboardRouter = {
             clientId: businessSchema.complianceAlert.clientId,
           })
           .from(businessSchema.complianceAlert)
-          .where(
-            and(
-              eq(businessSchema.complianceAlert.status, "ACTIVE"),
-              lte(
-                businessSchema.complianceAlert.dueDate,
-                new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              ), // Due in next 30 days
-              clientId
-                ? eq(businessSchema.complianceAlert.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          )
+          .where(and(...alertConditions))
           .orderBy(businessSchema.complianceAlert.dueDate)
           .limit(10);
 
@@ -523,6 +526,17 @@ export const dashboardRouter = {
           .groupBy(businessSchema.complianceAlert.type);
 
         // Upcoming deadlines (next 30 days)
+        const upcomingConditions = [
+          eq(businessSchema.complianceAlert.status, "ACTIVE"),
+          gte(businessSchema.complianceAlert.dueDate, new Date().toISOString()),
+          lte(
+            businessSchema.complianceAlert.dueDate,
+            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          ),
+        ];
+        if (clientIds && clientIds.length > 0) {
+          upcomingConditions.push(sql`client_id = ANY(${clientIds})`);
+        }
         const upcomingDeadlines = await db
           .select({
             id: businessSchema.complianceAlert.id,
@@ -533,26 +547,17 @@ export const dashboardRouter = {
             clientId: businessSchema.complianceAlert.clientId,
           })
           .from(businessSchema.complianceAlert)
-          .where(
-            and(
-              eq(businessSchema.complianceAlert.status, "ACTIVE"),
-              gte(
-                businessSchema.complianceAlert.dueDate,
-                new Date().toISOString()
-              ),
-              lte(
-                businessSchema.complianceAlert.dueDate,
-                new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-              ),
-              clientIds && clientIds.length > 0
-                ? sql`client_id = ANY(${clientIds})`
-                : undefined
-            ).filter(Boolean)
-          )
+          .where(and(...upcomingConditions))
           .orderBy(businessSchema.complianceAlert.dueDate)
           .limit(20);
 
         // Client compliance scores
+        const clientComplianceConditions = [
+          eq(businessSchema.client.status, "ACTIVE"),
+        ];
+        if (clientIds && clientIds.length > 0) {
+          clientComplianceConditions.push(sql`id = ANY(${clientIds})`);
+        }
         const clientCompliance = await db
           .select({
             clientId: businessSchema.client.id,
@@ -567,14 +572,7 @@ export const dashboardRouter = {
             )`,
           })
           .from(businessSchema.client)
-          .where(
-            and(
-              eq(businessSchema.client.status, "ACTIVE"),
-              clientIds && clientIds.length > 0
-                ? sql`id = ANY(${clientIds})`
-                : undefined
-            ).filter(Boolean)
-          )
+          .where(and(...clientComplianceConditions))
           .orderBy(desc(businessSchema.client.complianceScore));
 
         return {
@@ -766,17 +764,34 @@ export const dashboardRouter = {
             averageInvoice: sql<number>`COALESCE(AVG(total), 0)`,
           })
           .from(businessSchema.invoice)
-          .where(
-            and(
+          .where(() => {
+            const invoiceConditions = [
               gte(businessSchema.invoice.issueDate, startDate),
               lte(businessSchema.invoice.issueDate, endDate),
-              clientId
-                ? eq(businessSchema.invoice.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          );
+            ];
+            if (clientId) {
+              invoiceConditions.push(
+                eq(businessSchema.invoice.clientId, clientId)
+              );
+            }
+            return and(...invoiceConditions);
+          });
 
         // Cash flow projection (next 90 days)
+        const cashFlowConditions = [
+          gte(businessSchema.invoice.dueDate, now.toISOString()),
+          lte(
+            businessSchema.invoice.dueDate,
+            new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString()
+          ),
+          sql`status IN ('PENDING', 'OVERDUE')`,
+        ];
+        if (clientId) {
+          cashFlowConditions.push(
+            eq(businessSchema.invoice.clientId, clientId)
+          );
+        }
+
         const upcomingInvoices = await db
           .select({
             dueDate: businessSchema.invoice.dueDate,
@@ -784,19 +799,7 @@ export const dashboardRouter = {
             status: businessSchema.invoice.status,
           })
           .from(businessSchema.invoice)
-          .where(
-            and(
-              gte(businessSchema.invoice.dueDate, now.toISOString()),
-              lte(
-                businessSchema.invoice.dueDate,
-                new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString()
-              ),
-              sql`status IN ('PENDING', 'OVERDUE')`,
-              clientId
-                ? eq(businessSchema.invoice.clientId, clientId)
-                : undefined
-            ).filter(Boolean)
-          )
+          .where(and(...cashFlowConditions))
           .groupBy(
             businessSchema.invoice.dueDate,
             businessSchema.invoice.status

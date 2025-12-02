@@ -1009,10 +1009,12 @@ function RouteComponent() {
               <div className="flex items-center gap-2">
                 {viewMode === "list" && filteredClients.length > 0 && (
                   <Checkbox
-                    checked={selectedClients.length === filteredClients.length}
-                    indeterminate={
-                      selectedClients.length > 0 &&
-                      selectedClients.length < filteredClients.length
+                    checked={
+                      selectedClients.length === filteredClients.length
+                        ? true
+                        : selectedClients.length > 0
+                          ? "indeterminate"
+                          : false
                     }
                     onCheckedChange={selectAllClients}
                   />
@@ -1045,10 +1047,10 @@ function RouteComponent() {
                       <Checkbox
                         checked={
                           selectedClients.length === filteredClients.length
-                        }
-                        indeterminate={
-                          selectedClients.length > 0 &&
-                          selectedClients.length < filteredClients.length
+                            ? true
+                            : selectedClients.length > 0
+                              ? "indeterminate"
+                              : false
                         }
                         onCheckedChange={selectAllClients}
                       />

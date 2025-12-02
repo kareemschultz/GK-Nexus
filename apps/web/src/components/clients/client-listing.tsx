@@ -801,10 +801,12 @@ export function ClientListing({
                 <CardTitle>Clients ({filteredClients.length})</CardTitle>
                 {filteredClients.length > 0 && viewMode === "list" && (
                   <Checkbox
-                    checked={selectedClients.length === filteredClients.length}
-                    indeterminate={
-                      selectedClients.length > 0 &&
-                      selectedClients.length < filteredClients.length
+                    checked={
+                      selectedClients.length === filteredClients.length
+                        ? true
+                        : selectedClients.length > 0
+                          ? "indeterminate"
+                          : false
                     }
                     onCheckedChange={selectAllClients}
                   />

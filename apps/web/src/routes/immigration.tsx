@@ -1166,10 +1166,12 @@ function RouteComponent() {
               <div className="flex items-center gap-2">
                 {filteredCases.length > 0 && (
                   <Checkbox
-                    checked={selectedCases.length === filteredCases.length}
-                    indeterminate={
-                      selectedCases.length > 0 &&
-                      selectedCases.length < filteredCases.length
+                    checked={
+                      selectedCases.length === filteredCases.length
+                        ? true
+                        : selectedCases.length > 0
+                          ? "indeterminate"
+                          : false
                     }
                     onCheckedChange={selectAllCases}
                   />
@@ -1198,10 +1200,12 @@ function RouteComponent() {
                   <TableRow>
                     <TableHead className="w-[50px]">
                       <Checkbox
-                        checked={selectedCases.length === filteredCases.length}
-                        indeterminate={
-                          selectedCases.length > 0 &&
-                          selectedCases.length < filteredCases.length
+                        checked={
+                          selectedCases.length === filteredCases.length
+                            ? true
+                            : selectedCases.length > 0
+                              ? "indeterminate"
+                              : false
                         }
                         onCheckedChange={selectAllCases}
                       />
