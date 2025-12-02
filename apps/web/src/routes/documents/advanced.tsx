@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   History,
   Layers,
   List,
+  Loader2,
   MoreHorizontal,
   Move,
   Plus,
@@ -21,6 +23,7 @@ import {
   Target,
   Trash2,
   Upload,
+  User,
   Users,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -54,6 +57,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/advanced")({
   component: AdvancedDocumentManagementPage,
@@ -117,15 +121,16 @@ interface AdvancedDocument {
   collaborators: string[];
 }
 
-const mockCategories: DocumentCategory[] = [
+// Static category reference data
+const defaultCategories: DocumentCategory[] = [
   {
     id: "cat-financial",
     name: "Financial Documents",
     description: "Financial reports, statements, and accounting documents",
     color: "bg-green-100 text-green-800",
     icon: "💰",
-    documentCount: 45,
-    lastUpdated: "2024-01-15",
+    documentCount: 0,
+    lastUpdated: new Date().toISOString().split("T")[0],
     subcategories: [
       {
         id: "cat-financial-reports",
@@ -133,8 +138,8 @@ const mockCategories: DocumentCategory[] = [
         description: "Annual, quarterly, and monthly financial reports",
         color: "bg-green-50 text-green-700",
         icon: "📊",
-        documentCount: 23,
-        lastUpdated: "2024-01-15",
+        documentCount: 0,
+        lastUpdated: new Date().toISOString().split("T")[0],
       },
       {
         id: "cat-financial-statements",
@@ -142,8 +147,8 @@ const mockCategories: DocumentCategory[] = [
         description: "Balance sheets, P&L statements, cash flow",
         color: "bg-green-50 text-green-700",
         icon: "📈",
-        documentCount: 22,
-        lastUpdated: "2024-01-12",
+        documentCount: 0,
+        lastUpdated: new Date().toISOString().split("T")[0],
       },
     ],
   },
@@ -153,8 +158,8 @@ const mockCategories: DocumentCategory[] = [
     description: "Legal documents, contracts, and compliance materials",
     color: "bg-blue-100 text-blue-800",
     icon: "⚖️",
-    documentCount: 28,
-    lastUpdated: "2024-01-14",
+    documentCount: 0,
+    lastUpdated: new Date().toISOString().split("T")[0],
   },
   {
     id: "cat-immigration",
@@ -163,8 +168,8 @@ const mockCategories: DocumentCategory[] = [
       "Visa applications, immigration forms, and supporting documents",
     color: "bg-purple-100 text-purple-800",
     icon: "🛂",
-    documentCount: 67,
-    lastUpdated: "2024-01-16",
+    documentCount: 0,
+    lastUpdated: new Date().toISOString().split("T")[0],
     subcategories: [
       {
         id: "cat-immigration-visas",
@@ -172,8 +177,8 @@ const mockCategories: DocumentCategory[] = [
         description: "Various types of visa application documents",
         color: "bg-purple-50 text-purple-700",
         icon: "📝",
-        documentCount: 34,
-        lastUpdated: "2024-01-16",
+        documentCount: 0,
+        lastUpdated: new Date().toISOString().split("T")[0],
       },
       {
         id: "cat-immigration-supporting",
@@ -181,8 +186,8 @@ const mockCategories: DocumentCategory[] = [
         description: "Passport copies, photos, medical exams",
         color: "bg-purple-50 text-purple-700",
         icon: "📄",
-        documentCount: 33,
-        lastUpdated: "2024-01-15",
+        documentCount: 0,
+        lastUpdated: new Date().toISOString().split("T")[0],
       },
     ],
   },
@@ -192,147 +197,8 @@ const mockCategories: DocumentCategory[] = [
     description: "Client-specific files and communications",
     color: "bg-orange-100 text-orange-800",
     icon: "👥",
-    documentCount: 89,
-    lastUpdated: "2024-01-16",
-  },
-];
-
-const mockDocuments: AdvancedDocument[] = [
-  {
-    id: "doc-1",
-    name: "Q4 Financial Report 2024.pdf",
-    description: "Comprehensive quarterly financial report with analysis",
-    type: "Financial Report",
-    mimeType: "application/pdf",
-    size: 2_456_789,
-    categoryId: "cat-financial-reports",
-    folderId: "folder-financial",
-    tags: ["Q4", "2024", "financial", "quarterly", "analysis"],
-    status: "approved",
-    isConfidential: true,
-    isFavorite: false,
-    uploadDate: "2024-01-15T10:00:00Z",
-    lastModified: "2024-01-15T14:30:00Z",
-    createdBy: "John Doe",
-    lastModifiedBy: "Jane Smith",
-    clientId: "client-123",
-    versions: [
-      {
-        id: "ver-1-3",
-        version: "1.3",
-        uploadDate: "2024-01-15T14:30:00Z",
-        uploadedBy: "Jane Smith",
-        changes: "Updated revenue projections and added market analysis",
-        size: 2_456_789,
-        downloadUrl: "/docs/q4-report-v1.3.pdf",
-        isActive: true,
-      },
-      {
-        id: "ver-1-2",
-        version: "1.2",
-        uploadDate: "2024-01-15T12:00:00Z",
-        uploadedBy: "John Doe",
-        changes: "Corrected calculation errors in expense section",
-        size: 2_234_567,
-        downloadUrl: "/docs/q4-report-v1.2.pdf",
-        isActive: false,
-      },
-      {
-        id: "ver-1-1",
-        version: "1.1",
-        uploadDate: "2024-01-15T10:30:00Z",
-        uploadedBy: "John Doe",
-        changes: "Added executive summary and charts",
-        size: 2_123_456,
-        downloadUrl: "/docs/q4-report-v1.1.pdf",
-        isActive: false,
-      },
-      {
-        id: "ver-1-0",
-        version: "1.0",
-        uploadDate: "2024-01-15T10:00:00Z",
-        uploadedBy: "John Doe",
-        changes: "Initial version of quarterly financial report",
-        size: 1_987_654,
-        downloadUrl: "/docs/q4-report-v1.0.pdf",
-        isActive: false,
-      },
-    ],
-    shareSettings: {
-      isShared: true,
-      sharedWith: ["client-123", "accountant@example.com"],
-      permissions: "view",
-    },
-    metadata: {
-      extractedText: "Quarterly Financial Report... [extracted text]",
-      ocrProcessed: true,
-      keywords: ["revenue", "expenses", "profit", "analysis", "Q4"],
-      language: "en",
-      pageCount: 45,
-    },
-    downloadCount: 23,
-    viewCount: 156,
-    collaborators: ["John Doe", "Jane Smith", "Mike Johnson"],
-  },
-  {
-    id: "doc-2",
-    name: "Express Entry Application - Smith Family.pdf",
-    description: "Complete Express Entry application with supporting documents",
-    type: "Visa Application",
-    mimeType: "application/pdf",
-    size: 8_765_432,
-    categoryId: "cat-immigration-visas",
-    tags: [
-      "express-entry",
-      "smith-family",
-      "canada",
-      "immigration",
-      "federal-skilled",
-    ],
-    status: "review",
-    isConfidential: true,
-    isFavorite: true,
-    uploadDate: "2024-01-14T09:00:00Z",
-    lastModified: "2024-01-16T11:15:00Z",
-    createdBy: "Immigration Officer",
-    lastModifiedBy: "Sarah Wilson",
-    clientId: "client-smith",
-    versions: [
-      {
-        id: "ver-2-2",
-        version: "2.2",
-        uploadDate: "2024-01-16T11:15:00Z",
-        uploadedBy: "Sarah Wilson",
-        changes: "Updated employment letter and added spouse documents",
-        size: 8_765_432,
-        downloadUrl: "/docs/express-entry-smith-v2.2.pdf",
-        isActive: true,
-      },
-      {
-        id: "ver-2-1",
-        version: "2.1",
-        uploadDate: "2024-01-15T16:00:00Z",
-        uploadedBy: "Immigration Officer",
-        changes: "Corrected passport information and added medical exam",
-        size: 7_654_321,
-        downloadUrl: "/docs/express-entry-smith-v2.1.pdf",
-        isActive: false,
-      },
-    ],
-    shareSettings: {
-      isShared: false,
-      sharedWith: [],
-      permissions: "view",
-    },
-    metadata: {
-      ocrProcessed: true,
-      keywords: ["express", "entry", "canada", "skilled", "worker"],
-      language: "en",
-      pageCount: 127,
-    },
-    downloadCount: 8,
-    viewCount: 42,
-    collaborators: ["Immigration Officer", "Sarah Wilson"],
+    documentCount: 0,
+    lastUpdated: new Date().toISOString().split("T")[0],
   },
 ];
 
@@ -359,6 +225,98 @@ function AdvancedDocumentManagementPage() {
   const [draggedDocument, setDraggedDocument] = useState<string | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
 
+  // Fetch documents from API
+  const { data: documentsResponse, isLoading } = useQuery({
+    queryKey: ["documents", "list"],
+    queryFn: () => orpc.documents.list({}),
+  });
+
+  // Map API response to component format
+  const documents: AdvancedDocument[] = useMemo(() => {
+    const apiDocs = documentsResponse?.data?.items || [];
+    return apiDocs.map((doc: any) => ({
+      id: doc.id,
+      name: doc.name || doc.filename,
+      description: doc.description,
+      type: doc.type || "Document",
+      mimeType: doc.mimeType || "application/pdf",
+      size: doc.size || 0,
+      categoryId: mapCategoryId(doc.category),
+      folderId: doc.folderId,
+      tags: doc.tags || [],
+      status: doc.status || "draft",
+      isConfidential: doc.isConfidential,
+      isFavorite: doc.isFavorite,
+      uploadDate: doc.uploadedAt || doc.createdAt || new Date().toISOString(),
+      lastModified: doc.updatedAt || doc.createdAt || new Date().toISOString(),
+      createdBy: doc.createdBy || "System",
+      lastModifiedBy: doc.lastModifiedBy || doc.createdBy || "System",
+      clientId: doc.clientId,
+      versions: doc.versions || [
+        {
+          id: `ver-${doc.id}-1`,
+          version: "1.0",
+          uploadDate: doc.createdAt || new Date().toISOString(),
+          uploadedBy: doc.createdBy || "System",
+          changes: "Initial version",
+          size: doc.size || 0,
+          downloadUrl: `/documents/${doc.id}/download`,
+          isActive: true,
+        },
+      ],
+      shareSettings: doc.shareSettings || {
+        isShared: false,
+        sharedWith: [],
+        permissions: "view",
+      },
+      metadata: {
+        extractedText: doc.extractedText,
+        ocrProcessed: doc.ocrProcessed,
+        keywords: doc.keywords || [],
+        language: doc.language || "en",
+        pageCount: doc.pageCount,
+      },
+      downloadCount: doc.downloadCount || 0,
+      viewCount: doc.viewCount || 0,
+      collaborators: doc.collaborators || [],
+    }));
+  }, [documentsResponse]);
+
+  // Calculate category counts from documents
+  const categories: DocumentCategory[] = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const doc of documents) {
+      counts[doc.categoryId] = (counts[doc.categoryId] || 0) + 1;
+    }
+
+    return defaultCategories.map((cat) => ({
+      ...cat,
+      documentCount:
+        counts[cat.id] ||
+        (cat.subcategories?.reduce(
+          (sum, sub) => sum + (counts[sub.id] || 0),
+          0
+        ) ??
+          0),
+      subcategories: cat.subcategories?.map((sub) => ({
+        ...sub,
+        documentCount: counts[sub.id] || 0,
+      })),
+    }));
+  }, [documents]);
+
+  function mapCategoryId(category?: string): string {
+    if (!category) return "cat-clients";
+    const catLower = category.toLowerCase();
+    if (catLower.includes("financial") || catLower.includes("tax"))
+      return "cat-financial";
+    if (catLower.includes("legal") || catLower.includes("compliance"))
+      return "cat-legal";
+    if (catLower.includes("immigration") || catLower.includes("visa"))
+      return "cat-immigration";
+    return "cat-clients";
+  }
+
   const handleDragStart = useCallback((documentId: string) => {
     setDraggedDocument(documentId);
   }, []);
@@ -379,10 +337,7 @@ function AdvancedDocumentManagementPage() {
     (e: React.DragEvent, targetCategoryId: string) => {
       e.preventDefault();
       if (draggedDocument && targetCategoryId !== dragOverCategory) {
-        console.log(
-          `Moving document ${draggedDocument} to category ${targetCategoryId}`
-        );
-        // TODO: Implement category change
+        // TODO: Implement category change via API
       }
       setDraggedDocument(null);
       setDragOverCategory(null);
@@ -392,7 +347,7 @@ function AdvancedDocumentManagementPage() {
 
   const filteredDocuments = useMemo(
     () =>
-      mockDocuments
+      documents
         .filter((doc) => {
           const matchesSearch =
             doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -436,7 +391,7 @@ function AdvancedDocumentManagementPage() {
               return 0;
           }
         }),
-    [searchQuery, selectedCategory, selectedStatus, sortBy]
+    [documents, searchQuery, selectedCategory, selectedStatus, sortBy]
   );
 
   const handleDocumentClick = (document: AdvancedDocument) => {
@@ -482,7 +437,7 @@ function AdvancedDocumentManagementPage() {
   };
 
   const getCategoryIcon = (categoryId: string) => {
-    const category = mockCategories.find(
+    const category = categories.find(
       (cat) =>
         cat.id === categoryId ||
         cat.subcategories?.some((sub) => sub.id === categoryId)
@@ -674,6 +629,15 @@ function AdvancedDocumentManagementPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading documents...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-full px-4 py-6">
       {/* Header */}
@@ -723,10 +687,9 @@ function AdvancedDocumentManagementPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{mockDocuments.length}</div>
+            <div className="font-bold text-2xl">{documents.length}</div>
             <p className="text-muted-foreground text-xs">
-              {mockDocuments.filter((d) => d.status === "approved").length}{" "}
-              approved
+              {documents.filter((d) => d.status === "approved").length} approved
             </p>
           </CardContent>
         </Card>
@@ -738,8 +701,8 @@ function AdvancedDocumentManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {mockCategories.length +
-                mockCategories.reduce(
+              {categories.length +
+                categories.reduce(
                   (acc, cat) => acc + (cat.subcategories?.length || 0),
                   0
                 )}
@@ -758,7 +721,7 @@ function AdvancedDocumentManagementPage() {
           <CardContent>
             <div className="font-bold text-2xl">
               {formatFileSize(
-                mockDocuments.reduce((acc, doc) => acc + doc.size, 0)
+                documents.reduce((acc, doc) => acc + doc.size, 0)
               )}
             </div>
             <p className="text-muted-foreground text-xs">
@@ -776,7 +739,7 @@ function AdvancedDocumentManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {mockDocuments.reduce((acc, doc) => acc + doc.versions.length, 0)}
+              {documents.reduce((acc, doc) => acc + doc.versions.length, 0)}
             </div>
             <p className="text-muted-foreground text-xs">
               Version history entries
@@ -817,7 +780,7 @@ function AdvancedDocumentManagementPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {mockCategories.map((category) => (
+                {categories.map((category) => (
                   <div key={category.id}>
                     <SelectItem value={category.id}>
                       <div className="flex items-center gap-2">
@@ -900,7 +863,7 @@ function AdvancedDocumentManagementPage() {
             <>
               {viewMode === "category" ? (
                 <div className="space-y-8">
-                  {mockCategories.map((category) => (
+                  {categories.map((category) => (
                     <CategorySection category={category} key={category.id} />
                   ))}
                 </div>
@@ -923,7 +886,7 @@ function AdvancedDocumentManagementPage() {
 
         <TabsContent className="space-y-6" value="categories">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {mockCategories.map((category) => (
+            {categories.map((category) => (
               <Card
                 className="group cursor-pointer transition-shadow hover:shadow-md"
                 key={category.id}
@@ -1008,9 +971,11 @@ function AdvancedDocumentManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {mockCategories.map((category) => {
+                  {categories.map((category) => {
                     const percentage =
-                      (category.documentCount / mockDocuments.length) * 100;
+                      documents.length > 0
+                        ? (category.documentCount / documents.length) * 100
+                        : 0;
                     return (
                       <div className="space-y-1" key={category.id}>
                         <div className="flex items-center justify-between text-sm">

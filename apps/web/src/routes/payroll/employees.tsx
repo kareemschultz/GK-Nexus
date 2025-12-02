@@ -9,6 +9,7 @@ import {
   Download,
   Edit,
   Eye,
+  Loader2,
   Mail,
   MoreHorizontal,
   Phone,
@@ -18,7 +19,7 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,9 +121,7 @@ type PayrollCalculation = {
 };
 
 function RouteComponent() {
-  const { session } = Route.useRouteContext();
   const navigate = useNavigate();
-  const _privateData = useQuery(orpc.privateData.queryOptions());
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -134,144 +133,65 @@ function RouteComponent() {
   const [selectedPayrollCalc, setSelectedPayrollCalc] =
     useState<PayrollCalculation | null>(null);
 
-  // Mock employee data
-  const mockEmployees: Employee[] = [
-    {
-      id: "emp-001",
-      employeeId: "GKN-001",
-      firstName: "John",
-      lastName: "Smith",
-      email: "john.smith@gknexus.com",
-      phone: "+592-123-4567",
-      position: "Senior Developer",
-      department: "Engineering",
-      hireDate: "2023-01-15",
-      status: "active",
-      payFrequency: "monthly",
-      grossSalary: 180_000,
-      basicSalary: 150_000,
-      allowances: 30_000,
-      deductions: 35_250,
-      netSalary: 144_750,
-      payeRate: 0.175,
-      payeAmount: 26_250,
-      nisContribution: 9000,
-      bankAccount: "ACC-123456789",
-      nisNumber: "NIS-123456789",
-      tinNumber: "TIN-123456789",
-      lastPayDate: "2024-11-15",
-      nextPayDate: "2024-12-15",
-    },
-    {
-      id: "emp-002",
-      employeeId: "GKN-002",
-      firstName: "Sarah",
-      lastName: "Johnson",
-      email: "sarah.johnson@gknexus.com",
-      phone: "+592-234-5678",
-      position: "Marketing Manager",
-      department: "Sales",
-      hireDate: "2022-06-10",
-      status: "active",
-      payFrequency: "monthly",
-      grossSalary: 165_000,
-      basicSalary: 135_000,
-      allowances: 30_000,
-      deductions: 32_175,
-      netSalary: 132_825,
-      payeRate: 0.175,
-      payeAmount: 23_625,
-      nisContribution: 8550,
-      bankAccount: "ACC-987654321",
-      nisNumber: "NIS-987654321",
-      tinNumber: "TIN-987654321",
-      lastPayDate: "2024-11-15",
-      nextPayDate: "2024-12-15",
-    },
-    {
-      id: "emp-003",
-      employeeId: "GKN-003",
-      firstName: "Michael",
-      lastName: "Chen",
-      email: "michael.chen@gknexus.com",
-      phone: "+592-345-6789",
-      position: "Operations Lead",
-      department: "Operations",
-      hireDate: "2023-03-20",
-      status: "active",
-      payFrequency: "monthly",
-      grossSalary: 155_000,
-      basicSalary: 125_000,
-      allowances: 30_000,
-      deductions: 30_125,
-      netSalary: 124_875,
-      payeRate: 0.175,
-      payeAmount: 21_875,
-      nisContribution: 8250,
-      bankAccount: "ACC-456789123",
-      nisNumber: "NIS-456789123",
-      tinNumber: "TIN-456789123",
-      lastPayDate: "2024-11-15",
-      nextPayDate: "2024-12-15",
-    },
-    {
-      id: "emp-004",
-      employeeId: "GKN-004",
-      firstName: "Emily",
-      lastName: "Davis",
-      email: "emily.davis@gknexus.com",
-      phone: "+592-456-7890",
-      position: "HR Specialist",
-      department: "HR",
-      hireDate: "2023-08-12",
-      status: "on-leave",
-      payFrequency: "monthly",
-      grossSalary: 120_000,
-      basicSalary: 95_000,
-      allowances: 25_000,
-      deductions: 22_500,
-      netSalary: 97_500,
-      payeRate: 0.15,
-      payeAmount: 15_000,
-      nisContribution: 7500,
-      bankAccount: "ACC-789123456",
-      nisNumber: "NIS-789123456",
-      tinNumber: "TIN-789123456",
-      lastPayDate: "2024-10-15",
-      nextPayDate: "2024-12-15",
-    },
-    {
-      id: "emp-005",
-      employeeId: "GKN-005",
-      firstName: "Robert",
-      lastName: "Wilson",
-      email: "robert.wilson@gknexus.com",
-      phone: "+592-567-8901",
-      position: "Finance Analyst",
-      department: "Administration",
-      hireDate: "2022-11-05",
-      status: "active",
-      payFrequency: "monthly",
-      grossSalary: 140_000,
-      basicSalary: 115_000,
-      allowances: 25_000,
-      deductions: 26_750,
-      netSalary: 113_250,
-      payeRate: 0.175,
-      payeAmount: 19_250,
-      nisContribution: 7500,
-      bankAccount: "ACC-321654987",
-      nisNumber: "NIS-321654987",
-      tinNumber: "TIN-321654987",
-      lastPayDate: "2024-11-15",
-      nextPayDate: "2024-12-15",
-    },
-  ];
+  // Fetch employees from API
+  const { data: employeesResponse, isLoading } = useQuery({
+    queryKey: ["payroll", "employees"],
+    queryFn: () => orpc.payroll.employees.list({}),
+  });
 
-  // Mock payroll calculation
-  const mockPayrollCalc: PayrollCalculation = {
-    employeeId: "GKN-001",
-    payPeriod: "November 2024",
+  // Map API response to component format
+  const employees: Employee[] = useMemo(() => {
+    const apiEmployees = employeesResponse?.data?.items || [];
+    return apiEmployees.map((emp: any) => {
+      const grossSalary = emp.salary || 150_000;
+      const payeAmount = grossSalary * 0.175;
+      const nisContribution = grossSalary * 0.056;
+      const deductions = payeAmount + nisContribution;
+      const netSalary = grossSalary - deductions;
+      const nameParts = (emp.name || "").split(" ");
+
+      return {
+        id: emp.id,
+        employeeId: `GKN-${emp.id.slice(0, 3).toUpperCase()}`,
+        firstName: nameParts[0] || "Unknown",
+        lastName: nameParts.slice(1).join(" ") || "",
+        email: emp.email || "",
+        phone: "+592-000-0000",
+        position: emp.position || "Staff",
+        department: emp.department || "General",
+        hireDate: emp.startDate || new Date().toISOString().split("T")[0],
+        status: (emp.status === "on_leave"
+          ? "on-leave"
+          : emp.status || "active") as Employee["status"],
+        payFrequency: "monthly" as const,
+        grossSalary,
+        basicSalary: grossSalary * 0.8,
+        allowances: grossSalary * 0.2,
+        deductions,
+        netSalary,
+        payeRate: 0.175,
+        payeAmount,
+        nisContribution,
+        bankAccount: "ACC-XXXXXXXXX",
+        nisNumber: emp.nisNumber || "NIS-XXXXXXXXX",
+        tinNumber: emp.tinNumber || "TIN-XXXXXXXXX",
+        lastPayDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        nextPayDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+      };
+    });
+  }, [employeesResponse]);
+
+  // Default payroll calculation template
+  const defaultPayrollCalc: PayrollCalculation = {
+    employeeId: "",
+    payPeriod: new Date().toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    }),
     grossPay: 180_000,
     basicPay: 150_000,
     allowances: 30_000,
@@ -280,27 +200,37 @@ function RouteComponent() {
     nisDeduction: 9000,
     netPay: 144_750,
     payeRate: 0.175,
-    overtimeHours: 8,
-    overtimePay: 12_000,
+    overtimeHours: 0,
+    overtimePay: 0,
   };
 
-  const departments = [...new Set(mockEmployees.map((emp) => emp.department))];
+  const departments = useMemo(
+    () => [...new Set(employees.map((emp) => emp.department))],
+    [employees]
+  );
 
-  const filteredEmployees = mockEmployees.filter((employee) => {
-    const matchesSearch =
-      employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredEmployees = useMemo(
+    () =>
+      employees.filter((employee) => {
+        const matchesSearch =
+          employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          employee.employeeId
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          employee.position.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesDepartment =
-      departmentFilter === "all" || employee.department === departmentFilter;
-    const matchesStatus =
-      statusFilter === "all" || employee.status === statusFilter;
+        const matchesDepartment =
+          departmentFilter === "all" ||
+          employee.department === departmentFilter;
+        const matchesStatus =
+          statusFilter === "all" || employee.status === statusFilter;
 
-    return matchesSearch && matchesDepartment && matchesStatus;
-  });
+        return matchesSearch && matchesDepartment && matchesStatus;
+      }),
+    [employees, searchTerm, departmentFilter, statusFilter]
+  );
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -360,25 +290,14 @@ function RouteComponent() {
       day: "numeric",
     });
 
-  const calculatePAYE = (grossSalary: number) => {
-    // Simplified PAYE calculation for Guyana (actual rates may vary)
-    const personalAllowance = 55_000; // Monthly personal allowance
-    const taxableIncome = Math.max(0, grossSalary - personalAllowance);
-
-    if (taxableIncome <= 55_000) {
-      return 0;
-    }
-    if (taxableIncome <= 125_000) {
-      return taxableIncome * 0.15; // 15% tax rate
-    }
-    return 55_000 * 0.15 + (taxableIncome - 125_000) * 0.175; // 17.5% for higher bracket
-  };
-
-  const calculateNIS = (grossSalary: number) => {
-    // NIS contribution is typically 5% of gross salary (employee portion)
-    const nisRate = 0.05;
-    return grossSalary * nisRate;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading employees...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -471,7 +390,7 @@ function RouteComponent() {
                   <p className="font-medium text-muted-foreground text-sm">
                     Total Employees
                   </p>
-                  <p className="font-bold text-2xl">{mockEmployees.length}</p>
+                  <p className="font-bold text-2xl">{employees.length}</p>
                 </div>
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -485,7 +404,7 @@ function RouteComponent() {
                     Active Employees
                   </p>
                   <p className="font-bold text-2xl">
-                    {mockEmployees.filter((e) => e.status === "active").length}
+                    {employees.filter((e) => e.status === "active").length}
                   </p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -501,7 +420,7 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {formatCurrency(
-                      mockEmployees.reduce((sum, e) => sum + e.grossSalary, 0)
+                      employees.reduce((sum, e) => sum + e.grossSalary, 0)
                     )}
                   </p>
                 </div>
@@ -517,10 +436,12 @@ function RouteComponent() {
                     Average Salary
                   </p>
                   <p className="font-bold text-2xl">
-                    {formatCurrency(
-                      mockEmployees.reduce((sum, e) => sum + e.grossSalary, 0) /
-                        mockEmployees.length
-                    )}
+                    {employees.length > 0
+                      ? formatCurrency(
+                          employees.reduce((sum, e) => sum + e.grossSalary, 0) /
+                            employees.length
+                        )
+                      : formatCurrency(0)}
                   </p>
                 </div>
                 <User className="h-8 w-8 text-muted-foreground" />
@@ -619,8 +540,15 @@ function RouteComponent() {
                           <DropdownMenuItem
                             onClick={() => {
                               setSelectedPayrollCalc({
-                                ...mockPayrollCalc,
+                                ...defaultPayrollCalc,
                                 employeeId: employee.employeeId,
+                                grossPay: employee.grossSalary,
+                                basicPay: employee.basicSalary,
+                                allowances: employee.allowances,
+                                totalDeductions: employee.deductions,
+                                payeDeduction: employee.payeAmount,
+                                nisDeduction: employee.nisContribution,
+                                netPay: employee.netSalary,
                               });
                               setShowPayrollCalc(true);
                             }}
@@ -835,8 +763,15 @@ function RouteComponent() {
                 <Button
                   onClick={() => {
                     setSelectedPayrollCalc({
-                      ...mockPayrollCalc,
+                      ...defaultPayrollCalc,
                       employeeId: selectedEmployee.employeeId,
+                      grossPay: selectedEmployee.grossSalary,
+                      basicPay: selectedEmployee.basicSalary,
+                      allowances: selectedEmployee.allowances,
+                      totalDeductions: selectedEmployee.deductions,
+                      payeDeduction: selectedEmployee.payeAmount,
+                      nisDeduction: selectedEmployee.nisContribution,
+                      netPay: selectedEmployee.netSalary,
                     });
                     setShowPayrollCalc(true);
                     setShowEmployeeDetails(false);
@@ -921,7 +856,7 @@ function RouteComponent() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">
-                          NIS Contribution (5%):
+                          NIS Contribution (5.6%):
                         </span>
                         <span className="font-medium text-blue-600">
                           -{formatCurrency(selectedPayrollCalc.nisDeduction)}

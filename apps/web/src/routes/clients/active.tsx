@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-
+import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/active")({
   component: ActiveCasesPage,
   beforeLoad: async () => {
@@ -45,50 +46,6 @@ interface ActiveCase {
   assignedTo: string;
   lastActivity: string;
 }
-
-const mockActiveCases: ActiveCase[] = [
-  {
-    id: "1",
-    clientName: "Caribbean Holdings Ltd",
-    caseType: "Tax Filing",
-    status: "in-progress",
-    priority: "high",
-    dueDate: "2025-01-15",
-    assignedTo: "John Smith",
-    lastActivity: "2 hours ago",
-  },
-  {
-    id: "2",
-    clientName: "Guyana Mining Corp",
-    caseType: "Corporate Registration",
-    status: "pending-review",
-    priority: "medium",
-    dueDate: "2025-01-20",
-    assignedTo: "Sarah Johnson",
-    lastActivity: "1 day ago",
-  },
-  {
-    id: "3",
-    clientName: "Atlantic Shipping Inc",
-    caseType: "Immigration Application",
-    status: "awaiting-documents",
-    priority: "high",
-    dueDate: "2025-01-10",
-    assignedTo: "Mike Brown",
-    lastActivity: "3 hours ago",
-  },
-  {
-    id: "4",
-    clientName: "Georgetown Retail Ltd",
-    caseType: "VAT Registration",
-    status: "scheduled",
-    priority: "low",
-    dueDate: "2025-02-01",
-    assignedTo: "Emily Davis",
-    lastActivity: "5 days ago",
-  },
-];
-
 const statusConfig = {
   "in-progress": { label: "In Progress", variant: "default" as const },
   "pending-review": { label: "Pending Review", variant: "secondary" as const },
@@ -106,6 +63,62 @@ const priorityConfig = {
 };
 
 function ActiveCasesPage() {
+  // Fetch active clients from API
+  const { data: clientsResponse, isLoading } = useQuery({
+    queryKey: ["activeClients"],
+    queryFn: () => orpc.clients.list({ status: "active", page: 1, limit: 100 }),
+  });
+
+  // Map clients to ActiveCase type
+  const activeCases: ActiveCase[] = (clientsResponse?.data?.items || []).map(
+    (client: {
+      id: string;
+      name: string;
+      status: string;
+      riskLevel: string | null;
+      assignedManager: string | null;
+      updatedAt: string | Date | null;
+    }) => ({
+      id: client.id,
+      clientName: client.name,
+      caseType: "Client Services",
+      status: "in-progress" as const,
+      priority: (client.riskLevel?.toLowerCase() === "high"
+        ? "high"
+        : client.riskLevel?.toLowerCase() === "low"
+          ? "low"
+          : "medium") as "high" | "medium" | "low",
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+      assignedTo: client.assignedManager || "Unassigned",
+      lastActivity: client.updatedAt
+        ? formatRelativeTime(new Date(client.updatedAt))
+        : "Recently",
+    })
+  );
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading active cases...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper function for relative time formatting
+  function formatRelativeTime(date: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours < 24) return hours <= 1 ? "1 hour ago" : `${hours} hours ago`;
+    const days = Math.floor(hours / 24);
+    return days === 1 ? "1 day ago" : `${days} days ago`;
+  }
+
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <header className="mb-8">
@@ -142,7 +155,7 @@ function ActiveCasesPage() {
             <CardTitle className="text-sm">Total Active</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{mockActiveCases.length}</div>
+            <div className="font-bold text-2xl">{activeCases.length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -151,7 +164,7 @@ function ActiveCasesPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl text-destructive">
-              {mockActiveCases.filter((c) => c.priority === "high").length}
+              {activeCases.filter((c) => c.priority === "high").length}
             </div>
           </CardContent>
         </Card>
@@ -162,7 +175,7 @@ function ActiveCasesPage() {
           <CardContent>
             <div className="font-bold text-2xl">
               {
-                mockActiveCases.filter((c) => c.status === "awaiting-documents")
+                activeCases.filter((c) => c.status === "awaiting-documents")
                   .length
               }
             </div>
@@ -179,7 +192,7 @@ function ActiveCasesPage() {
       </div>
 
       <div className="space-y-4">
-        {mockActiveCases.map((activeCase) => (
+        {activeCases.map((activeCase) => (
           <Card className="transition-all hover:shadow-md" key={activeCase.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -232,7 +245,7 @@ function ActiveCasesPage() {
         ))}
       </div>
 
-      {mockActiveCases.length === 0 && (
+      {activeCases.length === 0 && (
         <Card className="py-12 text-center">
           <CardContent>
             <AlertCircle className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />

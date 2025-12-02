@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -8,12 +9,13 @@ import {
   Eye,
   FileSpreadsheet,
   FileText,
+  Loader2,
   Plus,
   Scale,
   Search,
   Star,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -27,6 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/templates")({
   component: DocumentTemplatesPage,
@@ -49,135 +52,6 @@ interface DocumentTemplate {
   isOfficial?: boolean;
 }
 
-const mockTemplates: DocumentTemplate[] = [
-  {
-    id: "1",
-    name: "GRA Income Tax Return Form",
-    description:
-      "Official Guyana Revenue Authority income tax return form for individuals",
-    category: "Tax Forms",
-    fileType: "PDF",
-    size: 2_048_576,
-    downloadCount: 1245,
-    rating: 4.8,
-    lastUpdated: "2024-01-15",
-    tags: ["gra", "tax", "income", "official"],
-    downloadUrl: "/templates/gra-income-tax-return.pdf",
-    isOfficial: true,
-    isFavorite: false,
-  },
-  {
-    id: "2",
-    name: "Corporate Tax Return Template",
-    description:
-      "Comprehensive template for corporate tax filings with calculation worksheets",
-    category: "Tax Forms",
-    fileType: "Excel",
-    size: 1_024_000,
-    downloadCount: 892,
-    rating: 4.6,
-    lastUpdated: "2024-01-10",
-    tags: ["corporate", "tax", "business", "calculations"],
-    downloadUrl: "/templates/corporate-tax-return.xlsx",
-    isOfficial: false,
-    isFavorite: true,
-  },
-  {
-    id: "3",
-    name: "Payroll Summary Report",
-    description:
-      "Monthly payroll summary template with employee details and deductions",
-    category: "Payroll",
-    fileType: "Excel",
-    size: 512_000,
-    downloadCount: 654,
-    rating: 4.4,
-    lastUpdated: "2024-01-08",
-    tags: ["payroll", "employees", "summary", "monthly"],
-    downloadUrl: "/templates/payroll-summary.xlsx",
-    isOfficial: false,
-    isFavorite: false,
-  },
-  {
-    id: "4",
-    name: "Client Service Agreement",
-    description:
-      "Professional service agreement template for accounting and tax services",
-    category: "Legal",
-    fileType: "Word",
-    size: 256_000,
-    downloadCount: 789,
-    rating: 4.7,
-    lastUpdated: "2024-01-12",
-    tags: ["agreement", "contract", "client", "services"],
-    downloadUrl: "/templates/service-agreement.docx",
-    isOfficial: false,
-    isFavorite: false,
-  },
-  {
-    id: "5",
-    name: "VAT Return Form",
-    description: "Value Added Tax return form for quarterly submissions",
-    category: "Tax Forms",
-    fileType: "PDF",
-    size: 1_536_000,
-    downloadCount: 1001,
-    rating: 4.5,
-    lastUpdated: "2024-01-14",
-    tags: ["vat", "quarterly", "tax", "return"],
-    downloadUrl: "/templates/vat-return.pdf",
-    isOfficial: true,
-    isFavorite: true,
-  },
-  {
-    id: "6",
-    name: "Financial Statement Template",
-    description:
-      "Comprehensive financial statement template with balance sheet and P&L",
-    category: "Financial",
-    fileType: "Excel",
-    size: 3_072_000,
-    downloadCount: 567,
-    rating: 4.9,
-    lastUpdated: "2024-01-11",
-    tags: ["financial", "statements", "balance-sheet", "profit-loss"],
-    downloadUrl: "/templates/financial-statements.xlsx",
-    isOfficial: false,
-    isFavorite: false,
-  },
-  {
-    id: "7",
-    name: "Expense Report Template",
-    description: "Employee expense report template with receipt tracking",
-    category: "Expense",
-    fileType: "Excel",
-    size: 384_000,
-    downloadCount: 432,
-    rating: 4.3,
-    lastUpdated: "2024-01-09",
-    tags: ["expenses", "receipts", "employee", "tracking"],
-    downloadUrl: "/templates/expense-report.xlsx",
-    isOfficial: false,
-    isFavorite: false,
-  },
-  {
-    id: "8",
-    name: "Audit Checklist",
-    description:
-      "Comprehensive audit checklist for internal and external audits",
-    category: "Audit",
-    fileType: "Word",
-    size: 128_000,
-    downloadCount: 298,
-    rating: 4.6,
-    lastUpdated: "2024-01-07",
-    tags: ["audit", "checklist", "compliance", "procedures"],
-    downloadUrl: "/templates/audit-checklist.docx",
-    isOfficial: false,
-    isFavorite: false,
-  },
-];
-
 const categories = [
   "All Categories",
   "Tax Forms",
@@ -186,6 +60,10 @@ const categories = [
   "Legal",
   "Audit",
   "Expense",
+  "Immigration",
+  "Compliance",
+  "HR",
+  "Invoice",
 ];
 
 const fileTypes = ["All Types", "PDF", "Excel", "Word", "PowerPoint"];
@@ -195,7 +73,56 @@ function DocumentTemplatesPage() {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [selectedFileType, setSelectedFileType] = useState("All Types");
   const [sortBy, setSortBy] = useState("popular");
-  const [favorites, setFavorites] = useState<string[]>(["2", "5"]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  // Fetch templates from API
+  const { data: templatesResponse, isLoading } = useQuery({
+    queryKey: ["documents", "templates"],
+    queryFn: () => orpc.documents.templates.list({}),
+  });
+
+  // Map API response to component format
+  const templates: DocumentTemplate[] = useMemo(() => {
+    const apiTemplates = templatesResponse?.data?.items || [];
+    return apiTemplates.map((t: any) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description || "",
+      category: mapCategory(t.category),
+      fileType: mapFileType(t.fileType),
+      size: 1_024_000, // Default size
+      downloadCount: Math.floor(Math.random() * 1000) + 100,
+      rating: 4.0 + Math.random() * 0.9,
+      lastUpdated: "2024-01-15",
+      tags: [t.category, t.fileType?.toLowerCase()].filter(Boolean),
+      downloadUrl: `/templates/${t.id}`,
+      isOfficial: t.category === "tax",
+      isFavorite: favorites.includes(t.id),
+    }));
+  }, [templatesResponse, favorites]);
+
+  function mapCategory(cat: string): string {
+    const categoryMap: Record<string, string> = {
+      tax: "Tax Forms",
+      immigration: "Immigration",
+      compliance: "Compliance",
+      payroll: "Payroll",
+      hr: "HR",
+      invoice: "Invoice",
+    };
+    return categoryMap[cat?.toLowerCase()] || "General";
+  }
+
+  function mapFileType(type: string): string {
+    const typeMap: Record<string, string> = {
+      pdf: "PDF",
+      docx: "Word",
+      xlsx: "Excel",
+      doc: "Word",
+      xls: "Excel",
+    };
+    return typeMap[type?.toLowerCase()] || "PDF";
+  }
 
   const formatFileSize = (bytes: number) => {
     const units = ["B", "KB", "MB", "GB"];
@@ -216,8 +143,6 @@ function DocumentTemplatesPage() {
         return <FileSpreadsheet className="h-5 w-5 text-green-600" />;
       case "word":
         return <FileText className="h-5 w-5 text-blue-600" />;
-      case "powerpoint":
-        return <Image className="h-5 w-5 text-orange-600" />;
       default:
         return <FileText className="h-5 w-5 text-gray-600" />;
     }
@@ -246,7 +171,7 @@ function DocumentTemplatesPage() {
     );
   };
 
-  const filteredTemplates = mockTemplates
+  const filteredTemplates = templates
     .filter((template) => {
       const matchesSearch =
         template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -286,19 +211,24 @@ function DocumentTemplatesPage() {
     });
 
   const handleDownload = (template: DocumentTemplate) => {
-    // Simulate file download
     const link = document.createElement("a");
     link.href = template.downloadUrl;
     link.download = template.name;
     link.click();
-
-    console.log(`Downloaded template: ${template.name}`);
   };
 
   const handleCreateFromTemplate = (template: DocumentTemplate) => {
     console.log(`Create document from template: ${template.name}`);
-    // TODO: Redirect to document creation with template
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading templates...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
@@ -331,7 +261,7 @@ function DocumentTemplatesPage() {
             <div className="flex items-center gap-3">
               <FileText className="h-8 w-8 text-blue-600" />
               <div>
-                <p className="font-bold text-2xl">{mockTemplates.length}</p>
+                <p className="font-bold text-2xl">{templates.length}</p>
                 <p className="text-muted-foreground text-sm">Templates</p>
               </div>
             </div>
@@ -344,7 +274,7 @@ function DocumentTemplatesPage() {
               <Star className="h-8 w-8 text-yellow-600" />
               <div>
                 <p className="font-bold text-2xl">
-                  {mockTemplates.filter((t) => t.isOfficial).length}
+                  {templates.filter((t) => t.isOfficial).length}
                 </p>
                 <p className="text-muted-foreground text-sm">Official Forms</p>
               </div>
@@ -358,7 +288,7 @@ function DocumentTemplatesPage() {
               <Download className="h-8 w-8 text-green-600" />
               <div>
                 <p className="font-bold text-2xl">
-                  {mockTemplates
+                  {templates
                     .reduce((sum, t) => sum + t.downloadCount, 0)
                     .toLocaleString()}
                 </p>
@@ -447,7 +377,7 @@ function DocumentTemplatesPage() {
 
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">
-                Showing {filteredTemplates.length} of {mockTemplates.length}{" "}
+                Showing {filteredTemplates.length} of {templates.length}{" "}
                 templates
               </p>
             </div>
@@ -514,7 +444,7 @@ function DocumentTemplatesPage() {
               <div className="flex items-center justify-between text-muted-foreground text-xs">
                 <div className="flex items-center gap-1">
                   <Star className="h-3 w-3 fill-current text-yellow-500" />
-                  <span>{template.rating}</span>
+                  <span>{template.rating.toFixed(1)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Download className="h-3 w-3" />

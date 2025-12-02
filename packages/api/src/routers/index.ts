@@ -18,6 +18,7 @@ import { localContentRouter } from "./local-content";
 import { notificationsRouter } from "./notifications";
 import { ocrRouter } from "./ocr";
 import { partnerNetworkRouter } from "./partner-network";
+import { payrollRouter } from "./payroll";
 import { propertyManagementRouter } from "./property-management";
 import { serviceCatalogRouter } from "./service-catalog";
 import { taxRouter } from "./tax";
@@ -47,6 +48,7 @@ export const appRouter = {
   gra: graIntegrationRouter,
   ocr: ocrRouter,
   notifications: notificationsRouter,
+  payroll: payrollRouter,
   // Phase 5: Extended Business Modules
   propertyManagement: propertyManagementRouter,
   expediting: expeditingRouter,

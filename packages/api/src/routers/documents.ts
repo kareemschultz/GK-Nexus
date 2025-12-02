@@ -1064,4 +1064,376 @@ export const documentsRouter = {
         },
       };
     }),
+
+  // Document templates - static reference data
+  templates: {
+    list: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .input(
+        z.object({
+          category: z.string().nullish(),
+          search: z.string().nullish(),
+        })
+      )
+      .handler(async ({ input }) => {
+        // Static reference templates - no templates table in schema
+        const templates = [
+          {
+            id: "tpl-001",
+            name: "Tax Return - Individual",
+            category: "tax",
+            description:
+              "Standard individual tax return template for GRA filing",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-002",
+            name: "Tax Return - Corporate",
+            category: "tax",
+            description: "Corporate tax filing template with schedules",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-003",
+            name: "VAT Return Form",
+            category: "tax",
+            description: "Quarterly VAT return form for GRA submission",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-004",
+            name: "Work Permit Application",
+            category: "immigration",
+            description: "Work permit application form for Ministry of Labour",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-005",
+            name: "Business Registration",
+            category: "compliance",
+            description: "New business registration form for Deeds Registry",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-006",
+            name: "NIS Employer Registration",
+            category: "payroll",
+            description: "NIS employer registration form",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-007",
+            name: "Employee Contract",
+            category: "hr",
+            description: "Standard employment contract template",
+            fileType: "docx",
+            version: "2024",
+          },
+          {
+            id: "tpl-008",
+            name: "Invoice Template",
+            category: "invoice",
+            description: "Professional service invoice template",
+            fileType: "xlsx",
+            version: "2024",
+          },
+          {
+            id: "tpl-009",
+            name: "PAYE Monthly Return",
+            category: "payroll",
+            description: "Monthly PAYE return form for GRA",
+            fileType: "pdf",
+            version: "2024",
+          },
+          {
+            id: "tpl-010",
+            name: "Annual Compliance Checklist",
+            category: "compliance",
+            description: "Annual business compliance checklist",
+            fileType: "pdf",
+            version: "2024",
+          },
+        ];
+
+        let filtered = templates;
+
+        if (input.category) {
+          filtered = filtered.filter(
+            (t) => t.category.toLowerCase() === input.category!.toLowerCase()
+          );
+        }
+
+        if (input.search) {
+          const searchLower = input.search.toLowerCase();
+          filtered = filtered.filter(
+            (t) =>
+              t.name.toLowerCase().includes(searchLower) ||
+              t.description.toLowerCase().includes(searchLower)
+          );
+        }
+
+        return {
+          success: true,
+          data: {
+            items: filtered,
+            total: filtered.length,
+          },
+        };
+      }),
+
+    getById: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .input(z.object({ id: z.string() }))
+      .handler(async ({ input }) => {
+        const templates: Record<string, any> = {
+          "tpl-001": {
+            id: "tpl-001",
+            name: "Tax Return - Individual",
+            category: "tax",
+            description:
+              "Standard individual tax return template for GRA filing",
+            fileType: "pdf",
+            version: "2024",
+            fields: ["tin", "income", "deductions", "dependents"],
+            instructions: "Complete all sections. Attach supporting documents.",
+          },
+        };
+
+        const template = templates[input.id];
+        if (!template) {
+          return { success: false, data: null, message: "Template not found" };
+        }
+
+        return { success: true, data: template };
+      }),
+
+    categories: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .handler(async () => ({
+        success: true,
+        data: [
+          { id: "tax", name: "Tax", count: 3 },
+          { id: "immigration", name: "Immigration", count: 1 },
+          { id: "compliance", name: "Compliance", count: 2 },
+          { id: "payroll", name: "Payroll", count: 2 },
+          { id: "hr", name: "HR", count: 1 },
+          { id: "invoice", name: "Invoice", count: 1 },
+        ],
+      })),
+  },
+
+  // Document requirements by service type
+  requirements: {
+    list: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .input(
+        z.object({
+          serviceType: z.string().nullish(),
+        })
+      )
+      .handler(async ({ input }) => {
+        // Static reference data for document requirements
+        const requirements = [
+          {
+            id: "req-001",
+            serviceType: "work_permit",
+            document: "Valid Passport",
+            required: true,
+            description:
+              "Must be valid for at least 6 months beyond intended stay",
+          },
+          {
+            id: "req-002",
+            serviceType: "work_permit",
+            document: "Passport Photos",
+            required: true,
+            description: "2 recent photos, white background, 2x2 inches",
+          },
+          {
+            id: "req-003",
+            serviceType: "work_permit",
+            document: "Employment Contract",
+            required: true,
+            description: "Signed by employer, stating position and salary",
+          },
+          {
+            id: "req-004",
+            serviceType: "work_permit",
+            document: "Police Clearance",
+            required: true,
+            description: "From country of origin, not older than 6 months",
+          },
+          {
+            id: "req-005",
+            serviceType: "work_permit",
+            document: "Medical Certificate",
+            required: true,
+            description: "Recent health examination from approved facility",
+          },
+          {
+            id: "req-006",
+            serviceType: "business_registration",
+            document: "National ID",
+            required: true,
+            description: "Valid national ID card for all directors",
+          },
+          {
+            id: "req-007",
+            serviceType: "business_registration",
+            document: "Proof of Address",
+            required: true,
+            description:
+              "Utility bill or bank statement (not older than 3 months)",
+          },
+          {
+            id: "req-008",
+            serviceType: "business_registration",
+            document: "Business Plan",
+            required: false,
+            description: "Required for certain business types",
+          },
+          {
+            id: "req-009",
+            serviceType: "tax_filing",
+            document: "TIN Certificate",
+            required: true,
+            description: "Tax Identification Number certificate",
+          },
+          {
+            id: "req-010",
+            serviceType: "tax_filing",
+            document: "Financial Statements",
+            required: true,
+            description: "Audited financial statements for corporate filings",
+          },
+          {
+            id: "req-011",
+            serviceType: "tax_filing",
+            document: "Bank Statements",
+            required: false,
+            description: "Last 12 months of bank statements",
+          },
+          {
+            id: "req-012",
+            serviceType: "vat_registration",
+            document: "Business Registration",
+            required: true,
+            description: "Certificate of incorporation or business name",
+          },
+          {
+            id: "req-013",
+            serviceType: "vat_registration",
+            document: "Proof of Revenue",
+            required: true,
+            description: "Evidence of annual revenue exceeding threshold",
+          },
+        ];
+
+        let filtered = requirements;
+
+        if (input.serviceType) {
+          filtered = filtered.filter(
+            (r) => r.serviceType === input.serviceType
+          );
+        }
+
+        return {
+          success: true,
+          data: {
+            items: filtered,
+            total: filtered.length,
+          },
+        };
+      }),
+
+    serviceTypes: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .handler(async () => ({
+        success: true,
+        data: [
+          {
+            id: "work_permit",
+            name: "Work Permit Application",
+            documentCount: 5,
+          },
+          {
+            id: "business_registration",
+            name: "Business Registration",
+            documentCount: 3,
+          },
+          { id: "tax_filing", name: "Tax Filing", documentCount: 3 },
+          {
+            id: "vat_registration",
+            name: "VAT Registration",
+            documentCount: 2,
+          },
+        ],
+      })),
+
+    checklists: protectedProcedure
+      .use(requirePermission("documents.read"))
+      .input(
+        z.object({
+          serviceType: z.string().nullish(),
+        })
+      )
+      .handler(async ({ input }) => {
+        const checklists = [
+          {
+            id: "chk-001",
+            serviceType: "work_permit",
+            name: "Work Permit Application Checklist",
+            items: [
+              { document: "Valid Passport", checked: false },
+              { document: "Passport Photos", checked: false },
+              { document: "Employment Contract", checked: false },
+              { document: "Police Clearance", checked: false },
+              { document: "Medical Certificate", checked: false },
+            ],
+          },
+          {
+            id: "chk-002",
+            serviceType: "business_registration",
+            name: "Business Registration Checklist",
+            items: [
+              { document: "National ID", checked: false },
+              { document: "Proof of Address", checked: false },
+              { document: "Business Plan", checked: false },
+            ],
+          },
+          {
+            id: "chk-003",
+            serviceType: "tax_filing",
+            name: "Tax Filing Checklist",
+            items: [
+              { document: "TIN Certificate", checked: false },
+              { document: "Financial Statements", checked: false },
+              { document: "Bank Statements", checked: false },
+            ],
+          },
+        ];
+
+        let filtered = checklists;
+
+        if (input.serviceType) {
+          filtered = filtered.filter(
+            (c) => c.serviceType === input.serviceType
+          );
+        }
+
+        return {
+          success: true,
+          data: {
+            items: filtered,
+            total: filtered.length,
+          },
+        };
+      }),
+  },
 };

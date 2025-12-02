@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -9,12 +10,13 @@ import {
   Eye,
   FileText,
   Filter,
+  Loader2,
   MapPin,
   Search,
   Shield,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,91 +38,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/filings")({
   component: FilingsPage,
 });
 
-const mockFilings = [
-  {
-    id: 1,
-    title: "GIT Monthly Return - November 2024",
-    type: "GIT",
-    period: "November 2024",
-    dueDate: "2024-12-15",
-    submittedDate: "2024-12-10",
-    status: "submitted",
-    amount: "GYD 45,000",
-    filingNumber: "GIT202411001",
-    description: "Goods and Services Tax monthly return",
-    priority: "high",
-  },
-  {
-    id: 2,
-    title: "PAYE Monthly Submission - November 2024",
-    type: "PAYE",
-    period: "November 2024",
-    dueDate: "2024-12-15",
-    submittedDate: "2024-12-12",
-    status: "submitted",
-    amount: "GYD 180,000",
-    filingNumber: "PAYE202411001",
-    description: "Pay As You Earn monthly submission",
-    priority: "high",
-  },
-  {
-    id: 3,
-    title: "Withholding Tax Return - Q4 2024",
-    type: "WHT",
-    period: "Q4 2024",
-    dueDate: "2024-01-31",
-    submittedDate: null,
-    status: "pending",
-    amount: "GYD 25,000",
-    filingNumber: null,
-    description: "Quarterly withholding tax return",
-    priority: "medium",
-  },
-  {
-    id: 4,
-    title: "Corporation Tax Return - 2023",
-    type: "Corporation Tax",
-    period: "2023",
-    dueDate: "2024-03-31",
-    submittedDate: "2024-03-28",
-    status: "approved",
-    amount: "GYD 500,000",
-    filingNumber: "CT2023001",
-    description: "Annual corporation tax return",
-    priority: "low",
-  },
-  {
-    id: 5,
-    title: "GIT Monthly Return - December 2024",
-    type: "GIT",
-    period: "December 2024",
-    dueDate: "2025-01-15",
-    submittedDate: null,
-    status: "upcoming",
-    amount: "Estimated GYD 50,000",
-    filingNumber: null,
-    description: "Goods and Services Tax monthly return",
-    priority: "high",
-  },
-  {
-    id: 6,
-    title: "VAT Return - Q4 2024",
-    type: "VAT",
-    period: "Q4 2024",
-    dueDate: "2024-01-31",
-    submittedDate: null,
-    status: "overdue",
-    amount: "GYD 75,000",
-    filingNumber: null,
-    description: "Quarterly VAT return submission",
-    priority: "urgent",
-  },
-];
+interface Filing {
+  id: string;
+  title: string;
+  type: string;
+  period: string;
+  dueDate: string;
+  submittedDate: string | null;
+  status: string;
+  amount: string;
+  filingNumber: string | null;
+  description: string;
+  priority: string;
+}
 
 const complianceMetrics = [
   {
@@ -161,49 +97,11 @@ const complianceMetrics = [
   },
 ];
 
-const upcomingDeadlines = [
-  {
-    id: 1,
-    title: "GIT Monthly Return",
-    type: "GIT",
-    dueDate: "2025-01-15",
-    daysUntil: 18,
-    priority: "high",
-    description: "December 2024 GIT filing",
-  },
-  {
-    id: 2,
-    title: "WHT Quarterly Return",
-    type: "WHT",
-    dueDate: "2025-01-31",
-    daysUntil: 34,
-    priority: "medium",
-    description: "Q4 2024 withholding tax return",
-  },
-  {
-    id: 3,
-    title: "VAT Return - Q4 2024",
-    type: "VAT",
-    dueDate: "2025-01-31",
-    daysUntil: 34,
-    priority: "urgent",
-    description: "Quarterly VAT return - OVERDUE",
-  },
-  {
-    id: 4,
-    title: "PAYE Monthly Submission",
-    type: "PAYE",
-    dueDate: "2025-01-15",
-    daysUntil: 18,
-    priority: "high",
-    description: "December 2024 PAYE filing",
-  },
-];
-
 function getStatusColor(status: string) {
   switch (status) {
     case "submitted":
     case "approved":
+    case "completed":
       return "default";
     case "pending":
     case "upcoming":
@@ -220,6 +118,7 @@ function getStatusIcon(status: string) {
     case "submitted":
       return <Clock aria-hidden="true" className="h-4 w-4" />;
     case "approved":
+    case "completed":
       return <CheckCircle2 aria-hidden="true" className="h-4 w-4" />;
     case "pending":
     case "upcoming":
@@ -262,10 +161,10 @@ function getComplianceStatusColor(status: string) {
 }
 
 function getDaysUntilColor(days: number) {
-  if (days < 0) return "destructive"; // overdue
-  if (days <= 7) return "destructive"; // urgent
-  if (days <= 14) return "secondary"; // medium
-  return "outline"; // low priority
+  if (days < 0) return "destructive";
+  if (days <= 7) return "destructive";
+  if (days <= 14) return "secondary";
+  return "outline";
 }
 
 function FilingsPage() {
@@ -273,7 +172,76 @@ function FilingsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
 
-  const filteredFilings = mockFilings.filter((filing) => {
+  // Fetch filings from API
+  const { data: filingsResponse, isLoading } = useQuery({
+    queryKey: ["tax", "filings"],
+    queryFn: () => orpc.tax.filings.list({}),
+  });
+
+  // Map API response to component format
+  const filings: Filing[] = useMemo(() => {
+    const apiFilings = filingsResponse?.data?.items || [];
+    return apiFilings.map((f: any) => {
+      const dueDate = f.dueDate || new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const due = new Date(dueDate);
+      const daysUntil = Math.ceil(
+        (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      let status = f.status || "pending";
+      if (status === "completed") status = "approved";
+      if (daysUntil < 0 && status === "pending") status = "overdue";
+
+      let priority = "medium";
+      if (daysUntil < 0) priority = "urgent";
+      else if (daysUntil <= 7) priority = "high";
+      else if (daysUntil <= 14) priority = "medium";
+      else priority = "low";
+
+      return {
+        id: f.id,
+        title: `${f.type?.replace(/_/g, " ")} - ${f.period}`,
+        type: f.type?.split("_")[0] || "TAX",
+        period: f.period || "2024",
+        dueDate,
+        submittedDate: f.submittedAt,
+        status,
+        amount: f.amount ? `GYD ${f.amount.toLocaleString()}` : "TBD",
+        filingNumber: f.graReference,
+        description: `${f.type?.replace(/_/g, " ")} filing`,
+        priority,
+      };
+    });
+  }, [filingsResponse]);
+
+  // Calculate upcoming deadlines from filings
+  const upcomingDeadlines = useMemo(
+    () =>
+      filings
+        .filter((f) => f.status === "pending" || f.status === "upcoming")
+        .map((f) => {
+          const due = new Date(f.dueDate);
+          const now = new Date();
+          const daysUntil = Math.ceil(
+            (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          return {
+            id: f.id,
+            title: f.title,
+            type: f.type,
+            dueDate: f.dueDate,
+            daysUntil,
+            priority: f.priority,
+            description: f.description,
+          };
+        })
+        .sort((a, b) => a.daysUntil - b.daysUntil)
+        .slice(0, 5),
+    [filings]
+  );
+
+  const filteredFilings = filings.filter((filing) => {
     const matchesSearch =
       filing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       filing.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -288,6 +256,15 @@ function FilingsPage() {
     complianceMetrics.reduce((sum, metric) => sum + metric.percentage, 0) /
       complianceMetrics.length
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading filings...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -332,7 +309,7 @@ function FilingsPage() {
               <div>
                 <p className="font-semibold text-2xl text-foreground">
                   {
-                    mockFilings.filter(
+                    filings.filter(
                       (f) => f.status === "submitted" || f.status === "approved"
                     ).length
                   }
@@ -372,7 +349,7 @@ function FilingsPage() {
               </div>
               <div>
                 <p className="font-semibold text-2xl text-foreground">
-                  {mockFilings.filter((f) => f.status === "overdue").length}
+                  {filings.filter((f) => f.status === "overdue").length}
                 </p>
                 <p className="text-muted-foreground text-xs">Overdue</p>
               </div>
@@ -446,56 +423,62 @@ function FilingsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {upcomingDeadlines.map((deadline) => (
-              <div
-                className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                key={deadline.id}
-              >
-                <div className="flex items-center space-x-4">
-                  <div
-                    className={`rounded-full p-2 ${
-                      deadline.priority === "urgent"
-                        ? "bg-red-50 dark:bg-red-950"
-                        : deadline.priority === "high"
-                          ? "bg-amber-50 dark:bg-amber-950"
-                          : "bg-blue-50 dark:bg-blue-950"
-                    }`}
-                  >
-                    <CheckCircle
-                      aria-hidden="true"
-                      className={`h-4 w-4 ${
-                        deadline.priority === "urgent"
-                          ? "text-red-600"
-                          : deadline.priority === "high"
-                            ? "text-amber-600"
-                            : "text-blue-600"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">
-                      {deadline.title}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                      {deadline.description}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Due: {new Date(deadline.dueDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Badge variant={getDaysUntilColor(deadline.daysUntil)}>
-                    {deadline.daysUntil < 0
-                      ? "OVERDUE"
-                      : `${deadline.daysUntil} days`}
-                  </Badge>
-                  <Badge variant={getPriorityColor(deadline.priority)}>
-                    {deadline.priority.toUpperCase()}
-                  </Badge>
-                </div>
+            {upcomingDeadlines.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                No upcoming deadlines
               </div>
-            ))}
+            ) : (
+              upcomingDeadlines.map((deadline) => (
+                <div
+                  className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
+                  key={deadline.id}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div
+                      className={`rounded-full p-2 ${
+                        deadline.priority === "urgent"
+                          ? "bg-red-50 dark:bg-red-950"
+                          : deadline.priority === "high"
+                            ? "bg-amber-50 dark:bg-amber-950"
+                            : "bg-blue-50 dark:bg-blue-950"
+                      }`}
+                    >
+                      <CheckCircle2
+                        aria-hidden="true"
+                        className={`h-4 w-4 ${
+                          deadline.priority === "urgent"
+                            ? "text-red-600"
+                            : deadline.priority === "high"
+                              ? "text-amber-600"
+                              : "text-blue-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">
+                        {deadline.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {deadline.description}
+                      </p>
+                      <p className="text-muted-foreground text-xs">
+                        Due: {new Date(deadline.dueDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={getDaysUntilColor(deadline.daysUntil)}>
+                      {deadline.daysUntil < 0
+                        ? "OVERDUE"
+                        : `${deadline.daysUntil} days`}
+                    </Badge>
+                    <Badge variant={getPriorityColor(deadline.priority)}>
+                      {deadline.priority.toUpperCase()}
+                    </Badge>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -550,11 +533,9 @@ function FilingsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="GIT">GIT</SelectItem>
-                <SelectItem value="PAYE">PAYE</SelectItem>
-                <SelectItem value="WHT">WHT</SelectItem>
                 <SelectItem value="VAT">VAT</SelectItem>
-                <SelectItem value="Corporation Tax">Corporation Tax</SelectItem>
+                <SelectItem value="PAYE">PAYE</SelectItem>
+                <SelectItem value="CORPORATE">Corporate Tax</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -651,12 +632,10 @@ function FilingsPage() {
                     className="relative flex items-start space-x-4"
                     key={filing.id}
                   >
-                    {/* Timeline line */}
                     {index < filteredFilings.length - 1 && (
                       <div className="absolute top-12 left-6 h-20 w-0.5 bg-border" />
                     )}
 
-                    {/* Status icon */}
                     <div
                       className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${
                         filing.status === "approved"
@@ -671,7 +650,6 @@ function FilingsPage() {
                       {getStatusIcon(filing.status)}
                     </div>
 
-                    {/* Content */}
                     <div className="min-w-0 flex-1">
                       <Card>
                         <CardContent className="p-4">

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -8,6 +9,7 @@ import {
   Clock,
   Download,
   FileText,
+  Loader2,
   Plus,
   RefreshCw,
   Search,
@@ -15,7 +17,7 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +43,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/requirements")({
   component: DocumentRequirementsPage,
@@ -65,7 +68,7 @@ interface DocumentRequirement {
   reviewComments?: string;
   isOptional: boolean;
   dependencies: string[];
-  estimatedCompletionTime: number; // in hours
+  estimatedCompletionTime: number;
   completionPercentage: number;
   lastUpdated: string;
   tags: string[];
@@ -79,7 +82,7 @@ interface RequirementChecklist {
   clientId?: string;
   type: "immigration" | "tax" | "corporate" | "compliance" | "general";
   status: "draft" | "active" | "completed" | "archived";
-  requirements: string[]; // requirement IDs
+  requirements: string[];
   createdBy: string;
   createdAt: string;
   completedAt?: string;
@@ -90,171 +93,6 @@ interface RequirementChecklist {
   dueDate?: string;
   priority: "low" | "medium" | "high" | "critical";
 }
-
-const mockRequirements: DocumentRequirement[] = [
-  {
-    id: "req-1",
-    name: "Passport Copy (Certified)",
-    description:
-      "Certified copy of current passport, all pages including blank pages",
-    category: "Identity",
-    priority: "critical",
-    status: "approved",
-    dueDate: "2024-02-15",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    templateId: "template-passport",
-    uploadedDocumentId: "doc-456",
-    submittedBy: "client-123",
-    submittedAt: "2024-01-10T10:00:00Z",
-    reviewedBy: "agent-001",
-    reviewedAt: "2024-01-11T14:30:00Z",
-    reviewComments: "Document accepted. Clear copy with all required pages.",
-    isOptional: false,
-    dependencies: [],
-    estimatedCompletionTime: 2,
-    completionPercentage: 100,
-    lastUpdated: "2024-01-11T14:30:00Z",
-    tags: ["identity", "passport", "certified"],
-  },
-  {
-    id: "req-2",
-    name: "Educational Certificates",
-    description:
-      "Original or certified copies of all educational certificates and transcripts",
-    category: "Education",
-    priority: "high",
-    status: "in_progress",
-    dueDate: "2024-02-20",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    isOptional: false,
-    dependencies: ["req-1"],
-    estimatedCompletionTime: 4,
-    completionPercentage: 75,
-    lastUpdated: "2024-01-15T09:00:00Z",
-    tags: ["education", "certificates", "transcripts"],
-  },
-  {
-    id: "req-3",
-    name: "Employment Letter",
-    description:
-      "Letter from current employer confirming employment status and salary",
-    category: "Employment",
-    priority: "high",
-    status: "review",
-    dueDate: "2024-02-10",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    uploadedDocumentId: "doc-789",
-    submittedBy: "client-123",
-    submittedAt: "2024-01-12T16:00:00Z",
-    isOptional: false,
-    dependencies: [],
-    estimatedCompletionTime: 1,
-    completionPercentage: 100,
-    lastUpdated: "2024-01-12T16:00:00Z",
-    tags: ["employment", "salary", "verification"],
-  },
-  {
-    id: "req-4",
-    name: "Bank Statements (6 months)",
-    description: "Last 6 months of bank statements showing financial stability",
-    category: "Financial",
-    priority: "medium",
-    status: "pending",
-    dueDate: "2024-02-25",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    isOptional: false,
-    dependencies: [],
-    estimatedCompletionTime: 3,
-    completionPercentage: 0,
-    lastUpdated: "2024-01-08T12:00:00Z",
-    tags: ["financial", "bank-statements", "proof-of-funds"],
-  },
-  {
-    id: "req-5",
-    name: "Medical Examination",
-    description: "Medical examination by panel physician (Form IMM 1017E)",
-    category: "Medical",
-    priority: "high",
-    status: "rejected",
-    dueDate: "2024-02-18",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    uploadedDocumentId: "doc-101",
-    submittedBy: "client-123",
-    submittedAt: "2024-01-14T11:00:00Z",
-    reviewedBy: "agent-002",
-    reviewedAt: "2024-01-15T13:00:00Z",
-    reviewComments: "Form incomplete. Please complete section 4 and resubmit.",
-    isOptional: false,
-    dependencies: [],
-    estimatedCompletionTime: 6,
-    completionPercentage: 80,
-    lastUpdated: "2024-01-15T13:00:00Z",
-    tags: ["medical", "examination", "panel-physician"],
-  },
-  {
-    id: "req-6",
-    name: "Police Clearance Certificate",
-    description: "Police clearance certificate from country of residence",
-    category: "Background",
-    priority: "critical",
-    status: "pending",
-    dueDate: "2024-03-01",
-    assignedTo: "client-123",
-    requiredForCase: ["case-visa-001"],
-    isOptional: false,
-    dependencies: ["req-1"],
-    estimatedCompletionTime: 8,
-    completionPercentage: 25,
-    lastUpdated: "2024-01-09T14:00:00Z",
-    tags: ["background", "police", "clearance"],
-  },
-];
-
-const mockChecklists: RequirementChecklist[] = [
-  {
-    id: "checklist-1",
-    name: "Express Entry - Federal Skilled Worker",
-    description:
-      "Complete document checklist for Express Entry application under Federal Skilled Worker program",
-    caseId: "case-visa-001",
-    clientId: "client-123",
-    type: "immigration",
-    status: "active",
-    requirements: ["req-1", "req-2", "req-3", "req-4", "req-5", "req-6"],
-    createdBy: "agent-001",
-    createdAt: "2024-01-05T10:00:00Z",
-    totalRequirements: 6,
-    completedRequirements: 1,
-    approvedRequirements: 1,
-    pendingRequirements: 3,
-    dueDate: "2024-03-01",
-    priority: "high",
-  },
-  {
-    id: "checklist-2",
-    name: "Corporate Tax Compliance",
-    description:
-      "Annual corporate tax filing requirements and supporting documents",
-    caseId: "case-tax-002",
-    clientId: "client-456",
-    type: "tax",
-    status: "completed",
-    requirements: ["req-7", "req-8", "req-9"],
-    createdBy: "agent-002",
-    createdAt: "2024-01-01T09:00:00Z",
-    completedAt: "2024-01-20T17:00:00Z",
-    totalRequirements: 3,
-    completedRequirements: 3,
-    approvedRequirements: 3,
-    pendingRequirements: 0,
-    priority: "medium",
-  },
-];
 
 const categories = [
   "All Categories",
@@ -314,8 +152,76 @@ function DocumentRequirementsPage() {
     useState<RequirementChecklist | null>(null);
   const [isRequirementDialogOpen, setIsRequirementDialogOpen] = useState(false);
   const [isChecklistDialogOpen, setIsChecklistDialogOpen] = useState(false);
-  const [isCreateRequirementOpen, setIsCreateRequirementOpen] = useState(false);
-  const [isCreateChecklistOpen, setIsCreateChecklistOpen] = useState(false);
+  const [, setIsCreateRequirementOpen] = useState(false);
+  const [, setIsCreateChecklistOpen] = useState(false);
+
+  // Fetch requirements from API
+  const { data: requirementsResponse, isLoading: isLoadingRequirements } =
+    useQuery({
+      queryKey: ["documents", "requirements"],
+      queryFn: () => orpc.documents.requirements.list({}),
+    });
+
+  // Fetch checklists from API
+  const { data: checklistsResponse, isLoading: isLoadingChecklists } = useQuery(
+    {
+      queryKey: ["documents", "checklists"],
+      queryFn: () => orpc.documents.requirements.checklists({}),
+    }
+  );
+
+  // Map API response to component format
+  const requirements: DocumentRequirement[] = useMemo(() => {
+    const apiRequirements = requirementsResponse?.data?.items || [];
+    return apiRequirements.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description || "",
+      category: r.category || "General",
+      priority: r.priority || "medium",
+      status: r.status || "pending",
+      dueDate: r.dueDate,
+      assignedTo: r.assignedTo,
+      requiredForCase: r.requiredForCase || [],
+      templateId: r.templateId,
+      uploadedDocumentId: r.uploadedDocumentId,
+      submittedBy: r.submittedBy,
+      submittedAt: r.submittedAt,
+      reviewedBy: r.reviewedBy,
+      reviewedAt: r.reviewedAt,
+      reviewComments: r.reviewComments,
+      isOptional: r.isOptional,
+      dependencies: r.dependencies || [],
+      estimatedCompletionTime: r.estimatedCompletionTime || 2,
+      completionPercentage: r.completionPercentage || 0,
+      lastUpdated: r.lastUpdated || new Date().toISOString(),
+      tags: r.tags || [],
+    }));
+  }, [requirementsResponse]);
+
+  // Map checklists API response
+  const checklists: RequirementChecklist[] = useMemo(() => {
+    const apiChecklists = checklistsResponse?.data?.items || [];
+    return apiChecklists.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      description: c.description || "",
+      caseId: c.caseId,
+      clientId: c.clientId,
+      type: c.type || "general",
+      status: c.status || "draft",
+      requirements: c.requirements || [],
+      createdBy: c.createdBy || "System",
+      createdAt: c.createdAt || new Date().toISOString(),
+      completedAt: c.completedAt,
+      totalRequirements: c.totalRequirements || 0,
+      completedRequirements: c.completedRequirements || 0,
+      approvedRequirements: c.approvedRequirements || 0,
+      pendingRequirements: c.pendingRequirements || 0,
+      dueDate: c.dueDate,
+      priority: c.priority || "medium",
+    }));
+  }, [checklistsResponse]);
 
   const getStatusIcon = (status: string) => {
     const statusConfig = statuses.find((s) => s.value === status);
@@ -333,7 +239,7 @@ function DocumentRequirementsPage() {
     return priorityConfig?.color || "text-gray-600";
   };
 
-  const filteredRequirements = mockRequirements.filter((requirement) => {
+  const filteredRequirements = requirements.filter((requirement) => {
     const matchesSearch =
       requirement.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       requirement.description
@@ -356,7 +262,7 @@ function DocumentRequirementsPage() {
     return matchesSearch && matchesCategory && matchesStatus && matchesPriority;
   });
 
-  const filteredChecklists = mockChecklists.filter((checklist) => {
+  const filteredChecklists = checklists.filter((checklist) => {
     const matchesSearch =
       checklist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       checklist.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -393,6 +299,17 @@ function DocumentRequirementsPage() {
     if (diffDays <= 7) return "warning";
     return "normal";
   };
+
+  if (isLoadingRequirements || isLoadingChecklists) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">
+          Loading requirements...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-full px-4 py-6">
@@ -444,7 +361,7 @@ function DocumentRequirementsPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {mockChecklists.filter((c) => c.status === "active").length}
+              {checklists.filter((c) => c.status === "active").length}
             </div>
             <p className="text-muted-foreground text-xs">In progress</p>
           </CardContent>
@@ -459,7 +376,7 @@ function DocumentRequirementsPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {mockRequirements.filter((r) => r.status === "review").length}
+              {requirements.filter((r) => r.status === "review").length}
             </div>
             <p className="text-muted-foreground text-xs">Awaiting approval</p>
           </CardContent>
@@ -473,7 +390,7 @@ function DocumentRequirementsPage() {
           <CardContent>
             <div className="font-bold text-2xl">
               {
-                mockRequirements.filter(
+                requirements.filter(
                   (r) => r.dueDate && getDueDateStatus(r.dueDate) === "overdue"
                 ).length
               }
@@ -491,12 +408,14 @@ function DocumentRequirementsPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {Math.round(
-                (mockRequirements.filter((r) => r.status === "approved")
-                  .length /
-                  mockRequirements.length) *
-                  100
-              )}
+              {requirements.length > 0
+                ? Math.round(
+                    (requirements.filter((r) => r.status === "approved")
+                      .length /
+                      requirements.length) *
+                      100
+                  )
+                : 0}
               %
             </div>
             <p className="text-muted-foreground text-xs">Overall progress</p>
@@ -1129,7 +1048,7 @@ function DocumentRequirementsPage() {
                 <Label className="font-medium text-base">Requirements</Label>
                 <div className="space-y-2">
                   {selectedChecklist.requirements.map((requirementId) => {
-                    const requirement = mockRequirements.find(
+                    const requirement = requirements.find(
                       (r) => r.id === requirementId
                     );
                     if (!requirement) return null;

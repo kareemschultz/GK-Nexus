@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Building2,
@@ -5,6 +6,7 @@ import {
   Camera,
   CreditCard,
   Edit2,
+  Loader2,
   Mail,
   MapPin,
   Phone,
@@ -13,7 +15,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +30,54 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/profile")({
   component: ProfilePage,
 });
 
-const mockUserData = {
+interface UserProfile {
+  personal: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    nationality: string;
+    avatar: string;
+  };
+  business: {
+    companyName: string;
+    registrationNumber: string;
+    businessType: string;
+    industry: string;
+    establishedDate: string;
+    employeeCount: string;
+    website: string;
+  };
+  address: {
+    street: string;
+    city: string;
+    region: string;
+    postalCode: string;
+    country: string;
+  };
+  tax: {
+    tin: string;
+    nis: string;
+    vatRegistered: boolean;
+    vatNumber: string;
+    payeNumber: string;
+  };
+  account: {
+    accountType: string;
+    memberSince: string;
+    lastLogin: string;
+    status: string;
+  };
+}
+
+const defaultUserData: UserProfile = {
   personal: {
     firstName: "John",
     lastName: "Smith",
@@ -69,18 +113,67 @@ const mockUserData = {
   account: {
     accountType: "Premium Client",
     memberSince: "2020-01-15",
-    lastLogin: "2024-11-28T10:30:00Z",
+    lastLogin: new Date().toISOString(),
     status: "Active",
   },
 };
 
 function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(mockUserData);
+  const [formData, setFormData] = useState<UserProfile>(defaultUserData);
+
+  // Fetch user profile from API
+  const { data: userResponse, isLoading } = useQuery({
+    queryKey: ["users", "me"],
+    queryFn: () => orpc.users.me(),
+  });
+
+  // Initialize form data from API response
+  useEffect(() => {
+    if (userResponse?.data) {
+      const userData = userResponse.data;
+      const nameParts = (userData.name || "").split(" ");
+      setFormData({
+        personal: {
+          firstName: nameParts[0] || defaultUserData.personal.firstName,
+          lastName:
+            nameParts.slice(1).join(" ") || defaultUserData.personal.lastName,
+          email: userData.email || defaultUserData.personal.email,
+          phone: defaultUserData.personal.phone,
+          dateOfBirth: defaultUserData.personal.dateOfBirth,
+          nationality: defaultUserData.personal.nationality,
+          avatar: userData.image || "",
+        },
+        business: defaultUserData.business,
+        address: defaultUserData.address,
+        tax: defaultUserData.tax,
+        account: {
+          accountType: userData.role || "Client",
+          memberSince:
+            userData.createdAt || defaultUserData.account.memberSince,
+          lastLogin: new Date().toISOString(),
+          status: "Active",
+        },
+      });
+    }
+  }, [userResponse]);
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = () => {
-    setFormData(mockUserData);
+    if (userResponse?.data) {
+      const userData = userResponse.data;
+      const nameParts = (userData.name || "").split(" ");
+      setFormData({
+        ...formData,
+        personal: {
+          ...formData.personal,
+          firstName: nameParts[0] || defaultUserData.personal.firstName,
+          lastName:
+            nameParts.slice(1).join(" ") || defaultUserData.personal.lastName,
+          email: userData.email || defaultUserData.personal.email,
+        },
+      });
+    }
     setIsEditing(false);
   };
   const handleSave = () => {
@@ -101,6 +194,15 @@ function ProfilePage() {
       },
     }));
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="ml-3 text-muted-foreground">Loading profile...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

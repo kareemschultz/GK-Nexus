@@ -195,7 +195,7 @@ function RouteComponent() {
     }
   };
 
-  const mockClients: Client[] = useMemo(() => {
+  const clients: Client[] = useMemo(() => {
     if (!clientsQuery.data?.data?.items) return [];
 
     return clientsQuery.data.data.items.map((apiClient) => ({
@@ -233,7 +233,7 @@ function RouteComponent() {
   }, [clientsQuery.data]);
 
   const filteredClients = useMemo(() => {
-    return mockClients.filter((client) => {
+    return clients.filter((client) => {
       // Search term matching
       const searchLower = filters.searchTerm.toLowerCase();
       const matchesSearch =
@@ -304,16 +304,16 @@ function RouteComponent() {
         matchesDateRange
       );
     });
-  }, [mockClients, filters]);
+  }, [clients, filters]);
 
   const uniqueIndustries = useMemo(
-    () => [...new Set(mockClients.map((c) => c.industry))],
-    [mockClients]
+    () => [...new Set(clients.map((c) => c.industry))],
+    [clients]
   );
 
   const uniqueTags = useMemo(
-    () => [...new Set(mockClients.flatMap((c) => c.tags))],
-    [mockClients]
+    () => [...new Set(clients.flatMap((c) => c.tags))],
+    [clients]
   );
 
   const handleFilterChange = (key: keyof FilterCriteria, value: any) => {
@@ -477,7 +477,7 @@ function RouteComponent() {
 
   const searchSuggestions = useMemo(() => {
     const suggestions = [
-      ...mockClients.map((c) => ({
+      ...clients.map((c) => ({
         type: "client" as const,
         value: c.name,
         label: c.name,
@@ -497,7 +497,7 @@ function RouteComponent() {
       })),
     ];
     return suggestions;
-  }, [mockClients, uniqueIndustries, uniqueTags]);
+  }, [clients, uniqueIndustries, uniqueTags]);
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -542,7 +542,7 @@ function RouteComponent() {
                     }
                     onSuggestionSelect={(suggestion) => {
                       if (suggestion.type === "client") {
-                        const client = mockClients.find(
+                        const client = clients.find(
                           (c) => c.name === suggestion.value
                         );
                         if (client) {
@@ -790,7 +790,7 @@ function RouteComponent() {
                   <p className="font-medium text-muted-foreground text-sm">
                     Total Clients
                   </p>
-                  <p className="font-bold text-2xl">{mockClients.length}</p>
+                  <p className="font-bold text-2xl">{clients.length}</p>
                 </div>
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -804,7 +804,7 @@ function RouteComponent() {
                     Active Clients
                   </p>
                   <p className="font-bold text-2xl">
-                    {mockClients.filter((c) => c.status === "active").length}
+                    {clients.filter((c) => c.status === "active").length}
                   </p>
                 </div>
                 <CheckCircle2 className="h-8 w-8 text-green-500" />
@@ -819,10 +819,7 @@ function RouteComponent() {
                     Immigration Cases
                   </p>
                   <p className="font-bold text-2xl">
-                    {mockClients.reduce(
-                      (sum, c) => sum + c.immigrationCases,
-                      0
-                    )}
+                    {clients.reduce((sum, c) => sum + c.immigrationCases, 0)}
                   </p>
                 </div>
                 <FileText className="h-8 w-8 text-blue-500" />
@@ -838,7 +835,7 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {formatCurrency(
-                      mockClients.reduce((sum, c) => sum + c.revenue, 0)
+                      clients.reduce((sum, c) => sum + c.revenue, 0)
                     )}
                   </p>
                 </div>
@@ -855,10 +852,8 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {Math.round(
-                      mockClients.reduce(
-                        (sum, c) => sum + c.complianceScore,
-                        0
-                      ) / mockClients.length
+                      clients.reduce((sum, c) => sum + c.complianceScore, 0) /
+                        clients.length
                     )}
                     %
                   </p>
@@ -918,7 +913,7 @@ function RouteComponent() {
                   Clients ({filteredClients.length})
                   {hasActiveFilters && (
                     <span className="ml-2 font-normal text-muted-foreground text-sm">
-                      (filtered from {mockClients.length} total)
+                      (filtered from {clients.length} total)
                     </span>
                   )}
                 </CardTitle>

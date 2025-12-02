@@ -191,67 +191,71 @@ function RouteComponent() {
   });
 
   // Map API response to ImmigrationCase type
-  const mockImmigrationCases: ImmigrationCase[] = useMemo(() => {
+  const immigrationCases: ImmigrationCase[] = useMemo(() => {
     if (!casesQuery.data?.data?.items) return [];
 
-    return casesQuery.data.data.items.map((apiCase: {
-      id: string;
-      caseNumber: string;
-      caseType: string;
-      priority: string;
-      status: string;
-      title: string;
-      clientId: string;
-      assignedTo: string | null;
-      applicationDate: string | Date | null;
-      targetCompletionDate: string | Date | null;
-      currentStage: string | null;
-      updatedAt: string | Date | null;
-    }) => ({
-      id: apiCase.id,
-      caseNumber: apiCase.caseNumber || "N/A",
-      petitionType: apiCase.caseType?.replace(/_/g, " ").toUpperCase() || "N/A",
-      visaCategory: apiCase.caseType?.replace(/_/g, " ") || "N/A",
-      beneficiaryName: apiCase.title || "Unnamed Case",
-      beneficiaryEmail: "",
-      clientId: apiCase.clientId || "",
-      clientName: "Client",
-      status: (apiCase.status?.toLowerCase() || "pending") as ImmigrationCase["status"],
-      priority: (apiCase.priority?.toLowerCase() || "normal") as ImmigrationCase["priority"],
-      filingDate: apiCase.applicationDate
-        ? new Date(apiCase.applicationDate).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-      currentStep: apiCase.currentStage || "Processing",
-      nextAction: "Review case",
-      nextActionDate: apiCase.targetCompletionDate
-        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-      attorney: apiCase.assignedTo || "Unassigned",
-      estimatedCompletion: apiCase.targetCompletionDate
-        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
-        : "TBD",
-      progressPercentage: 50,
-      documents: [],
-      timeline: [],
-      fees: {
-        governmentFee: 0,
-        attorneyFee: 0,
-        total: 0,
-        paid: 0,
-        outstanding: 0,
-      },
-      tags: [],
-      riskLevel: "medium" as const,
-      lastUpdated: apiCase.updatedAt
-        ? new Date(apiCase.updatedAt).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
-    }));
+    return casesQuery.data.data.items.map(
+      (apiCase: {
+        id: string;
+        caseNumber: string;
+        caseType: string;
+        priority: string;
+        status: string;
+        title: string;
+        clientId: string;
+        assignedTo: string | null;
+        applicationDate: string | Date | null;
+        targetCompletionDate: string | Date | null;
+        currentStage: string | null;
+        updatedAt: string | Date | null;
+      }) => ({
+        id: apiCase.id,
+        caseNumber: apiCase.caseNumber || "N/A",
+        petitionType:
+          apiCase.caseType?.replace(/_/g, " ").toUpperCase() || "N/A",
+        visaCategory: apiCase.caseType?.replace(/_/g, " ") || "N/A",
+        beneficiaryName: apiCase.title || "Unnamed Case",
+        beneficiaryEmail: "",
+        clientId: apiCase.clientId || "",
+        clientName: "Client",
+        status: (apiCase.status?.toLowerCase() ||
+          "pending") as ImmigrationCase["status"],
+        priority: (apiCase.priority?.toLowerCase() ||
+          "normal") as ImmigrationCase["priority"],
+        filingDate: apiCase.applicationDate
+          ? new Date(apiCase.applicationDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        currentStep: apiCase.currentStage || "Processing",
+        nextAction: "Review case",
+        nextActionDate: apiCase.targetCompletionDate
+          ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        attorney: apiCase.assignedTo || "Unassigned",
+        estimatedCompletion: apiCase.targetCompletionDate
+          ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+          : "TBD",
+        progressPercentage: 50,
+        documents: [],
+        timeline: [],
+        fees: {
+          governmentFee: 0,
+          attorneyFee: 0,
+          total: 0,
+          paid: 0,
+          outstanding: 0,
+        },
+        tags: [],
+        riskLevel: "medium" as const,
+        lastUpdated: apiCase.updatedAt
+          ? new Date(apiCase.updatedAt).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+      })
+    );
   }, [casesQuery.data]);
-
 
   const filteredCases = useMemo(
     () =>
-      mockImmigrationCases.filter((case_) => {
+      immigrationCases.filter((case_) => {
         const searchLower = filters.searchTerm.toLowerCase();
         const matchesSearch =
           !searchLower ||
@@ -290,7 +294,7 @@ function RouteComponent() {
           matchesTags
         );
       }),
-    [mockImmigrationCases, filters]
+    [immigrationCases, filters]
   );
 
   const getStatusBadge = (status: string) => {
@@ -772,7 +776,7 @@ function RouteComponent() {
                     Total Cases
                   </p>
                   <p className="font-bold text-2xl">
-                    {mockImmigrationCases.length}
+                    {immigrationCases.length}
                   </p>
                 </div>
                 <FileText className="h-8 w-8 text-muted-foreground" />
@@ -788,9 +792,8 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {
-                      mockImmigrationCases.filter(
-                        (c) => c.status === "approved"
-                      ).length
+                      immigrationCases.filter((c) => c.status === "approved")
+                        .length
                     }
                   </p>
                 </div>
@@ -807,7 +810,7 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {
-                      mockImmigrationCases.filter(
+                      immigrationCases.filter(
                         (c) => c.status === "pending" || c.status === "filed"
                       ).length
                     }
@@ -825,10 +828,7 @@ function RouteComponent() {
                     RFE Cases
                   </p>
                   <p className="font-bold text-2xl">
-                    {
-                      mockImmigrationCases.filter((c) => c.status === "rfe")
-                        .length
-                    }
+                    {immigrationCases.filter((c) => c.status === "rfe").length}
                   </p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-orange-500" />
@@ -844,10 +844,9 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl text-green-600">
                     {Math.round(
-                      (mockImmigrationCases.filter(
-                        (c) => c.status === "approved"
-                      ).length /
-                        mockImmigrationCases.length) *
+                      (immigrationCases.filter((c) => c.status === "approved")
+                        .length /
+                        immigrationCases.length) *
                         100
                     )}
                     %
@@ -908,7 +907,7 @@ function RouteComponent() {
                   Immigration Cases ({filteredCases.length})
                   {hasActiveFilters && (
                     <span className="ml-2 font-normal text-muted-foreground text-sm">
-                      (filtered from {mockImmigrationCases.length} total)
+                      (filtered from {immigrationCases.length} total)
                     </span>
                   )}
                 </CardTitle>
