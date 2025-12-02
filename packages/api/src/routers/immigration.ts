@@ -1,4 +1,4 @@
-import { businessSchema } from "@GK-Nexus/db";
+import { businessSchema, immigrationSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import {
   and,
@@ -410,21 +410,22 @@ export const immigrationRouter = {
         };
 
         const [newCase] = await db
-          .insert(businessSchema.immigrationCase)
+          .insert(immigrationSchema.immigrationCases)
           .values(caseData)
           .returning({
-            id: businessSchema.immigrationCase.id,
-            caseNumber: businessSchema.immigrationCase.caseNumber,
-            internalReference: businessSchema.immigrationCase.internalReference,
-            title: businessSchema.immigrationCase.title,
-            caseType: businessSchema.immigrationCase.caseType,
-            status: businessSchema.immigrationCase.status,
-            priority: businessSchema.immigrationCase.priority,
-            createdAt: businessSchema.immigrationCase.createdAt,
+            id: immigrationSchema.immigrationCases.id,
+            caseNumber: immigrationSchema.immigrationCases.caseNumber,
+            internalReference:
+              immigrationSchema.immigrationCases.internalReference,
+            title: immigrationSchema.immigrationCases.title,
+            caseType: immigrationSchema.immigrationCases.caseType,
+            status: immigrationSchema.immigrationCases.status,
+            priority: immigrationSchema.immigrationCases.priority,
+            createdAt: immigrationSchema.immigrationCases.createdAt,
           });
 
         // Create initial timeline event
-        await db.insert(businessSchema.immigrationTimeline).values({
+        await db.insert(immigrationSchema.immigrationTimeline).values({
           id: nanoid(),
           caseId: newCase.id,
           organizationId: user?.organizationId!,
@@ -483,47 +484,49 @@ export const immigrationRouter = {
       if (search) {
         conditions.push(
           sql`(
-            ${ilike(businessSchema.immigrationCase.caseNumber, `%${search}%`)} OR
-            ${ilike(businessSchema.immigrationCase.title, `%${search}%`)} OR
-            ${ilike(businessSchema.immigrationCase.description, `%${search}%`)} OR
-            ${ilike(businessSchema.immigrationCase.internalReference, `%${search}%`)} OR
-            ${ilike(businessSchema.immigrationCase.governmentFileNumber, `%${search}%`)}
+            ${ilike(immigrationSchema.immigrationCases.caseNumber, `%${search}%`)} OR
+            ${ilike(immigrationSchema.immigrationCases.title, `%${search}%`)} OR
+            ${ilike(immigrationSchema.immigrationCases.description, `%${search}%`)} OR
+            ${ilike(immigrationSchema.immigrationCases.internalReference, `%${search}%`)} OR
+            ${ilike(immigrationSchema.immigrationCases.governmentFileNumber, `%${search}%`)}
           )`
         );
       }
 
       if (clientId) {
-        conditions.push(eq(businessSchema.immigrationCase.clientId, clientId));
+        conditions.push(
+          eq(immigrationSchema.immigrationCases.clientId, clientId)
+        );
       }
 
       if (caseType) {
         conditions.push(
-          eq(businessSchema.immigrationCase.caseType, caseType as any)
+          eq(immigrationSchema.immigrationCases.caseType, caseType as any)
         );
       }
 
       if (status) {
         conditions.push(
-          eq(businessSchema.immigrationCase.status, status as any)
+          eq(immigrationSchema.immigrationCases.status, status as any)
         );
       }
 
       if (priority) {
         conditions.push(
-          eq(businessSchema.immigrationCase.priority, priority as any)
+          eq(immigrationSchema.immigrationCases.priority, priority as any)
         );
       }
 
       if (assignedTo) {
         conditions.push(
-          eq(businessSchema.immigrationCase.assignedTo, assignedTo)
+          eq(immigrationSchema.immigrationCases.assignedTo, assignedTo)
         );
       }
 
       if (governmentDepartment) {
         conditions.push(
           eq(
-            businessSchema.immigrationCase.governmentDepartment,
+            immigrationSchema.immigrationCases.governmentDepartment,
             governmentDepartment
           )
         );
@@ -531,29 +534,31 @@ export const immigrationRouter = {
 
       if (startDate) {
         conditions.push(
-          gte(businessSchema.immigrationCase.applicationDate, startDate)
+          gte(immigrationSchema.immigrationCases.applicationDate, startDate)
         );
       }
 
       if (endDate) {
         conditions.push(
-          lte(businessSchema.immigrationCase.applicationDate, endDate)
+          lte(immigrationSchema.immigrationCases.applicationDate, endDate)
         );
       }
 
       if (tags) {
         conditions.push(
-          sql`${businessSchema.immigrationCase.tags}::text LIKE ${`%"${tags}"%`}`
+          sql`${immigrationSchema.immigrationCases.tags}::text LIKE ${`%"${tags}"%`}`
         );
       }
 
       if (isActive !== undefined) {
-        conditions.push(eq(businessSchema.immigrationCase.isActive, isActive));
+        conditions.push(
+          eq(immigrationSchema.immigrationCases.isActive, isActive)
+        );
       }
 
       if (isArchived !== undefined) {
         conditions.push(
-          eq(businessSchema.immigrationCase.isArchived, isArchived)
+          eq(immigrationSchema.immigrationCases.isArchived, isArchived)
         );
       }
 
@@ -563,49 +568,52 @@ export const immigrationRouter = {
       // Get total count
       const [totalResult] = await db
         .select({ count: count() })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause);
 
       // Get cases with sorting
       const sortColumn =
-        businessSchema.immigrationCase[
-          sortBy as keyof typeof businessSchema.immigrationCase
+        immigrationSchema.immigrationCases[
+          sortBy as keyof typeof immigrationSchema.immigrationCases
         ];
       const orderClause =
         sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
 
       const cases = await db
         .select({
-          id: businessSchema.immigrationCase.id,
-          caseNumber: businessSchema.immigrationCase.caseNumber,
-          internalReference: businessSchema.immigrationCase.internalReference,
+          id: immigrationSchema.immigrationCases.id,
+          caseNumber: immigrationSchema.immigrationCases.caseNumber,
+          internalReference:
+            immigrationSchema.immigrationCases.internalReference,
           governmentFileNumber:
-            businessSchema.immigrationCase.governmentFileNumber,
-          title: businessSchema.immigrationCase.title,
-          caseType: businessSchema.immigrationCase.caseType,
-          subCategory: businessSchema.immigrationCase.subCategory,
-          status: businessSchema.immigrationCase.status,
-          priority: businessSchema.immigrationCase.priority,
-          clientId: businessSchema.immigrationCase.clientId,
-          assignedTo: businessSchema.immigrationCase.assignedTo,
-          assignedTeam: businessSchema.immigrationCase.assignedTeam,
-          applicationDate: businessSchema.immigrationCase.applicationDate,
-          submissionDate: businessSchema.immigrationCase.submissionDate,
-          targetDecisionDate: businessSchema.immigrationCase.targetDecisionDate,
-          actualDecisionDate: businessSchema.immigrationCase.actualDecisionDate,
-          decisionMade: businessSchema.immigrationCase.decisionMade,
-          decisionType: businessSchema.immigrationCase.decisionType,
-          isExpedited: businessSchema.immigrationCase.isExpedited,
+            immigrationSchema.immigrationCases.governmentFileNumber,
+          title: immigrationSchema.immigrationCases.title,
+          caseType: immigrationSchema.immigrationCases.caseType,
+          subCategory: immigrationSchema.immigrationCases.subCategory,
+          status: immigrationSchema.immigrationCases.status,
+          priority: immigrationSchema.immigrationCases.priority,
+          clientId: immigrationSchema.immigrationCases.clientId,
+          assignedTo: immigrationSchema.immigrationCases.assignedTo,
+          assignedTeam: immigrationSchema.immigrationCases.assignedTeam,
+          applicationDate: immigrationSchema.immigrationCases.applicationDate,
+          submissionDate: immigrationSchema.immigrationCases.submissionDate,
+          targetDecisionDate:
+            immigrationSchema.immigrationCases.targetDecisionDate,
+          actualDecisionDate:
+            immigrationSchema.immigrationCases.actualDecisionDate,
+          decisionMade: immigrationSchema.immigrationCases.decisionMade,
+          decisionType: immigrationSchema.immigrationCases.decisionType,
+          isExpedited: immigrationSchema.immigrationCases.isExpedited,
           governmentDepartment:
-            businessSchema.immigrationCase.governmentDepartment,
-          processingOffice: businessSchema.immigrationCase.processingOffice,
-          tags: businessSchema.immigrationCase.tags,
-          isActive: businessSchema.immigrationCase.isActive,
-          isArchived: businessSchema.immigrationCase.isArchived,
-          createdAt: businessSchema.immigrationCase.createdAt,
-          updatedAt: businessSchema.immigrationCase.updatedAt,
+            immigrationSchema.immigrationCases.governmentDepartment,
+          processingOffice: immigrationSchema.immigrationCases.processingOffice,
+          tags: immigrationSchema.immigrationCases.tags,
+          isActive: immigrationSchema.immigrationCases.isActive,
+          isArchived: immigrationSchema.immigrationCases.isArchived,
+          createdAt: immigrationSchema.immigrationCases.createdAt,
+          updatedAt: immigrationSchema.immigrationCases.updatedAt,
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause)
         .orderBy(orderClause)
         .limit(limit)
@@ -643,11 +651,11 @@ export const immigrationRouter = {
 
       const [immigrationCase] = await db
         .select()
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(
           and(
-            eq(businessSchema.immigrationCase.id, input.id),
-            eq(businessSchema.immigrationCase.isActive, true)
+            eq(immigrationSchema.immigrationCases.id, input.id),
+            eq(immigrationSchema.immigrationCases.isActive, true)
           )
         )
         .limit(1);
@@ -700,11 +708,11 @@ export const immigrationRouter = {
       // Check if case exists
       const [existingCase] = await db
         .select()
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(
           and(
-            eq(businessSchema.immigrationCase.id, id),
-            eq(businessSchema.immigrationCase.isActive, true)
+            eq(immigrationSchema.immigrationCases.id, id),
+            eq(immigrationSchema.immigrationCases.isActive, true)
           )
         )
         .limit(1);
@@ -740,20 +748,20 @@ export const immigrationRouter = {
 
       try {
         const [updatedCase] = await db
-          .update(businessSchema.immigrationCase)
+          .update(immigrationSchema.immigrationCases)
           .set(processedUpdateData)
-          .where(eq(businessSchema.immigrationCase.id, id))
+          .where(eq(immigrationSchema.immigrationCases.id, id))
           .returning({
-            id: businessSchema.immigrationCase.id,
-            caseNumber: businessSchema.immigrationCase.caseNumber,
-            title: businessSchema.immigrationCase.title,
-            status: businessSchema.immigrationCase.status,
-            updatedAt: businessSchema.immigrationCase.updatedAt,
+            id: immigrationSchema.immigrationCases.id,
+            caseNumber: immigrationSchema.immigrationCases.caseNumber,
+            title: immigrationSchema.immigrationCases.title,
+            status: immigrationSchema.immigrationCases.status,
+            updatedAt: immigrationSchema.immigrationCases.updatedAt,
           });
 
         // Create timeline event if status changed
         if (updateData.status && updateData.status !== existingCase.status) {
-          await db.insert(businessSchema.immigrationTimeline).values({
+          await db.insert(immigrationSchema.immigrationTimeline).values({
             id: nanoid(),
             caseId: id,
             organizationId: user?.organizationId!,
@@ -798,7 +806,7 @@ export const immigrationRouter = {
 
       try {
         const [archivedCase] = await db
-          .update(businessSchema.immigrationCase)
+          .update(immigrationSchema.immigrationCases)
           .set({
             isArchived: true,
             archivedAt: new Date(),
@@ -807,15 +815,15 @@ export const immigrationRouter = {
           })
           .where(
             and(
-              eq(businessSchema.immigrationCase.id, input.id),
-              eq(businessSchema.immigrationCase.isActive, true)
+              eq(immigrationSchema.immigrationCases.id, input.id),
+              eq(immigrationSchema.immigrationCases.isActive, true)
             )
           )
           .returning({
-            id: businessSchema.immigrationCase.id,
-            caseNumber: businessSchema.immigrationCase.caseNumber,
-            title: businessSchema.immigrationCase.title,
-            isArchived: businessSchema.immigrationCase.isArchived,
+            id: immigrationSchema.immigrationCases.id,
+            caseNumber: immigrationSchema.immigrationCases.caseNumber,
+            title: immigrationSchema.immigrationCases.title,
+            isArchived: immigrationSchema.immigrationCases.isArchived,
           });
 
         if (!archivedCase) {
@@ -823,7 +831,7 @@ export const immigrationRouter = {
         }
 
         // Create timeline event
-        await db.insert(businessSchema.immigrationTimeline).values({
+        await db.insert(immigrationSchema.immigrationTimeline).values({
           id: nanoid(),
           caseId: input.id,
           organizationId: user?.organizationId!,
@@ -861,13 +869,13 @@ export const immigrationRouter = {
 
       const requirements = await db
         .select()
-        .from(businessSchema.immigrationDocumentRequirement)
+        .from(immigrationSchema.immigrationDocumentRequirements)
         .where(
-          eq(businessSchema.immigrationDocumentRequirement.caseId, input.caseId)
+          eq(immigrationSchema.immigrationDocumentRequirements.caseId, input.caseId)
         )
         .orderBy(
-          asc(businessSchema.immigrationDocumentRequirement.sortOrder),
-          asc(businessSchema.immigrationDocumentRequirement.displayName)
+          asc(immigrationSchema.immigrationDocumentRequirements.sortOrder),
+          asc(immigrationSchema.immigrationDocumentRequirements.displayName)
         );
 
       // Parse JSON fields
@@ -896,7 +904,7 @@ export const immigrationRouter = {
 
       try {
         const [requirement] = await db
-          .insert(businessSchema.immigrationDocumentRequirement)
+          .insert(immigrationSchema.immigrationDocumentRequirements)
           .values({
             id: nanoid(),
             organizationId: user?.organizationId!,
@@ -907,14 +915,14 @@ export const immigrationRouter = {
             createdBy: user?.id,
           })
           .returning({
-            id: businessSchema.immigrationDocumentRequirement.id,
+            id: immigrationSchema.immigrationDocumentRequirements.id,
             documentType:
-              businessSchema.immigrationDocumentRequirement.documentType,
+              immigrationSchema.immigrationDocumentRequirements.documentType,
             displayName:
-              businessSchema.immigrationDocumentRequirement.displayName,
+              immigrationSchema.immigrationDocumentRequirements.displayName,
             isRequired:
-              businessSchema.immigrationDocumentRequirement.isRequired,
-            status: businessSchema.immigrationDocumentRequirement.status,
+              immigrationSchema.immigrationDocumentRequirements.isRequired,
+            status: immigrationSchema.immigrationDocumentRequirements.status,
           });
 
         return {
@@ -955,15 +963,15 @@ export const immigrationRouter = {
 
       try {
         const [updatedRequirement] = await db
-          .update(businessSchema.immigrationDocumentRequirement)
+          .update(immigrationSchema.immigrationDocumentRequirements)
           .set(processedUpdateData)
-          .where(eq(businessSchema.immigrationDocumentRequirement.id, id))
+          .where(eq(immigrationSchema.immigrationDocumentRequirements.id, id))
           .returning({
-            id: businessSchema.immigrationDocumentRequirement.id,
+            id: immigrationSchema.immigrationDocumentRequirements.id,
             documentType:
-              businessSchema.immigrationDocumentRequirement.documentType,
-            status: businessSchema.immigrationDocumentRequirement.status,
-            updatedAt: businessSchema.immigrationDocumentRequirement.updatedAt,
+              immigrationSchema.immigrationDocumentRequirements.documentType,
+            status: immigrationSchema.immigrationDocumentRequirements.status,
+            updatedAt: immigrationSchema.immigrationDocumentRequirements.updatedAt,
           });
 
         if (!updatedRequirement) {
@@ -997,21 +1005,21 @@ export const immigrationRouter = {
     .handler(async ({ input, context }) => {
       const { db } = context;
       const conditions = [
-        eq(businessSchema.immigrationTimeline.caseId, input.caseId),
+        eq(immigrationSchema.immigrationTimeline.caseId, input.caseId),
       ];
 
       // Filter out internal notes unless specifically requested
       if (!input.includeInternal) {
         conditions.push(
-          isNull(businessSchema.immigrationTimeline.internalNote)
+          isNull(immigrationSchema.immigrationTimeline.internalNote)
         );
       }
 
       const timeline = await db
         .select()
-        .from(businessSchema.immigrationTimeline)
+        .from(immigrationSchema.immigrationTimeline)
         .where(and(...conditions))
-        .orderBy(desc(businessSchema.immigrationTimeline.eventDate));
+        .orderBy(desc(immigrationSchema.immigrationTimeline.eventDate));
 
       // Parse JSON fields
       const parsedTimeline = timeline.map((event) => ({
@@ -1037,7 +1045,7 @@ export const immigrationRouter = {
 
       try {
         const [event] = await db
-          .insert(businessSchema.immigrationTimeline)
+          .insert(immigrationSchema.immigrationTimeline)
           .values({
             id: nanoid(),
             organizationId: user?.organizationId!,
@@ -1055,11 +1063,11 @@ export const immigrationRouter = {
             createdBy: user?.id!,
           })
           .returning({
-            id: businessSchema.immigrationTimeline.id,
-            eventTitle: businessSchema.immigrationTimeline.eventTitle,
-            eventType: businessSchema.immigrationTimeline.eventType,
-            eventDate: businessSchema.immigrationTimeline.eventDate,
-            isMilestone: businessSchema.immigrationTimeline.isMilestone,
+            id: immigrationSchema.immigrationTimeline.id,
+            eventTitle: immigrationSchema.immigrationTimeline.eventTitle,
+            eventType: immigrationSchema.immigrationTimeline.eventType,
+            eventDate: immigrationSchema.immigrationTimeline.eventDate,
+            isMilestone: immigrationSchema.immigrationTimeline.isMilestone,
           });
 
         return {
@@ -1086,9 +1094,9 @@ export const immigrationRouter = {
 
       const interviews = await db
         .select()
-        .from(businessSchema.immigrationInterview)
-        .where(eq(businessSchema.immigrationInterview.caseId, input.caseId))
-        .orderBy(asc(businessSchema.immigrationInterview.scheduledDateTime));
+        .from(immigrationSchema.immigrationInterviews)
+        .where(eq(immigrationSchema.immigrationInterviews.caseId, input.caseId))
+        .orderBy(asc(immigrationSchema.immigrationInterviews.scheduledDateTime));
 
       // Parse JSON fields
       const parsedInterviews = interviews.map((interview) => ({
@@ -1117,7 +1125,7 @@ export const immigrationRouter = {
 
       try {
         const [interview] = await db
-          .insert(businessSchema.immigrationInterview)
+          .insert(immigrationSchema.immigrationInterviews)
           .values({
             id: nanoid(),
             organizationId: user?.organizationId!,
@@ -1131,16 +1139,16 @@ export const immigrationRouter = {
             createdBy: user?.id!,
           })
           .returning({
-            id: businessSchema.immigrationInterview.id,
-            title: businessSchema.immigrationInterview.title,
-            interviewType: businessSchema.immigrationInterview.interviewType,
+            id: immigrationSchema.immigrationInterviews.id,
+            title: immigrationSchema.immigrationInterviews.title,
+            interviewType: immigrationSchema.immigrationInterviews.interviewType,
             scheduledDateTime:
-              businessSchema.immigrationInterview.scheduledDateTime,
-            status: businessSchema.immigrationInterview.status,
+              immigrationSchema.immigrationInterviews.scheduledDateTime,
+            status: immigrationSchema.immigrationInterviews.status,
           });
 
         // Create timeline event
-        await db.insert(businessSchema.immigrationTimeline).values({
+        await db.insert(immigrationSchema.immigrationTimeline).values({
           id: nanoid(),
           caseId: input.caseId,
           organizationId: user?.organizationId!,
@@ -1205,15 +1213,15 @@ export const immigrationRouter = {
 
       try {
         const [updatedInterview] = await db
-          .update(businessSchema.immigrationInterview)
+          .update(immigrationSchema.immigrationInterviews)
           .set(processedUpdateData)
-          .where(eq(businessSchema.immigrationInterview.id, id))
+          .where(eq(immigrationSchema.immigrationInterviews.id, id))
           .returning({
-            id: businessSchema.immigrationInterview.id,
-            title: businessSchema.immigrationInterview.title,
-            status: businessSchema.immigrationInterview.status,
-            outcome: businessSchema.immigrationInterview.outcome,
-            updatedAt: businessSchema.immigrationInterview.updatedAt,
+            id: immigrationSchema.immigrationInterviews.id,
+            title: immigrationSchema.immigrationInterviews.title,
+            status: immigrationSchema.immigrationInterviews.status,
+            outcome: immigrationSchema.immigrationInterviews.outcome,
+            updatedAt: immigrationSchema.immigrationInterviews.updatedAt,
           });
 
         if (!updatedInterview) {
@@ -1247,21 +1255,23 @@ export const immigrationRouter = {
     .handler(async ({ input, context }) => {
       const { db } = context;
       const conditions = [
-        eq(businessSchema.immigrationCorrespondence.caseId, input.caseId),
+        eq(immigrationSchema.immigrationCorrespondence.caseId, input.caseId),
       ];
 
       // Filter out confidential correspondence unless specifically requested
       if (!input.includeConfidential) {
         conditions.push(
-          eq(businessSchema.immigrationCorrespondence.isConfidential, false)
+          eq(immigrationSchema.immigrationCorrespondence.isConfidential, false)
         );
       }
 
       const correspondence = await db
         .select()
-        .from(businessSchema.immigrationCorrespondence)
+        .from(immigrationSchema.immigrationCorrespondence)
         .where(and(...conditions))
-        .orderBy(desc(businessSchema.immigrationCorrespondence.sentDateTime));
+        .orderBy(
+          desc(immigrationSchema.immigrationCorrespondence.sentDateTime)
+        );
 
       // Parse JSON fields
       const parsedCorrespondence = correspondence.map((corr) => ({
@@ -1286,7 +1296,7 @@ export const immigrationRouter = {
 
       try {
         const [correspondence] = await db
-          .insert(businessSchema.immigrationCorrespondence)
+          .insert(immigrationSchema.immigrationCorrespondence)
           .values({
             id: nanoid(),
             organizationId: user?.organizationId!,
@@ -1305,15 +1315,15 @@ export const immigrationRouter = {
             createdBy: user?.id!,
           })
           .returning({
-            id: businessSchema.immigrationCorrespondence.id,
-            subject: businessSchema.immigrationCorrespondence.subject,
+            id: immigrationSchema.immigrationCorrespondence.id,
+            subject: immigrationSchema.immigrationCorrespondence.subject,
             correspondenceType:
-              businessSchema.immigrationCorrespondence.correspondenceType,
-            direction: businessSchema.immigrationCorrespondence.direction,
+              immigrationSchema.immigrationCorrespondence.correspondenceType,
+            direction: immigrationSchema.immigrationCorrespondence.direction,
             isGovernmentCorrespondence:
-              businessSchema.immigrationCorrespondence
+              immigrationSchema.immigrationCorrespondence
                 .isGovernmentCorrespondence,
-            createdAt: businessSchema.immigrationCorrespondence.createdAt,
+            createdAt: immigrationSchema.immigrationCorrespondence.createdAt,
           });
 
         return {
@@ -1345,26 +1355,28 @@ export const immigrationRouter = {
       const { db } = context;
       const { startDate, endDate, caseType, assignedTo } = input;
 
-      const conditions = [eq(businessSchema.immigrationCase.isActive, true)];
+      const conditions = [
+        eq(immigrationSchema.immigrationCases.isActive, true),
+      ];
 
       if (startDate) {
         conditions.push(
-          gte(businessSchema.immigrationCase.createdAt, new Date(startDate))
+          gte(immigrationSchema.immigrationCases.createdAt, new Date(startDate))
         );
       }
       if (endDate) {
         conditions.push(
-          lte(businessSchema.immigrationCase.createdAt, new Date(endDate))
+          lte(immigrationSchema.immigrationCases.createdAt, new Date(endDate))
         );
       }
       if (caseType) {
         conditions.push(
-          eq(businessSchema.immigrationCase.caseType, caseType as any)
+          eq(immigrationSchema.immigrationCases.caseType, caseType as any)
         );
       }
       if (assignedTo) {
         conditions.push(
-          eq(businessSchema.immigrationCase.assignedTo, assignedTo)
+          eq(immigrationSchema.immigrationCases.assignedTo, assignedTo)
         );
       }
 
@@ -1379,35 +1391,35 @@ export const immigrationRouter = {
           pending: sql<number>`COUNT(*) FILTER (WHERE status IN ('draft', 'additional_docs_required'))`,
           expedited: sql<number>`COUNT(*) FILTER (WHERE is_expedited = true)`,
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause);
 
       const statusStats = await db
         .select({
-          status: businessSchema.immigrationCase.status,
+          status: immigrationSchema.immigrationCases.status,
           count: count(),
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause)
-        .groupBy(businessSchema.immigrationCase.status);
+        .groupBy(immigrationSchema.immigrationCases.status);
 
       const caseTypeStats = await db
         .select({
-          caseType: businessSchema.immigrationCase.caseType,
+          caseType: immigrationSchema.immigrationCases.caseType,
           count: count(),
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause)
-        .groupBy(businessSchema.immigrationCase.caseType);
+        .groupBy(immigrationSchema.immigrationCases.caseType);
 
       const priorityStats = await db
         .select({
-          priority: businessSchema.immigrationCase.priority,
+          priority: immigrationSchema.immigrationCases.priority,
           count: count(),
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(whereClause)
-        .groupBy(businessSchema.immigrationCase.priority);
+        .groupBy(immigrationSchema.immigrationCases.priority);
 
       return {
         success: true,
@@ -1440,40 +1452,43 @@ export const immigrationRouter = {
       futureDate.setDate(futureDate.getDate() + daysAhead);
 
       const conditions = [
-        eq(businessSchema.immigrationCase.isActive, true),
+        eq(immigrationSchema.immigrationCases.isActive, true),
         gte(
-          businessSchema.immigrationCase.targetDecisionDate,
+          immigrationSchema.immigrationCases.targetDecisionDate,
           new Date().toISOString().split("T")[0]
         ),
         lte(
-          businessSchema.immigrationCase.targetDecisionDate,
+          immigrationSchema.immigrationCases.targetDecisionDate,
           futureDate.toISOString().split("T")[0]
         ),
       ];
 
       if (clientId) {
-        conditions.push(eq(businessSchema.immigrationCase.clientId, clientId));
+        conditions.push(
+          eq(immigrationSchema.immigrationCases.clientId, clientId)
+        );
       }
       if (priority) {
         conditions.push(
-          eq(businessSchema.immigrationCase.priority, priority as any)
+          eq(immigrationSchema.immigrationCases.priority, priority as any)
         );
       }
 
       const deadlines = await db
         .select({
-          id: businessSchema.immigrationCase.id,
-          caseNumber: businessSchema.immigrationCase.caseNumber,
-          title: businessSchema.immigrationCase.title,
-          caseType: businessSchema.immigrationCase.caseType,
-          priority: businessSchema.immigrationCase.priority,
-          clientId: businessSchema.immigrationCase.clientId,
-          targetDecisionDate: businessSchema.immigrationCase.targetDecisionDate,
-          status: businessSchema.immigrationCase.status,
+          id: immigrationSchema.immigrationCases.id,
+          caseNumber: immigrationSchema.immigrationCases.caseNumber,
+          title: immigrationSchema.immigrationCases.title,
+          caseType: immigrationSchema.immigrationCases.caseType,
+          priority: immigrationSchema.immigrationCases.priority,
+          clientId: immigrationSchema.immigrationCases.clientId,
+          targetDecisionDate:
+            immigrationSchema.immigrationCases.targetDecisionDate,
+          status: immigrationSchema.immigrationCases.status,
         })
-        .from(businessSchema.immigrationCase)
+        .from(immigrationSchema.immigrationCases)
         .where(and(...conditions))
-        .orderBy(asc(businessSchema.immigrationCase.targetDecisionDate));
+        .orderBy(asc(immigrationSchema.immigrationCases.targetDecisionDate));
 
       const deadlinesWithDaysLeft = deadlines.map((deadline) => ({
         ...deadline,

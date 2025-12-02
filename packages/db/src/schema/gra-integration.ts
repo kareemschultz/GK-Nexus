@@ -488,3 +488,125 @@ export const graWebhooksRelations = relations(graWebhooks, ({ one }) => ({
     references: [graSubmissions.id],
   }),
 }));
+
+// GRA API Credentials Table
+export const graApiCredential = pgTable(
+  "gra_api_credential",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    apiKey: text("api_key").notNull(),
+    apiSecret: text("api_secret"),
+    environment: text("environment").default("sandbox").notNull(), // sandbox, production
+    description: text("description"),
+    isActive: boolean("is_active").default(true).notNull(),
+    lastUsedAt: timestamp("last_used_at"),
+    expiresAt: timestamp("expires_at"),
+    permissions: text("permissions"), // JSON array of permissions
+    createdBy: text("created_by").references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("gra_api_credential_org_idx").on(table.organizationId),
+    index("gra_api_credential_environment_idx").on(table.environment),
+    index("gra_api_credential_active_idx").on(table.isActive),
+  ]
+);
+
+// GRA API Sync Status Table
+export const graApiSync = pgTable(
+  "gra_api_sync",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    syncType: text("sync_type").notNull(), // submissions, taxpayer_info, filings
+    status: text("status").default("pending").notNull(), // pending, in_progress, completed, failed
+    lastSyncAt: timestamp("last_sync_at"),
+    nextSyncAt: timestamp("next_sync_at"),
+    recordsProcessed: integer("records_processed").default(0),
+    recordsFailed: integer("records_failed").default(0),
+    errorMessage: text("error_message"),
+    metadata: text("metadata"), // JSON for additional sync details
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("gra_api_sync_org_idx").on(table.organizationId),
+    index("gra_api_sync_type_idx").on(table.syncType),
+    index("gra_api_sync_status_idx").on(table.status),
+  ]
+);
+
+// Activity Log Table
+export const activityLog = pgTable(
+  "activity_log",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => users.id),
+    actorType: text("actor_type").default("user").notNull(), // user, system, api
+    action: text("action").notNull(), // created, updated, deleted, viewed, etc.
+    entityType: text("entity_type").notNull(), // client, document, submission, etc.
+    entityId: text("entity_id"),
+    description: text("description"),
+    oldData: text("old_data"), // JSON of previous values
+    newData: text("new_data"), // JSON of new values
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    metadata: text("metadata"), // JSON for additional context
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("activity_log_org_idx").on(table.organizationId),
+    index("activity_log_actor_idx").on(table.actorId),
+    index("activity_log_entity_idx").on(table.entityType, table.entityId),
+    index("activity_log_action_idx").on(table.action),
+    index("activity_log_created_idx").on(table.createdAt),
+  ]
+);
+
+// Relations for new tables
+export const graApiCredentialRelations = relations(
+  graApiCredential,
+  ({ one }) => ({
+    organization: one(organizations, {
+      fields: [graApiCredential.organizationId],
+      references: [organizations.id],
+    }),
+    createdByUser: one(users, {
+      fields: [graApiCredential.createdBy],
+      references: [users.id],
+    }),
+  })
+);
+
+export const graApiSyncRelations = relations(graApiSync, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [graApiSync.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [activityLog.organizationId],
+    references: [organizations.id],
+  }),
+  actor: one(users, {
+    fields: [activityLog.actorId],
+    references: [users.id],
+  }),
+}));

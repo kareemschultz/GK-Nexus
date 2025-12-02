@@ -1,4 +1,4 @@
-import { businessSchema } from "@GK-Nexus/db";
+import { businessSchema, graIntegrationSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -29,7 +29,7 @@ export const graIntegrationRouter = {
 
         // Store authentication credentials securely (encrypted)
         await db
-          .insert(businessSchema.graApiCredential)
+          .insert(graIntegrationSchema.graApiCredential)
           .values({
             clientId,
             tin,
@@ -39,7 +39,7 @@ export const graIntegrationRouter = {
             createdBy: user?.id!,
           })
           .onConflictDoUpdate({
-            target: [businessSchema.graApiCredential.clientId],
+            target: [graIntegrationSchema.graApiCredential.clientId],
             set: {
               username,
               authToken,
@@ -88,11 +88,11 @@ export const graIntegrationRouter = {
         // Check GRA authentication
         const [credentials] = await db
           .select()
-          .from(businessSchema.graApiCredential)
+          .from(graIntegrationSchema.graApiCredential)
           .where(
             and(
-              eq(businessSchema.graApiCredential.clientId, clientId),
-              gte(businessSchema.graApiCredential.expiresAt, new Date())
+              eq(graIntegrationSchema.graApiCredential.clientId, clientId),
+              gte(graIntegrationSchema.graApiCredential.expiresAt, new Date())
             )
           )
           .limit(1);
@@ -169,7 +169,7 @@ export const graIntegrationRouter = {
         }
 
         // Store sync result
-        await db.insert(businessSchema.graApiSync).values({
+        await db.insert(graIntegrationSchema.graApiSync).values({
           clientId,
           syncType,
           syncData: JSON.stringify(syncData),
@@ -187,7 +187,7 @@ export const graIntegrationRouter = {
           message: `Successfully synced ${syncType.toLowerCase()} with GRA`,
         };
       } catch (error) {
-        await db.insert(businessSchema.graApiSync).values({
+        await db.insert(graIntegrationSchema.graApiSync).values({
           clientId: input.clientId,
           syncType: input.syncType,
           syncStatus: "FAILED",
@@ -233,11 +233,11 @@ export const graIntegrationRouter = {
         // Check GRA authentication
         const [credentials] = await db
           .select()
-          .from(businessSchema.graApiCredential)
+          .from(graIntegrationSchema.graApiCredential)
           .where(
             and(
-              eq(businessSchema.graApiCredential.clientId, submission.clientId),
-              gte(businessSchema.graApiCredential.expiresAt, new Date())
+              eq(graIntegrationSchema.graApiCredential.clientId, submission.clientId),
+              gte(graIntegrationSchema.graApiCredential.expiresAt, new Date())
             )
           )
           .limit(1);
@@ -268,7 +268,7 @@ export const graIntegrationRouter = {
           .where(eq(businessSchema.graSubmission.id, submissionId));
 
         // Create activity log
-        await db.insert(businessSchema.activityLog).values({
+        await db.insert(graIntegrationSchema.activityLog).values({
           userId: user?.id!,
           entityType: "GRA_SUBMISSION",
           entityId: submissionId,
@@ -610,7 +610,7 @@ export const graIntegrationRouter = {
         }
 
         // Log export activity
-        await db.insert(businessSchema.activityLog).values({
+        await db.insert(graIntegrationSchema.activityLog).values({
           userId: user?.id!,
           entityType: "BULK_EXPORT",
           action: "GRA_DATA_EXPORT",

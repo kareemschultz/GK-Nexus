@@ -1,4 +1,4 @@
-import { businessSchema } from "@GK-Nexus/db";
+import { businessSchema, documentsSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -687,13 +687,13 @@ export const documentsRouter = {
         }));
 
         const shares = await db
-          .insert(businessSchema.documentShare)
+          .insert(documentsSchema.documentShares)
           .values(shareRecords)
           .returning({
-            id: businessSchema.documentShare.id,
-            sharedWith: businessSchema.documentShare.sharedWith,
-            permissions: businessSchema.documentShare.permissions,
-            sharedAt: businessSchema.documentShare.sharedAt,
+            id: documentsSchema.documentShares.id,
+            sharedWith: documentsSchema.documentShares.sharedWith,
+            permissions: documentsSchema.documentShares.permissions,
+            sharedAt: documentsSchema.documentShares.sharedAt,
           });
 
         return {

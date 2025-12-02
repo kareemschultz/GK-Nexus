@@ -116,6 +116,15 @@ export const userProfile = pgTable(
   ]
 );
 
+// Client Status Enum
+export const clientStatusEnum = pgEnum("client_status", [
+  "ACTIVE",
+  "INACTIVE",
+  "SUSPENDED",
+  "PENDING",
+  "ARCHIVED",
+]);
+
 // Clients
 export const client = pgTable(
   "client",
@@ -135,6 +144,7 @@ export const client = pgTable(
     isLocalContentQualified: boolean("is_local_content_qualified").default(
       false
     ),
+    status: clientStatusEnum("status").default("ACTIVE").notNull(),
     complianceStatus:
       businessComplianceStatusEnum("compliance_status").default("GOOD"),
     complianceScore: integer("compliance_score").default(100),
@@ -151,12 +161,21 @@ export const client = pgTable(
   },
   (table) => [
     index("client_entity_type_idx").on(table.entityType),
+    index("client_status_idx").on(table.status),
     index("client_compliance_status_idx").on(table.complianceStatus),
     index("client_assigned_staff_idx").on(table.assignedStaffId),
     index("client_tin_idx").on(table.tinNumber),
     index("client_email_idx").on(table.email),
   ]
 );
+
+// Document Status Enum
+export const documentStatusEnum = pgEnum("document_status", [
+  "ACTIVE",
+  "ARCHIVED",
+  "DELETED",
+  "PENDING",
+]);
 
 // Documents
 export const document = pgTable(
@@ -172,9 +191,12 @@ export const document = pgTable(
     description: text("description"),
     fileName: varchar("file_name", { length: 255 }),
     filePath: text("file_path"),
+    fileUrl: text("file_url"), // Public URL for the document
     fileSize: integer("file_size"),
     mimeType: varchar("mime_type", { length: 100 }),
     referenceNumber: varchar("reference_number", { length: 100 }),
+    status: documentStatusEnum("status").default("ACTIVE").notNull(),
+    isConfidential: boolean("is_confidential").default(false),
     issueDate: timestamp("issue_date"),
     expiryDate: timestamp("expiry_date"),
     isRequired: boolean("is_required").default(false),
@@ -184,6 +206,7 @@ export const document = pgTable(
     uploadedBy: text("uploaded_by")
       .notNull()
       .references(() => user.id),
+    uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -194,8 +217,11 @@ export const document = pgTable(
     index("document_client_idx").on(table.clientId),
     index("document_folder_idx").on(table.folderId),
     index("document_type_idx").on(table.type),
+    index("document_status_idx").on(table.status),
+    index("document_confidential_idx").on(table.isConfidential),
     index("document_expiry_idx").on(table.expiryDate),
     index("document_reference_idx").on(table.referenceNumber),
+    index("document_uploaded_at_idx").on(table.uploadedAt),
   ]
 );
 
@@ -244,8 +270,10 @@ export const taxCalculation = pgTable(
     clientId: uuid("client_id")
       .notNull()
       .references(() => client.id, { onDelete: "cascade" }),
-    taxType: businessTaxTypeEnum("tax_type").notNull(),
+    taxType: businessTaxTypeEnum("tax_type"),
+    calculationType: varchar("calculation_type", { length: 50 }), // PAYE, NIS, VAT, PAYROLL, QUARTERLY
     calculationPeriod: varchar("calculation_period", { length: 50 }), // e.g., "2024-Q1", "2024-01"
+    period: varchar("period", { length: 50 }), // Alias for calculationPeriod used by router
     grossAmount: numeric("gross_amount", { precision: 15, scale: 2 }),
     taxableAmount: numeric("taxable_amount", { precision: 15, scale: 2 }),
     taxRate: numeric("tax_rate", { precision: 5, scale: 4 }), // 0.14 for 14%
@@ -254,6 +282,8 @@ export const taxCalculation = pgTable(
     deductions: numeric("deductions", { precision: 15, scale: 2 }).default("0"),
     allowances: numeric("allowances", { precision: 15, scale: 2 }).default("0"),
     metadata: text("metadata"), // JSON for additional calculation details
+    inputData: text("input_data"), // JSON input for calculation
+    resultData: text("result_data"), // JSON result from calculation
     calculatedBy: text("calculated_by")
       .notNull()
       .references(() => user.id),
@@ -265,7 +295,9 @@ export const taxCalculation = pgTable(
   (table) => [
     index("tax_calculation_client_idx").on(table.clientId),
     index("tax_calculation_type_idx").on(table.taxType),
+    index("tax_calculation_calc_type_idx").on(table.calculationType),
     index("tax_calculation_period_idx").on(table.calculationPeriod),
+    index("tax_calculation_period2_idx").on(table.period),
     index("tax_calculation_submitted_idx").on(table.isSubmitted),
   ]
 );
@@ -426,23 +458,42 @@ export const ocrJobStatusEnum = pgEnum("ocr_job_status", [
   "CANCELLED",
 ]);
 
+// OCR Job Status Enum (updated)
+export const ocrJobStatusExtendedEnum = pgEnum("ocr_job_status_extended", [
+  "QUEUED",
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "VALIDATED",
+  "FAILED",
+  "CANCELLED",
+]);
+
 // OCR Processing Job
 export const ocrProcessingJob = pgTable(
   "ocr_processing_job",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: text("id").primaryKey(), // Changed to text to allow custom IDs like ocr_xxx
     documentId: uuid("document_id")
       .notNull()
       .references(() => document.id, { onDelete: "cascade" }),
-    status: ocrJobStatusEnum("status").default("PENDING").notNull(),
-    priority: integer("priority").default(5), // 1-10 priority
+    clientId: uuid("client_id").references(() => client.id, {
+      onDelete: "cascade",
+    }),
+    batchId: text("batch_id"), // For batch processing
+    documentType: varchar("document_type", { length: 50 }), // INVOICE, RECEIPT, etc.
+    status: varchar("status", { length: 20 }).default("QUEUED").notNull(),
+    priority: varchar("priority", { length: 20 }).default("NORMAL"), // LOW, NORMAL, HIGH, URGENT
     extractedText: text("extracted_text"),
     confidence: numeric("confidence", { precision: 5, scale: 4 }),
+    confidenceScore: numeric("confidence_score", { precision: 5, scale: 4 }), // Alias
+    extractionOptions: text("extraction_options"), // JSON
     metadata: text("metadata"), // JSON metadata
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at"),
     completedAt: timestamp("completed_at"),
     processedBy: text("processed_by").references(() => user.id),
+    createdBy: text("created_by").references(() => user.id),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -451,6 +502,8 @@ export const ocrProcessingJob = pgTable(
   },
   (table) => [
     index("ocr_job_document_idx").on(table.documentId),
+    index("ocr_job_client_idx").on(table.clientId),
+    index("ocr_job_batch_idx").on(table.batchId),
     index("ocr_job_status_idx").on(table.status),
     index("ocr_job_priority_idx").on(table.priority),
     index("ocr_job_created_idx").on(table.createdAt),
@@ -641,6 +694,199 @@ export const clientServiceRelations = relations(clientService, ({ one }) => ({
   }),
   createdBy: one(user, {
     fields: [clientService.createdBy],
+    references: [user.id],
+  }),
+}));
+
+// Invoice Status Enum
+export const invoiceStatusEnum = pgEnum("invoice_status", [
+  "DRAFT",
+  "PENDING",
+  "SENT",
+  "PAID",
+  "OVERDUE",
+  "CANCELLED",
+  "REFUNDED",
+]);
+
+// Invoice Table
+export const invoice = pgTable(
+  "invoice",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+    invoiceNumber: varchar("invoice_number", { length: 50 }).notNull().unique(),
+    issueDate: timestamp("issue_date").notNull(),
+    dueDate: timestamp("due_date").notNull(),
+    subtotal: numeric("subtotal", { precision: 15, scale: 2 }).notNull(),
+    vatAmount: numeric("vat_amount", { precision: 15, scale: 2 }).default("0"),
+    total: numeric("total", { precision: 15, scale: 2 }).notNull(),
+    status: invoiceStatusEnum("status").default("DRAFT").notNull(),
+    currency: varchar("currency", { length: 3 }).default("GYD").notNull(),
+    notes: text("notes"),
+    termsAndConditions: text("terms_and_conditions"),
+    paidAt: timestamp("paid_at"),
+    paidAmount: numeric("paid_amount", { precision: 15, scale: 2 }),
+    paymentMethod: varchar("payment_method", { length: 50 }),
+    paymentReference: varchar("payment_reference", { length: 100 }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("invoice_client_idx").on(table.clientId),
+    index("invoice_number_idx").on(table.invoiceNumber),
+    index("invoice_status_idx").on(table.status),
+    index("invoice_issue_date_idx").on(table.issueDate),
+    index("invoice_due_date_idx").on(table.dueDate),
+  ]
+);
+
+// Payroll Record Table
+export const payrollRecord = pgTable(
+  "payroll_record",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+    employeeId: uuid("employee_id").notNull(),
+    period: varchar("period", { length: 20 }).notNull(), // e.g., "2024-01"
+    grossSalary: numeric("gross_salary", { precision: 15, scale: 2 }).notNull(),
+    allowances: numeric("allowances", { precision: 15, scale: 2 }).default("0"),
+    deductions: numeric("deductions", { precision: 15, scale: 2 }).default("0"),
+    payeTax: numeric("paye_tax", { precision: 15, scale: 2 }).default("0"),
+    nisEmployee: numeric("nis_employee", { precision: 15, scale: 2 }).default(
+      "0"
+    ),
+    nisEmployer: numeric("nis_employer", { precision: 15, scale: 2 }).default(
+      "0"
+    ),
+    netSalary: numeric("net_salary", { precision: 15, scale: 2 }).notNull(),
+    paymentDate: timestamp("payment_date"),
+    paymentStatus: varchar("payment_status", { length: 20 }).default("PENDING"),
+    metadata: text("metadata"), // JSON for additional payroll details
+    processedBy: text("processed_by").references(() => user.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("payroll_record_client_idx").on(table.clientId),
+    index("payroll_record_employee_idx").on(table.employeeId),
+    index("payroll_record_period_idx").on(table.period),
+    index("payroll_record_payment_status_idx").on(table.paymentStatus),
+  ]
+);
+
+// OCR Result Table
+export const ocrResult = pgTable(
+  "ocr_result",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    processingId: text("processing_id")
+      .notNull()
+      .references(() => ocrProcessingJob.id, { onDelete: "cascade" }),
+    extractedText: text("extracted_text"),
+    extractedData: text("extracted_data"), // JSON for structured data
+    confidenceScore: numeric("confidence_score", { precision: 5, scale: 4 }),
+    processingMetadata: text("processing_metadata"), // JSON for processing details
+    validatedBy: text("validated_by").references(() => user.id),
+    validationNotes: text("validation_notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("ocr_result_processing_idx").on(table.processingId),
+    index("ocr_result_confidence_idx").on(table.confidenceScore),
+  ]
+);
+
+// GRA Submission Table (for tax filings)
+export const graSubmission = pgTable(
+  "gra_submission",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+    formType: varchar("form_type", { length: 50 }).notNull(), // VAT_RETURN, PAYE_RETURN, CORPORATE_TAX
+    period: varchar("period", { length: 20 }).notNull(),
+    submissionData: text("submission_data"), // JSON with form data
+    graReference: varchar("gra_reference", { length: 100 }),
+    status: varchar("status", { length: 30 }).default("DRAFT"),
+    submittedAt: timestamp("submitted_at"),
+    processedAt: timestamp("processed_at"),
+    errorMessage: text("error_message"),
+    createdBy: text("created_by").references(() => user.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("gra_submission_client_idx").on(table.clientId),
+    index("gra_submission_form_type_idx").on(table.formType),
+    index("gra_submission_period_idx").on(table.period),
+    index("gra_submission_status_idx").on(table.status),
+    index("gra_submission_gra_ref_idx").on(table.graReference),
+  ]
+);
+
+// Relations for new tables
+export const invoiceRelations = relations(invoice, ({ one }) => ({
+  client: one(client, {
+    fields: [invoice.clientId],
+    references: [client.id],
+  }),
+  createdByUser: one(user, {
+    fields: [invoice.createdBy],
+    references: [user.id],
+  }),
+}));
+
+export const payrollRecordRelations = relations(payrollRecord, ({ one }) => ({
+  client: one(client, {
+    fields: [payrollRecord.clientId],
+    references: [client.id],
+  }),
+  processedByUser: one(user, {
+    fields: [payrollRecord.processedBy],
+    references: [user.id],
+  }),
+}));
+
+export const ocrResultRelations = relations(ocrResult, ({ one }) => ({
+  processingJob: one(ocrProcessingJob, {
+    fields: [ocrResult.processingId],
+    references: [ocrProcessingJob.id],
+  }),
+  validatedByUser: one(user, {
+    fields: [ocrResult.validatedBy],
+    references: [user.id],
+  }),
+}));
+
+export const graSubmissionRelations = relations(graSubmission, ({ one }) => ({
+  client: one(client, {
+    fields: [graSubmission.clientId],
+    references: [client.id],
+  }),
+  createdByUser: one(user, {
+    fields: [graSubmission.createdBy],
     references: [user.id],
   }),
 }));

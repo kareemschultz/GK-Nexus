@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🏗️ **v1.2.1 - Schema Fixes & Production Polish** (2025-12-02)
+
+#### **Database Schema Additions**
+- 🗃️ Added `immigrationStatusHistory` table for tracking immigration status changes
+- 💰 Added `invoice` table with full billing support
+- 📊 Added `payrollRecord` table for payroll tracking
+- 🔍 Added `ocrResult` table for OCR processing results
+- 📋 Added `graSubmission` table for GRA filing submissions
+- 🔑 Added `graApiCredential` table for GRA API authentication
+- 🔄 Added `graApiSync` table for GRA sync status tracking
+- 📝 Added `activityLog` table for system-wide activity logging
+
+#### **Schema Enhancements**
+- ✅ Added `status` field to `client` table (ACTIVE, INACTIVE, SUSPENDED, PENDING, ARCHIVED)
+- ✅ Added `status`, `isConfidential`, `fileUrl`, `uploadedAt` fields to `document` table
+- ✅ Added `calculationType`, `period`, `inputData`, `resultData` fields to `taxCalculation` table
+- ✅ Enhanced `ocrProcessingJob` with `clientId`, `batchId`, `documentType`, `extractionOptions`, `confidenceScore`
+
+#### **Router Fixes**
+- 🔧 Fixed all schema references in `immigration.ts` (immigrationTimeline, immigrationDocumentRequirements, immigrationInterviews)
+- 🔧 Fixed schema references in `documents.ts` (documentShares)
+- 🔧 Fixed schema references in `gra-integration.ts` (graApiCredential, graApiSync, activityLog)
+- 🔧 Fixed schema imports to use correct namespace exports
+
+#### **Build Improvements**
+- ✅ Server build passes with no schema-related warnings
+- ✅ Web build passes with PWA support
+
+---
+
 ### 🧙‍♂️ **v1.2.0 - Wizards & API Integration** (2025-12-02)
 
 #### **New Wizards**

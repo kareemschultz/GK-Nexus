@@ -335,6 +335,39 @@ export const immigrationStatusRelations = relations(
   })
 );
 
+// Immigration Status History tracking
+export const immigrationStatusHistory = pgTable(
+  "immigration_status_history",
+  {
+    id: text("id").primaryKey(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    status: immigrationStatusTypeEnum("status").notNull(),
+    changedAt: timestamp("changed_at").defaultNow().notNull(),
+    changedBy: text("changed_by").references(() => users.id),
+    notes: text("notes"),
+  },
+  (table) => [
+    index("immigration_status_history_client_id_idx").on(table.clientId),
+    index("immigration_status_history_changed_at_idx").on(table.changedAt),
+  ]
+);
+
+export const immigrationStatusHistoryRelations = relations(
+  immigrationStatusHistory,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [immigrationStatusHistory.clientId],
+      references: [clients.id],
+    }),
+    changedByUser: one(users, {
+      fields: [immigrationStatusHistory.changedBy],
+      references: [users.id],
+    }),
+  })
+);
+
 // Relations
 export const clientsRelations = relations(clients, ({ many, one }) => ({
   organization: one(organizations, {
