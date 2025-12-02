@@ -2,7 +2,7 @@ import {
   AlertTriangle,
   Archive,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   Download,
   Edit,
@@ -87,7 +87,7 @@ const getFileIcon = (mimeType: string) => {
 const getStatusIcon = (status: Document["status"]) => {
   switch (status) {
     case "approved":
-      return <CheckCircle className="h-3 w-3 text-green-600" />;
+      return <CheckCircle2 className="h-3 w-3 text-green-600" />;
     case "review":
       return <Clock className="h-3 w-3 text-yellow-600" />;
     case "draft":

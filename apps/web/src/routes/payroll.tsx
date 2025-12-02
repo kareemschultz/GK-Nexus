@@ -3,7 +3,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   DollarSign,
   Download,
@@ -229,7 +229,7 @@ function RouteComponent() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "compliant":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "warning":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case "non-compliant":
@@ -364,7 +364,7 @@ function RouteComponent() {
               <CardTitle className="font-medium text-sm">
                 NIS Contributions
               </CardTitle>
-              <CheckCircle className="h-5 w-5 text-muted-foreground" />
+              <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="font-bold text-2xl">
@@ -390,7 +390,7 @@ function RouteComponent() {
               className="flex items-center gap-2"
               id="compliance-heading"
             >
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle2 className="h-5 w-5" />
               Payroll Compliance Status
             </CardTitle>
             <CardDescription>
@@ -694,7 +694,7 @@ function RouteComponent() {
                   className="mt-2 w-full"
                   onClick={() => navigate({ to: "/payroll?tab=compliance" })}
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   View Full Compliance Report
                 </Button>
               </div>

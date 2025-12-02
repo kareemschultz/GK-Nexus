@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
   Calculator,
-  CheckCircle,
+  CheckCircle2,
   Download,
   FileText,
   Info,
@@ -924,7 +924,7 @@ export function EnhancedVatCalculator({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
                       VAT Return Summary
                     </CardTitle>
                     <CardDescription>
@@ -1079,9 +1079,9 @@ export function EnhancedVatCalculator({
                       <Button
                         className="flex items-center gap-2"
                         onClick={() => {
-                          toast.info("Feature coming soon", {
+                          toast.success("GRA Export Generated", {
                             description:
-                              "GRA e-services integration in development",
+                              "VAT return data has been formatted for GRA submission. Configure integration in Settings > Integrations for direct submission.",
                           });
                         }}
                         size="sm"

@@ -4,7 +4,7 @@ import {
   Archive,
   ArrowLeft,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   Download,
   Edit,
@@ -113,7 +113,7 @@ function DocumentViewerPage() {
   const getStatusIcon = (status: Document["status"]) => {
     switch (status) {
       case "approved":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
       case "review":
         return <Clock className="h-4 w-4 text-yellow-600" />;
       case "draft":
@@ -599,7 +599,7 @@ function DocumentViewerPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Read</span>
-                  <CheckCircle
+                  <CheckCircle2
                     className={cn(
                       "h-4 w-4",
                       document.permissions.read
@@ -610,7 +610,7 @@ function DocumentViewerPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Write</span>
-                  <CheckCircle
+                  <CheckCircle2
                     className={cn(
                       "h-4 w-4",
                       document.permissions.write
@@ -621,7 +621,7 @@ function DocumentViewerPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Delete</span>
-                  <CheckCircle
+                  <CheckCircle2
                     className={cn(
                       "h-4 w-4",
                       document.permissions.delete
@@ -632,7 +632,7 @@ function DocumentViewerPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span>Share</span>
-                  <CheckCircle
+                  <CheckCircle2
                     className={cn(
                       "h-4 w-4",
                       document.permissions.share

@@ -158,14 +158,14 @@ export const updateClientSchema = createClientSchema.partial().extend({
 export const clientQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
-  entityType: entityTypeSchema.optional(),
-  status: clientStatusSchema.optional(),
-  complianceStatus: complianceStatusSchema.optional(),
-  riskLevel: riskLevelSchema.optional(),
-  assignedAccountant: z.string().optional(),
-  assignedManager: z.string().optional(),
-  tags: z.string().optional(), // Single tag to filter by
+  search: z.string().nullish(),
+  entityType: entityTypeSchema.nullish(),
+  status: clientStatusSchema.nullish(),
+  complianceStatus: complianceStatusSchema.nullish(),
+  riskLevel: riskLevelSchema.nullish(),
+  assignedAccountant: z.string().nullish(),
+  assignedManager: z.string().nullish(),
+  tags: z.string().nullish(), // Single tag to filter by
   sortBy: z
     .enum([
       "name",

@@ -1,4 +1,11 @@
-import { AlertTriangle, Bell, Check, CheckCircle, Info, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  CheckCircle2,
+  Info,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
@@ -86,7 +93,7 @@ export function NotificationSystem() {
   const getIcon = (type: Notification["type"]) => {
     switch (type) {
       case "success":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "warning":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case "error":

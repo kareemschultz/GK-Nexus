@@ -3,7 +3,7 @@ import {
   BookOpen,
   Building2,
   Calculator,
-  CheckCircle,
+  CheckCircle2,
   Circle,
   Clock,
   CreditCard,
@@ -234,7 +234,7 @@ export function QuickStartGuide({
                 className="bg-green-500/10 text-green-700"
                 variant="secondary"
               >
-                <CheckCircle className="mr-1 h-3 w-3" />
+                <CheckCircle2 className="mr-1 h-3 w-3" />
                 Ready
               </Badge>
             )}
@@ -295,7 +295,7 @@ export function QuickStartGuide({
           {setupComplete && (
             <div className="space-y-3 text-center">
               <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-                <CheckCircle className="mx-auto mb-2 h-8 w-8 text-green-600" />
+                <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-green-600" />
                 <div className="font-medium text-green-800 text-sm">
                   Setup Complete!
                 </div>
@@ -409,7 +409,7 @@ export function QuickStartGuide({
                   >
                     <div className="flex-shrink-0">
                       {step.completed ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
                       ) : (
                         <Circle className="h-5 w-5 text-muted-foreground" />
                       )}
@@ -464,7 +464,7 @@ export function QuickStartGuide({
 
         {setupComplete && (
           <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-center">
-            <CheckCircle className="mx-auto mb-2 h-8 w-8 text-green-600" />
+            <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-green-600" />
             <div className="mb-1 font-semibold text-green-800">
               Congratulations! Setup Complete
             </div>

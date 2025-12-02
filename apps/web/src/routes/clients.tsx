@@ -4,7 +4,7 @@ import {
   AlertTriangle,
   Building2,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   DollarSign,
   Download,
@@ -459,7 +459,7 @@ function RouteComponent() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "active":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "inactive":
         return <Clock className="h-4 w-4 text-gray-500" />;
       case "onboarding":
@@ -882,7 +882,7 @@ function RouteComponent() {
                     {mockClients.filter((c) => c.status === "active").length}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -938,7 +938,7 @@ function RouteComponent() {
                     %
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-muted-foreground" />
+                <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -1569,7 +1569,7 @@ function RouteComponent() {
                               {selectedClient.complianceScore}%
                             </p>
                           </div>
-                          <CheckCircle className="h-8 w-8 text-muted-foreground" />
+                          <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
                         </div>
                       </CardContent>
                     </Card>

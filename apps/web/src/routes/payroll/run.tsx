@@ -5,7 +5,7 @@ import {
   Calculator,
   Calendar,
   Check,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   DollarSign,
   Download,
@@ -329,7 +329,7 @@ function RouteComponent() {
     isCompleted: boolean
   ) => {
     if (isCompleted) {
-      return <CheckCircle className="h-6 w-6 text-green-500" />;
+      return <CheckCircle2 className="h-6 w-6 text-green-500" />;
     }
     if (isActive) {
       return <Clock className="h-6 w-6 text-blue-500" />;
@@ -689,7 +689,7 @@ function RouteComponent() {
                         {formatCurrency(payrollSummary.totalNetPay)}
                       </p>
                     </div>
-                    <CheckCircle className="h-8 w-8 text-green-600" />
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -783,7 +783,7 @@ function RouteComponent() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
+                  <CheckCircle2 className="h-5 w-5" />
                   Final Approval
                 </CardTitle>
                 <CardDescription>
@@ -926,7 +926,7 @@ function RouteComponent() {
                   </div>
                 ) : (
                   <div className="text-center">
-                    <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+                    <CheckCircle2 className="mx-auto h-16 w-16 text-green-500" />
                     <h3 className="mt-4 font-medium text-lg">
                       Payroll Processing Complete!
                     </h3>
@@ -955,7 +955,7 @@ function RouteComponent() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
                   Payroll Run Complete
                 </CardTitle>
                 <CardDescription>

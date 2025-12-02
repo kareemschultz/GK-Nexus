@@ -1,7 +1,7 @@
-import { or } from "@orpc/server";
 import { z } from "zod";
 import { AuditService } from "../business-logic/audit-service";
 import { RbacService } from "../business-logic/rbac-service";
+import { o } from "../index";
 
 // Validation schemas
 const roleSchema = z.object({
@@ -128,7 +128,7 @@ const userPermissionSummarySchema = z.object({
 });
 
 // RBAC Router
-export const rbacRouter = or
+export const rbacRouter = o
   .input(
     z.object({
       userId: z.string().optional(),
@@ -148,7 +148,7 @@ export const rbacRouter = or
   })
   .router({
     // Permission checking
-    checkPermission: or
+    checkPermission: o
       .input(
         z.object({
           userId: z.string(),
@@ -209,7 +209,7 @@ export const rbacRouter = or
       }),
 
     // Get user permission summary
-    getUserPermissions: or
+    getUserPermissions: o
       .input(z.object({ userId: z.string() }))
       .output(userPermissionSummarySchema)
       .handler(async ({ input, context }) => {
@@ -249,8 +249,8 @@ export const rbacRouter = or
       }),
 
     // Role management
-    roles: or.router({
-      list: or
+    roles: o.router({
+      list: o
         .input(
           z.object({ includeInactive: z.boolean().optional().default(false) })
         )
@@ -284,7 +284,7 @@ export const rbacRouter = or
           return roles.filter((role) => input.includeInactive || role.isActive);
         }),
 
-      create: or
+      create: o
         .input(
           z.object({
             name: z.string(),
@@ -330,7 +330,7 @@ export const rbacRouter = or
           return newRole;
         }),
 
-      assignToUser: or
+      assignToUser: o
         .input(
           z.object({
             userId: z.string(),
@@ -389,7 +389,7 @@ export const rbacRouter = or
           return userRole;
         }),
 
-      removeFromUser: or
+      removeFromUser: o
         .input(
           z.object({
             userId: z.string(),
@@ -441,8 +441,8 @@ export const rbacRouter = or
     }),
 
     // Permission management
-    permissions: or.router({
-      list: or
+    permissions: o.router({
+      list: o
         .input(
           z.object({ includeInactive: z.boolean().optional().default(false) })
         )
@@ -478,7 +478,7 @@ export const rbacRouter = or
           );
         }),
 
-      create: or
+      create: o
         .input(
           z.object({
             name: z.string(),
@@ -569,7 +569,7 @@ export const rbacRouter = or
           return newPermission;
         }),
 
-      grantToUser: or
+      grantToUser: o
         .input(
           z.object({
             userId: z.string(),
@@ -628,7 +628,7 @@ export const rbacRouter = or
           return userPermission;
         }),
 
-      denyToUser: or
+      denyToUser: o
         .input(
           z.object({
             userId: z.string(),

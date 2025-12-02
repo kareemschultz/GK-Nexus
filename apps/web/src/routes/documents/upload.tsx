@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowLeft,
-  CheckCircle,
+  CheckCircle2,
   FileText,
   FolderOpen,
   Shield,
@@ -203,7 +203,7 @@ function DocumentUploadPage() {
 
                 {uploadProgress.completed === uploadProgress.total && (
                   <div className="flex items-center gap-2 text-green-600 text-sm">
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle2 className="h-4 w-4" />
                     All documents processed successfully! Redirecting...
                   </div>
                 )}
@@ -268,7 +268,7 @@ function DocumentUploadPage() {
                         className="flex items-center gap-3 rounded-lg border bg-green-50 p-3 dark:bg-green-950/20"
                         key={index}
                       >
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-sm">
                             {file.name}

@@ -1,7 +1,7 @@
-import { or } from "@orpc/server";
 import { z } from "zod";
 import { AuditService } from "../business-logic/audit-service";
 import { RbacService } from "../business-logic/rbac-service";
+import { o } from "../index";
 
 // Validation schemas
 const auditLogSchema = z.object({
@@ -132,7 +132,7 @@ const auditSummarySchema = z.object({
 });
 
 // Audit Router
-export const auditRouter = or
+export const auditRouter = o
   .input(
     z.object({
       userId: z.string().optional(),
@@ -151,8 +151,8 @@ export const auditRouter = or
   })
   .router({
     // Audit log searching and viewing
-    logs: or.router({
-      search: or
+    logs: o.router({
+      search: o
         .input(auditSearchFiltersSchema)
         .output(
           z.object({
@@ -198,7 +198,7 @@ export const auditRouter = or
           return result;
         }),
 
-      getById: or
+      getById: o
         .input(z.object({ id: z.string() }))
         .output(auditLogSchema)
         .handler(async ({ input, context }) => {
@@ -238,7 +238,7 @@ export const auditRouter = or
           return result.logs[0];
         }),
 
-      export: or
+      export: o
         .input(
           z.object({
             filters: auditSearchFiltersSchema,
@@ -288,7 +288,7 @@ export const auditRouter = or
           return { data, filename };
         }),
 
-      summary: or
+      summary: o
         .input(
           z.object({
             startDate: z.date(),
@@ -344,7 +344,7 @@ export const auditRouter = or
           return summary;
         }),
 
-      archive: or
+      archive: o
         .input(
           z.object({
             daysToKeep: z.number().min(1).max(3650).optional().default(2555),
@@ -390,8 +390,8 @@ export const auditRouter = or
     }),
 
     // System event monitoring
-    systemEvents: or.router({
-      list: or
+    systemEvents: o.router({
+      list: o
         .input(
           z.object({
             eventType: z.string().optional(),
@@ -442,7 +442,7 @@ export const auditRouter = or
           return events;
         }),
 
-      create: or
+      create: o
         .input(
           z.object({
             eventType: z.string(),
@@ -483,8 +483,8 @@ export const auditRouter = or
     }),
 
     // Login attempt monitoring
-    loginAttempts: or.router({
-      list: or
+    loginAttempts: o.router({
+      list: o
         .input(
           z.object({
             email: z.string().optional(),
@@ -531,7 +531,7 @@ export const auditRouter = or
           return attempts;
         }),
 
-      getSuspiciousActivity: or
+      getSuspiciousActivity: o
         .input(
           z.object({
             timeRange: z
@@ -600,8 +600,8 @@ export const auditRouter = or
     }),
 
     // Compliance reporting
-    compliance: or.router({
-      generateReport: or
+    compliance: o.router({
+      generateReport: o
         .input(
           z.object({
             reportType: z.enum(["soc2", "gdpr", "hipaa", "custom"]),
@@ -673,7 +673,7 @@ export const auditRouter = or
           };
         }),
 
-      getRetentionPolicy: or
+      getRetentionPolicy: o
         .output(
           z.object({
             policies: z.array(

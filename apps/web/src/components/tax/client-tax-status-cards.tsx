@@ -3,7 +3,7 @@
 import {
   AlertTriangle,
   Building2,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   DollarSign,
   FileText,
@@ -159,7 +159,7 @@ export function ClientTaxStatusCards({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "current":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "overdue":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case "pending":
@@ -268,7 +268,7 @@ export function ClientTaxStatusCards({
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                   <span className="font-medium text-sm">Current</span>
                 </div>
                 <div className="font-bold text-2xl text-green-600">

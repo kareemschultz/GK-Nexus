@@ -1,4 +1,4 @@
-import { db } from "@gknexus/db";
+import { db } from "@GK-Nexus/db";
 import {
   type AuditLog,
   auditLogs,
@@ -6,7 +6,7 @@ import {
   loginAttempts,
   type SystemEvent,
   systemEvents,
-} from "@gknexus/db/schema/audit-logs";
+} from "@GK-Nexus/db/schema/audit-logs";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 
 // Types for audit logging

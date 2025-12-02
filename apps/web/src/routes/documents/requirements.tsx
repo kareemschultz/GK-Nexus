@@ -3,7 +3,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Circle,
   Clock,
   Download,
@@ -292,7 +292,7 @@ const statuses = [
     value: "approved",
     label: "Approved",
     color: "text-green-600",
-    icon: CheckCircle,
+    icon: CheckCircle2,
   },
   {
     value: "rejected",
@@ -487,7 +487,7 @@ function DocumentRequirementsPage() {
             <CardTitle className="font-medium text-sm">
               Completion Rate
             </CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
@@ -796,7 +796,7 @@ function DocumentRequirementsPage() {
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <CheckCircle className="h-3 w-3 text-green-600" />
+                            <CheckCircle2 className="h-3 w-3 text-green-600" />
                             <span>
                               {checklist.approvedRequirements} Approved
                             </span>

@@ -39,6 +39,30 @@ export const businessComplianceStatusEnum = pgEnum(
   ["GOOD", "WARNING", "EXPIRED", "PENDING"]
 );
 
+export const complianceAlertTypeEnum = pgEnum("compliance_alert_type", [
+  "TAX_DEADLINE",
+  "LICENSE_RENEWAL",
+  "DOCUMENT_EXPIRY",
+  "REGULATORY_CHANGE",
+  "FILING_REMINDER",
+  "COMPLIANCE_REVIEW",
+  "OTHER",
+]);
+
+export const complianceAlertSeverityEnum = pgEnum("compliance_alert_severity", [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+]);
+
+export const complianceAlertStatusEnum = pgEnum("compliance_alert_status", [
+  "ACTIVE",
+  "ACKNOWLEDGED",
+  "RESOLVED",
+  "DISMISSED",
+]);
+
 export const businessDocumentTypeEnum = pgEnum("business_document_type", [
   "IDENTIFICATION",
   "TAX_COMPLIANCE",
@@ -275,6 +299,38 @@ export const complianceItem = pgTable(
     index("compliance_item_category_idx").on(table.category),
     index("compliance_item_due_date_idx").on(table.dueDate),
     index("compliance_item_status_idx").on(table.status),
+  ]
+);
+
+// Compliance Alerts
+export const complianceAlert = pgTable(
+  "compliance_alert",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id").references(() => client.id, {
+      onDelete: "cascade",
+    }),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    type: complianceAlertTypeEnum("type").notNull(),
+    severity: complianceAlertSeverityEnum("severity").default("MEDIUM"),
+    status: complianceAlertStatusEnum("status").default("ACTIVE"),
+    dueDate: timestamp("due_date"),
+    resolvedAt: timestamp("resolved_at"),
+    resolvedBy: text("resolved_by").references(() => user.id),
+    metadata: text("metadata"), // JSON for additional data
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("compliance_alert_client_idx").on(table.clientId),
+    index("compliance_alert_type_idx").on(table.type),
+    index("compliance_alert_severity_idx").on(table.severity),
+    index("compliance_alert_status_idx").on(table.status),
+    index("compliance_alert_due_date_idx").on(table.dueDate),
   ]
 );
 

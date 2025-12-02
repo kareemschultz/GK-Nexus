@@ -165,7 +165,7 @@ function ServiceCatalogPage() {
       },
     ],
     queryFn: () =>
-      orpc.serviceCatalog.services.list({
+      orpc.serviceCatalog.servicesList({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -180,7 +180,7 @@ function ServiceCatalogPage() {
   const projectsQuery = useQuery({
     queryKey: ["serviceProjects"],
     queryFn: () =>
-      orpc.serviceCatalog.projects.list({
+      orpc.serviceCatalog.projectsList({
         page: 1,
         limit: 50,
       }),
@@ -190,7 +190,7 @@ function ServiceCatalogPage() {
   const packagesQuery = useQuery({
     queryKey: ["servicePackages"],
     queryFn: () =>
-      orpc.serviceCatalog.packages.list({
+      orpc.serviceCatalog.packagesList({
         page: 1,
         limit: 50,
       }),
@@ -199,7 +199,7 @@ function ServiceCatalogPage() {
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["serviceStats"],
-    queryFn: () => orpc.serviceCatalog.services.stats(),
+    queryFn: () => orpc.serviceCatalog.servicesStats(),
   });
 
   // Create service mutation
@@ -212,7 +212,7 @@ function ServiceCatalogPage() {
       basePrice?: string;
       estimatedDurationHours?: number;
       notes?: string;
-    }) => orpc.serviceCatalog.services.create(data),
+    }) => orpc.serviceCatalog.servicesCreate(data),
     onSuccess: () => {
       toast.success("Service created successfully");
       setShowAddServiceDialog(false);
@@ -234,7 +234,7 @@ function ServiceCatalogPage() {
       validFrom?: string;
       validUntil?: string;
       notes?: string;
-    }) => orpc.serviceCatalog.packages.create(data),
+    }) => orpc.serviceCatalog.packagesCreate(data),
     onSuccess: () => {
       toast.success("Package created successfully");
       setShowAddPackageDialog(false);
@@ -247,7 +247,7 @@ function ServiceCatalogPage() {
 
   // Publish service mutation
   const publishServiceMutation = useMutation({
-    mutationFn: (id: string) => orpc.serviceCatalog.services.publish({ id }),
+    mutationFn: (id: string) => orpc.serviceCatalog.servicesPublish({ id }),
     onSuccess: () => {
       toast.success("Service published successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });

@@ -34,10 +34,12 @@ function VatPage() {
   };
 
   const handleNavigateToGRA = () => {
-    // Navigate to GRA integration page
+    // Navigate to GRA integration settings
     toast.info("GRA Integration", {
-      description: "GRA e-services integration coming soon",
+      description:
+        "Configure GRA e-services in Settings > Integrations to enable direct submission",
     });
+    navigate({ to: "/settings/integrations" });
   };
 
   return (

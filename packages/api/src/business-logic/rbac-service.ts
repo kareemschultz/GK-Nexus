@@ -1,4 +1,4 @@
-import { db } from "@gknexus/db";
+import { db } from "@GK-Nexus/db";
 import {
   type Permission,
   permissions,
@@ -9,7 +9,7 @@ import {
   type UserRole,
   userPermissions,
   userRoles,
-} from "@gknexus/db/schema/rbac";
+} from "@GK-Nexus/db/schema/rbac";
 import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 // Types for permission checking

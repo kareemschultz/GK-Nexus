@@ -4,7 +4,7 @@ import {
   Building2,
   Calculator,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   CreditCard,
   ExternalLink,
@@ -63,7 +63,7 @@ const illustrations = {
   upload: Upload,
   filter: Filter,
   connect: ExternalLink,
-  complete: CheckCircle,
+  complete: CheckCircle2,
   custom: Inbox,
 };
 
@@ -511,10 +511,10 @@ export function ErrorEmptyState({
   );
 }
 
-// Upcoming features empty state
+// Feature requiring configuration empty state
 export function ComingSoonEmptyState({
-  title = "Coming Soon",
-  description = "This feature is currently under development and will be available soon.",
+  title = "Configuration Required",
+  description = "This feature requires additional setup. Please configure the necessary integrations in Settings.",
   onNotifyMe,
   onViewRoadmap,
   estimatedDate,

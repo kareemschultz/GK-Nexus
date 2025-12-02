@@ -1,14 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AlertCircle,
-  Building2,
-  CheckCircle,
-  FileText,
-  Upload,
-  Users,
-} from "lucide-react";
+import { AlertCircle, Building2, FileText, Upload, Users } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -510,7 +503,7 @@ function DocumentUploadStep({
                   <span className="font-medium">National ID or Passport</span>
                 </div>
                 {uploadedFiles.includes("identification") ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-orange-500" />
                 )}
@@ -534,7 +527,7 @@ function DocumentUploadStep({
                   </span>
                 </div>
                 {uploadedFiles.includes("incorporation") ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
                   <AlertCircle className="h-5 w-5 text-orange-500" />
                 )}
@@ -975,7 +968,7 @@ export default function ClientOnboardingWizard({
                 )}
               >
                 {index < currentStep ? (
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle2 className="h-4 w-4" />
                 ) : (
                   index + 1
                 )}

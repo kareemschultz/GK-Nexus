@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TrainingRouteImport } from './routes/training'
 import { Route as TimeTrackingRouteImport } from './routes/time-tracking'
+import { Route as TaxRouteImport } from './routes/tax'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServiceCatalogRouteImport } from './routes/service-catalog'
 import { Route as PropertyManagementRouteImport } from './routes/property-management'
@@ -41,14 +42,23 @@ import { Route as TimeTrackingEntriesRouteImport } from './routes/time-tracking.
 import { Route as TaxVatRouteImport } from './routes/tax/vat'
 import { Route as TaxPayeRouteImport } from './routes/tax/paye'
 import { Route as TaxNisRouteImport } from './routes/tax/nis'
+import { Route as TaxFilingRouteImport } from './routes/tax/filing'
+import { Route as SettingsSecurityRouteImport } from './routes/settings/security'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as SettingsNotificationsRouteImport } from './routes/settings/notifications'
+import { Route as SettingsIntegrationsRouteImport } from './routes/settings/integrations'
+import { Route as SettingsBillingRouteImport } from './routes/settings/billing'
+import { Route as SettingsBackupRouteImport } from './routes/settings/backup'
+import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as PortalProfileRouteImport } from './routes/portal/profile'
 import { Route as PortalPaymentsRouteImport } from './routes/portal/payments'
 import { Route as PortalFilingsRouteImport } from './routes/portal/filings'
 import { Route as PortalDocumentsRouteImport } from './routes/portal/documents'
 import { Route as PortalAppointmentsRouteImport } from './routes/portal/appointments'
 import { Route as PayrollRunRouteImport } from './routes/payroll/run'
+import { Route as PayrollReportsRouteImport } from './routes/payroll/reports'
 import { Route as PayrollEmployeesRouteImport } from './routes/payroll/employees'
+import { Route as InvoicesPaymentsRouteImport } from './routes/invoices/payments'
 import { Route as InvoicesNewRouteImport } from './routes/invoices/new'
 import { Route as InvoicesIdRouteImport } from './routes/invoices/[id]'
 import { Route as DocumentsUploadRouteImport } from './routes/documents/upload'
@@ -57,11 +67,16 @@ import { Route as DocumentsSearchRouteImport } from './routes/documents/search'
 import { Route as DocumentsRequirementsRouteImport } from './routes/documents/requirements'
 import { Route as DocumentsAdvancedRouteImport } from './routes/documents/advanced'
 import { Route as DocumentsIdRouteImport } from './routes/documents/$id'
+import { Route as ComplianceReportsRouteImport } from './routes/compliance/reports'
+import { Route as ComplianceGraFilingRouteImport } from './routes/compliance/gra-filing'
+import { Route as ComplianceAlertsRouteImport } from './routes/compliance/alerts'
 import { Route as ClientsNewRouteImport } from './routes/clients/new'
+import { Route as ClientsActiveRouteImport } from './routes/clients/active'
 import { Route as ClientsIdRouteImport } from './routes/clients/$id'
 import { Route as AutomationTemplatesRouteImport } from './routes/automation.templates'
 import { Route as AutomationRulesRouteImport } from './routes/automation.rules'
 import { Route as AutomationHistoryRouteImport } from './routes/automation.history'
+import { Route as AppointmentsRequestsRouteImport } from './routes/appointments/requests'
 import { Route as AppointmentsNewRouteImport } from './routes/appointments/new'
 import { Route as AppointmentsCalendarRouteImport } from './routes/appointments/calendar'
 import { Route as AppointmentsIdRouteImport } from './routes/appointments/$id'
@@ -81,6 +96,11 @@ const TrainingRoute = TrainingRouteImport.update({
 const TimeTrackingRoute = TimeTrackingRouteImport.update({
   id: '/time-tracking',
   path: '/time-tracking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TaxRoute = TaxRouteImport.update({
+  id: '/tax',
+  path: '/tax',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -214,23 +234,58 @@ const TimeTrackingEntriesRoute = TimeTrackingEntriesRouteImport.update({
   getParentRoute: () => TimeTrackingRoute,
 } as any)
 const TaxVatRoute = TaxVatRouteImport.update({
-  id: '/tax/vat',
-  path: '/tax/vat',
-  getParentRoute: () => rootRouteImport,
+  id: '/vat',
+  path: '/vat',
+  getParentRoute: () => TaxRoute,
 } as any)
 const TaxPayeRoute = TaxPayeRouteImport.update({
-  id: '/tax/paye',
-  path: '/tax/paye',
-  getParentRoute: () => rootRouteImport,
+  id: '/paye',
+  path: '/paye',
+  getParentRoute: () => TaxRoute,
 } as any)
 const TaxNisRoute = TaxNisRouteImport.update({
-  id: '/tax/nis',
-  path: '/tax/nis',
-  getParentRoute: () => rootRouteImport,
+  id: '/nis',
+  path: '/nis',
+  getParentRoute: () => TaxRoute,
+} as any)
+const TaxFilingRoute = TaxFilingRouteImport.update({
+  id: '/filing',
+  path: '/filing',
+  getParentRoute: () => TaxRoute,
+} as any)
+const SettingsSecurityRoute = SettingsSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsNotificationsRoute = SettingsNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsIntegrationsRoute = SettingsIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsBillingRoute = SettingsBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsBackupRoute = SettingsBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
+  id: '/appearance',
+  path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
 const PortalProfileRoute = PortalProfileRouteImport.update({
@@ -263,10 +318,20 @@ const PayrollRunRoute = PayrollRunRouteImport.update({
   path: '/run',
   getParentRoute: () => PayrollRoute,
 } as any)
+const PayrollReportsRoute = PayrollReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => PayrollRoute,
+} as any)
 const PayrollEmployeesRoute = PayrollEmployeesRouteImport.update({
   id: '/employees',
   path: '/employees',
   getParentRoute: () => PayrollRoute,
+} as any)
+const InvoicesPaymentsRoute = InvoicesPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => InvoicesRoute,
 } as any)
 const InvoicesNewRoute = InvoicesNewRouteImport.update({
   id: '/new',
@@ -308,9 +373,29 @@ const DocumentsIdRoute = DocumentsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => DocumentsRoute,
 } as any)
+const ComplianceReportsRoute = ComplianceReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ComplianceRoute,
+} as any)
+const ComplianceGraFilingRoute = ComplianceGraFilingRouteImport.update({
+  id: '/gra-filing',
+  path: '/gra-filing',
+  getParentRoute: () => ComplianceRoute,
+} as any)
+const ComplianceAlertsRoute = ComplianceAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => ComplianceRoute,
+} as any)
 const ClientsNewRoute = ClientsNewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => ClientsRoute,
+} as any)
+const ClientsActiveRoute = ClientsActiveRouteImport.update({
+  id: '/active',
+  path: '/active',
   getParentRoute: () => ClientsRoute,
 } as any)
 const ClientsIdRoute = ClientsIdRouteImport.update({
@@ -332,6 +417,11 @@ const AutomationHistoryRoute = AutomationHistoryRouteImport.update({
   id: '/history',
   path: '/history',
   getParentRoute: () => AutomationRoute,
+} as any)
+const AppointmentsRequestsRoute = AppointmentsRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
+  getParentRoute: () => AppointmentsRoute,
 } as any)
 const AppointmentsNewRoute = AppointmentsNewRouteImport.update({
   id: '/new',
@@ -364,7 +454,7 @@ export interface FileRoutesByFullPath {
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
   '/clients': typeof ClientsRouteWithChildren
-  '/compliance': typeof ComplianceRoute
+  '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/expediting': typeof ExpeditingRoute
@@ -379,17 +469,23 @@ export interface FileRoutesByFullPath {
   '/property-management': typeof PropertyManagementRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/tax': typeof TaxRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
   '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
   '/appointments/new': typeof AppointmentsNewRoute
+  '/appointments/requests': typeof AppointmentsRequestsRoute
   '/automation/history': typeof AutomationHistoryRoute
   '/automation/rules': typeof AutomationRulesRoute
   '/automation/templates': typeof AutomationTemplatesRoute
   '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/active': typeof ClientsActiveRoute
   '/clients/new': typeof ClientsNewRoute
+  '/compliance/alerts': typeof ComplianceAlertsRoute
+  '/compliance/gra-filing': typeof ComplianceGraFilingRoute
+  '/compliance/reports': typeof ComplianceReportsRoute
   '/documents/$id': typeof DocumentsIdRoute
   '/documents/advanced': typeof DocumentsAdvancedRoute
   '/documents/requirements': typeof DocumentsRequirementsRoute
@@ -398,14 +494,23 @@ export interface FileRoutesByFullPath {
   '/documents/upload': typeof DocumentsUploadRoute
   '/invoices/id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/payments': typeof InvoicesPaymentsRoute
   '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/filings': typeof PortalFilingsRoute
   '/portal/payments': typeof PortalPaymentsRoute
   '/portal/profile': typeof PortalProfileRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
+  '/settings/backup': typeof SettingsBackupRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/tax/filing': typeof TaxFilingRoute
   '/tax/nis': typeof TaxNisRoute
   '/tax/paye': typeof TaxPayeRoute
   '/tax/vat': typeof TaxVatRoute
@@ -424,7 +529,7 @@ export interface FileRoutesByTo {
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
   '/clients': typeof ClientsRouteWithChildren
-  '/compliance': typeof ComplianceRoute
+  '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/expediting': typeof ExpeditingRoute
@@ -438,17 +543,23 @@ export interface FileRoutesByTo {
   '/property-management': typeof PropertyManagementRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/tax': typeof TaxRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
   '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
   '/appointments/new': typeof AppointmentsNewRoute
+  '/appointments/requests': typeof AppointmentsRequestsRoute
   '/automation/history': typeof AutomationHistoryRoute
   '/automation/rules': typeof AutomationRulesRoute
   '/automation/templates': typeof AutomationTemplatesRoute
   '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/active': typeof ClientsActiveRoute
   '/clients/new': typeof ClientsNewRoute
+  '/compliance/alerts': typeof ComplianceAlertsRoute
+  '/compliance/gra-filing': typeof ComplianceGraFilingRoute
+  '/compliance/reports': typeof ComplianceReportsRoute
   '/documents/$id': typeof DocumentsIdRoute
   '/documents/advanced': typeof DocumentsAdvancedRoute
   '/documents/requirements': typeof DocumentsRequirementsRoute
@@ -457,14 +568,23 @@ export interface FileRoutesByTo {
   '/documents/upload': typeof DocumentsUploadRoute
   '/invoices/id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/payments': typeof InvoicesPaymentsRoute
   '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/filings': typeof PortalFilingsRoute
   '/portal/payments': typeof PortalPaymentsRoute
   '/portal/profile': typeof PortalProfileRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
+  '/settings/backup': typeof SettingsBackupRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/tax/filing': typeof TaxFilingRoute
   '/tax/nis': typeof TaxNisRoute
   '/tax/paye': typeof TaxPayeRoute
   '/tax/vat': typeof TaxVatRoute
@@ -484,7 +604,7 @@ export interface FileRoutesById {
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
   '/clients': typeof ClientsRouteWithChildren
-  '/compliance': typeof ComplianceRoute
+  '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/expediting': typeof ExpeditingRoute
@@ -499,17 +619,23 @@ export interface FileRoutesById {
   '/property-management': typeof PropertyManagementRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/tax': typeof TaxRouteWithChildren
   '/time-tracking': typeof TimeTrackingRouteWithChildren
   '/training': typeof TrainingRoute
   '/users': typeof UsersRouteWithChildren
   '/appointments/$id': typeof AppointmentsIdRoute
   '/appointments/calendar': typeof AppointmentsCalendarRoute
   '/appointments/new': typeof AppointmentsNewRoute
+  '/appointments/requests': typeof AppointmentsRequestsRoute
   '/automation/history': typeof AutomationHistoryRoute
   '/automation/rules': typeof AutomationRulesRoute
   '/automation/templates': typeof AutomationTemplatesRoute
   '/clients/$id': typeof ClientsIdRouteWithChildren
+  '/clients/active': typeof ClientsActiveRoute
   '/clients/new': typeof ClientsNewRoute
+  '/compliance/alerts': typeof ComplianceAlertsRoute
+  '/compliance/gra-filing': typeof ComplianceGraFilingRoute
+  '/compliance/reports': typeof ComplianceReportsRoute
   '/documents/$id': typeof DocumentsIdRoute
   '/documents/advanced': typeof DocumentsAdvancedRoute
   '/documents/requirements': typeof DocumentsRequirementsRoute
@@ -518,14 +644,23 @@ export interface FileRoutesById {
   '/documents/upload': typeof DocumentsUploadRoute
   '/invoices/id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/payments': typeof InvoicesPaymentsRoute
   '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
   '/portal/documents': typeof PortalDocumentsRoute
   '/portal/filings': typeof PortalFilingsRoute
   '/portal/payments': typeof PortalPaymentsRoute
   '/portal/profile': typeof PortalProfileRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
+  '/settings/backup': typeof SettingsBackupRoute
+  '/settings/billing': typeof SettingsBillingRoute
+  '/settings/integrations': typeof SettingsIntegrationsRoute
+  '/settings/notifications': typeof SettingsNotificationsRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/settings/security': typeof SettingsSecurityRoute
+  '/tax/filing': typeof TaxFilingRoute
   '/tax/nis': typeof TaxNisRoute
   '/tax/paye': typeof TaxPayeRoute
   '/tax/vat': typeof TaxVatRoute
@@ -561,17 +696,23 @@ export interface FileRouteTypes {
     | '/property-management'
     | '/service-catalog'
     | '/settings'
+    | '/tax'
     | '/time-tracking'
     | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
+    | '/appointments/requests'
     | '/automation/history'
     | '/automation/rules'
     | '/automation/templates'
     | '/clients/$id'
+    | '/clients/active'
     | '/clients/new'
+    | '/compliance/alerts'
+    | '/compliance/gra-filing'
+    | '/compliance/reports'
     | '/documents/$id'
     | '/documents/advanced'
     | '/documents/requirements'
@@ -580,14 +721,23 @@ export interface FileRouteTypes {
     | '/documents/upload'
     | '/invoices/id'
     | '/invoices/new'
+    | '/invoices/payments'
     | '/payroll/employees'
+    | '/payroll/reports'
     | '/payroll/run'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/filings'
     | '/portal/payments'
     | '/portal/profile'
+    | '/settings/appearance'
+    | '/settings/backup'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
+    | '/tax/filing'
     | '/tax/nis'
     | '/tax/paye'
     | '/tax/vat'
@@ -620,17 +770,23 @@ export interface FileRouteTypes {
     | '/property-management'
     | '/service-catalog'
     | '/settings'
+    | '/tax'
     | '/time-tracking'
     | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
+    | '/appointments/requests'
     | '/automation/history'
     | '/automation/rules'
     | '/automation/templates'
     | '/clients/$id'
+    | '/clients/active'
     | '/clients/new'
+    | '/compliance/alerts'
+    | '/compliance/gra-filing'
+    | '/compliance/reports'
     | '/documents/$id'
     | '/documents/advanced'
     | '/documents/requirements'
@@ -639,14 +795,23 @@ export interface FileRouteTypes {
     | '/documents/upload'
     | '/invoices/id'
     | '/invoices/new'
+    | '/invoices/payments'
     | '/payroll/employees'
+    | '/payroll/reports'
     | '/payroll/run'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/filings'
     | '/portal/payments'
     | '/portal/profile'
+    | '/settings/appearance'
+    | '/settings/backup'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
+    | '/tax/filing'
     | '/tax/nis'
     | '/tax/paye'
     | '/tax/vat'
@@ -680,17 +845,23 @@ export interface FileRouteTypes {
     | '/property-management'
     | '/service-catalog'
     | '/settings'
+    | '/tax'
     | '/time-tracking'
     | '/training'
     | '/users'
     | '/appointments/$id'
     | '/appointments/calendar'
     | '/appointments/new'
+    | '/appointments/requests'
     | '/automation/history'
     | '/automation/rules'
     | '/automation/templates'
     | '/clients/$id'
+    | '/clients/active'
     | '/clients/new'
+    | '/compliance/alerts'
+    | '/compliance/gra-filing'
+    | '/compliance/reports'
     | '/documents/$id'
     | '/documents/advanced'
     | '/documents/requirements'
@@ -699,14 +870,23 @@ export interface FileRouteTypes {
     | '/documents/upload'
     | '/invoices/id'
     | '/invoices/new'
+    | '/invoices/payments'
     | '/payroll/employees'
+    | '/payroll/reports'
     | '/payroll/run'
     | '/portal/appointments'
     | '/portal/documents'
     | '/portal/filings'
     | '/portal/payments'
     | '/portal/profile'
+    | '/settings/appearance'
+    | '/settings/backup'
+    | '/settings/billing'
+    | '/settings/integrations'
+    | '/settings/notifications'
     | '/settings/profile'
+    | '/settings/security'
+    | '/tax/filing'
     | '/tax/nis'
     | '/tax/paye'
     | '/tax/vat'
@@ -726,7 +906,7 @@ export interface RootRouteChildren {
   AppointmentsRoute: typeof AppointmentsRouteWithChildren
   AutomationRoute: typeof AutomationRouteWithChildren
   ClientsRoute: typeof ClientsRouteWithChildren
-  ComplianceRoute: typeof ComplianceRoute
+  ComplianceRoute: typeof ComplianceRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
   ExpeditingRoute: typeof ExpeditingRoute
@@ -741,12 +921,10 @@ export interface RootRouteChildren {
   PropertyManagementRoute: typeof PropertyManagementRoute
   ServiceCatalogRoute: typeof ServiceCatalogRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  TaxRoute: typeof TaxRouteWithChildren
   TimeTrackingRoute: typeof TimeTrackingRouteWithChildren
   TrainingRoute: typeof TrainingRoute
   UsersRoute: typeof UsersRouteWithChildren
-  TaxNisRoute: typeof TaxNisRoute
-  TaxPayeRoute: typeof TaxPayeRoute
-  TaxVatRoute: typeof TaxVatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -770,6 +948,13 @@ declare module '@tanstack/react-router' {
       path: '/time-tracking'
       fullPath: '/time-tracking'
       preLoaderRoute: typeof TimeTrackingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tax': {
+      id: '/tax'
+      path: '/tax'
+      fullPath: '/tax'
+      preLoaderRoute: typeof TaxRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -956,30 +1141,79 @@ declare module '@tanstack/react-router' {
     }
     '/tax/vat': {
       id: '/tax/vat'
-      path: '/tax/vat'
+      path: '/vat'
       fullPath: '/tax/vat'
       preLoaderRoute: typeof TaxVatRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TaxRoute
     }
     '/tax/paye': {
       id: '/tax/paye'
-      path: '/tax/paye'
+      path: '/paye'
       fullPath: '/tax/paye'
       preLoaderRoute: typeof TaxPayeRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TaxRoute
     }
     '/tax/nis': {
       id: '/tax/nis'
-      path: '/tax/nis'
+      path: '/nis'
       fullPath: '/tax/nis'
       preLoaderRoute: typeof TaxNisRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TaxRoute
+    }
+    '/tax/filing': {
+      id: '/tax/filing'
+      path: '/filing'
+      fullPath: '/tax/filing'
+      preLoaderRoute: typeof TaxFilingRouteImport
+      parentRoute: typeof TaxRoute
+    }
+    '/settings/security': {
+      id: '/settings/security'
+      path: '/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SettingsSecurityRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/settings/profile': {
       id: '/settings/profile'
       path: '/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/notifications': {
+      id: '/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof SettingsNotificationsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/integrations': {
+      id: '/settings/integrations'
+      path: '/integrations'
+      fullPath: '/settings/integrations'
+      preLoaderRoute: typeof SettingsIntegrationsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/billing': {
+      id: '/settings/billing'
+      path: '/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof SettingsBillingRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/backup': {
+      id: '/settings/backup'
+      path: '/backup'
+      fullPath: '/settings/backup'
+      preLoaderRoute: typeof SettingsBackupRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/appearance': {
+      id: '/settings/appearance'
+      path: '/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/portal/profile': {
@@ -1024,12 +1258,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayrollRunRouteImport
       parentRoute: typeof PayrollRoute
     }
+    '/payroll/reports': {
+      id: '/payroll/reports'
+      path: '/reports'
+      fullPath: '/payroll/reports'
+      preLoaderRoute: typeof PayrollReportsRouteImport
+      parentRoute: typeof PayrollRoute
+    }
     '/payroll/employees': {
       id: '/payroll/employees'
       path: '/employees'
       fullPath: '/payroll/employees'
       preLoaderRoute: typeof PayrollEmployeesRouteImport
       parentRoute: typeof PayrollRoute
+    }
+    '/invoices/payments': {
+      id: '/invoices/payments'
+      path: '/payments'
+      fullPath: '/invoices/payments'
+      preLoaderRoute: typeof InvoicesPaymentsRouteImport
+      parentRoute: typeof InvoicesRoute
     }
     '/invoices/new': {
       id: '/invoices/new'
@@ -1087,11 +1335,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocumentsIdRouteImport
       parentRoute: typeof DocumentsRoute
     }
+    '/compliance/reports': {
+      id: '/compliance/reports'
+      path: '/reports'
+      fullPath: '/compliance/reports'
+      preLoaderRoute: typeof ComplianceReportsRouteImport
+      parentRoute: typeof ComplianceRoute
+    }
+    '/compliance/gra-filing': {
+      id: '/compliance/gra-filing'
+      path: '/gra-filing'
+      fullPath: '/compliance/gra-filing'
+      preLoaderRoute: typeof ComplianceGraFilingRouteImport
+      parentRoute: typeof ComplianceRoute
+    }
+    '/compliance/alerts': {
+      id: '/compliance/alerts'
+      path: '/alerts'
+      fullPath: '/compliance/alerts'
+      preLoaderRoute: typeof ComplianceAlertsRouteImport
+      parentRoute: typeof ComplianceRoute
+    }
     '/clients/new': {
       id: '/clients/new'
       path: '/new'
       fullPath: '/clients/new'
       preLoaderRoute: typeof ClientsNewRouteImport
+      parentRoute: typeof ClientsRoute
+    }
+    '/clients/active': {
+      id: '/clients/active'
+      path: '/active'
+      fullPath: '/clients/active'
+      preLoaderRoute: typeof ClientsActiveRouteImport
       parentRoute: typeof ClientsRoute
     }
     '/clients/$id': {
@@ -1121,6 +1397,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/automation/history'
       preLoaderRoute: typeof AutomationHistoryRouteImport
       parentRoute: typeof AutomationRoute
+    }
+    '/appointments/requests': {
+      id: '/appointments/requests'
+      path: '/requests'
+      fullPath: '/appointments/requests'
+      preLoaderRoute: typeof AppointmentsRequestsRouteImport
+      parentRoute: typeof AppointmentsRoute
     }
     '/appointments/new': {
       id: '/appointments/new'
@@ -1164,12 +1447,14 @@ interface AppointmentsRouteChildren {
   AppointmentsIdRoute: typeof AppointmentsIdRoute
   AppointmentsCalendarRoute: typeof AppointmentsCalendarRoute
   AppointmentsNewRoute: typeof AppointmentsNewRoute
+  AppointmentsRequestsRoute: typeof AppointmentsRequestsRoute
 }
 
 const AppointmentsRouteChildren: AppointmentsRouteChildren = {
   AppointmentsIdRoute: AppointmentsIdRoute,
   AppointmentsCalendarRoute: AppointmentsCalendarRoute,
   AppointmentsNewRoute: AppointmentsNewRoute,
+  AppointmentsRequestsRoute: AppointmentsRequestsRoute,
 }
 
 const AppointmentsRouteWithChildren = AppointmentsRoute._addFileChildren(
@@ -1208,16 +1493,34 @@ const ClientsIdRouteWithChildren = ClientsIdRoute._addFileChildren(
 
 interface ClientsRouteChildren {
   ClientsIdRoute: typeof ClientsIdRouteWithChildren
+  ClientsActiveRoute: typeof ClientsActiveRoute
   ClientsNewRoute: typeof ClientsNewRoute
 }
 
 const ClientsRouteChildren: ClientsRouteChildren = {
   ClientsIdRoute: ClientsIdRouteWithChildren,
+  ClientsActiveRoute: ClientsActiveRoute,
   ClientsNewRoute: ClientsNewRoute,
 }
 
 const ClientsRouteWithChildren =
   ClientsRoute._addFileChildren(ClientsRouteChildren)
+
+interface ComplianceRouteChildren {
+  ComplianceAlertsRoute: typeof ComplianceAlertsRoute
+  ComplianceGraFilingRoute: typeof ComplianceGraFilingRoute
+  ComplianceReportsRoute: typeof ComplianceReportsRoute
+}
+
+const ComplianceRouteChildren: ComplianceRouteChildren = {
+  ComplianceAlertsRoute: ComplianceAlertsRoute,
+  ComplianceGraFilingRoute: ComplianceGraFilingRoute,
+  ComplianceReportsRoute: ComplianceReportsRoute,
+}
+
+const ComplianceRouteWithChildren = ComplianceRoute._addFileChildren(
+  ComplianceRouteChildren,
+)
 
 interface DocumentsRouteChildren {
   DocumentsIdRoute: typeof DocumentsIdRoute
@@ -1244,11 +1547,13 @@ const DocumentsRouteWithChildren = DocumentsRoute._addFileChildren(
 interface InvoicesRouteChildren {
   InvoicesIdRoute: typeof InvoicesIdRoute
   InvoicesNewRoute: typeof InvoicesNewRoute
+  InvoicesPaymentsRoute: typeof InvoicesPaymentsRoute
 }
 
 const InvoicesRouteChildren: InvoicesRouteChildren = {
   InvoicesIdRoute: InvoicesIdRoute,
   InvoicesNewRoute: InvoicesNewRoute,
+  InvoicesPaymentsRoute: InvoicesPaymentsRoute,
 }
 
 const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
@@ -1257,11 +1562,13 @@ const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
 
 interface PayrollRouteChildren {
   PayrollEmployeesRoute: typeof PayrollEmployeesRoute
+  PayrollReportsRoute: typeof PayrollReportsRoute
   PayrollRunRoute: typeof PayrollRunRoute
 }
 
 const PayrollRouteChildren: PayrollRouteChildren = {
   PayrollEmployeesRoute: PayrollEmployeesRoute,
+  PayrollReportsRoute: PayrollReportsRoute,
   PayrollRunRoute: PayrollRunRoute,
 }
 
@@ -1290,16 +1597,44 @@ const PortalRouteWithChildren =
   PortalRoute._addFileChildren(PortalRouteChildren)
 
 interface SettingsRouteChildren {
+  SettingsAppearanceRoute: typeof SettingsAppearanceRoute
+  SettingsBackupRoute: typeof SettingsBackupRoute
+  SettingsBillingRoute: typeof SettingsBillingRoute
+  SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
+  SettingsNotificationsRoute: typeof SettingsNotificationsRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  SettingsSecurityRoute: typeof SettingsSecurityRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsAppearanceRoute: SettingsAppearanceRoute,
+  SettingsBackupRoute: SettingsBackupRoute,
+  SettingsBillingRoute: SettingsBillingRoute,
+  SettingsIntegrationsRoute: SettingsIntegrationsRoute,
+  SettingsNotificationsRoute: SettingsNotificationsRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  SettingsSecurityRoute: SettingsSecurityRoute,
 }
 
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
+
+interface TaxRouteChildren {
+  TaxFilingRoute: typeof TaxFilingRoute
+  TaxNisRoute: typeof TaxNisRoute
+  TaxPayeRoute: typeof TaxPayeRoute
+  TaxVatRoute: typeof TaxVatRoute
+}
+
+const TaxRouteChildren: TaxRouteChildren = {
+  TaxFilingRoute: TaxFilingRoute,
+  TaxNisRoute: TaxNisRoute,
+  TaxPayeRoute: TaxPayeRoute,
+  TaxVatRoute: TaxVatRoute,
+}
+
+const TaxRouteWithChildren = TaxRoute._addFileChildren(TaxRouteChildren)
 
 interface TimeTrackingRouteChildren {
   TimeTrackingEntriesRoute: typeof TimeTrackingEntriesRoute
@@ -1336,7 +1671,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppointmentsRoute: AppointmentsRouteWithChildren,
   AutomationRoute: AutomationRouteWithChildren,
   ClientsRoute: ClientsRouteWithChildren,
-  ComplianceRoute: ComplianceRoute,
+  ComplianceRoute: ComplianceRouteWithChildren,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
   ExpeditingRoute: ExpeditingRoute,
@@ -1351,12 +1686,10 @@ const rootRouteChildren: RootRouteChildren = {
   PropertyManagementRoute: PropertyManagementRoute,
   ServiceCatalogRoute: ServiceCatalogRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  TaxRoute: TaxRouteWithChildren,
   TimeTrackingRoute: TimeTrackingRouteWithChildren,
   TrainingRoute: TrainingRoute,
   UsersRoute: UsersRouteWithChildren,
-  TaxNisRoute: TaxNisRoute,
-  TaxPayeRoute: TaxPayeRoute,
-  TaxVatRoute: TaxVatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

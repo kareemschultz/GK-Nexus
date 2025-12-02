@@ -3,7 +3,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   CreditCard,
   DollarSign,
@@ -138,7 +138,7 @@ function RouteComponent() {
   const getStatusIcon = (status: InvoiceStatus) => {
     switch (status) {
       case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "sent":
         return <Clock className="h-4 w-4 text-blue-500" />;
       case "overdue":
@@ -280,7 +280,7 @@ function RouteComponent() {
                     {stats?.paidInvoices || 0}
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
@@ -475,7 +475,7 @@ function RouteComponent() {
                                   handleStatusUpdate(invoice.id, "paid")
                                 }
                               >
-                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Mark as Paid
                               </DropdownMenuItem>
                             )}

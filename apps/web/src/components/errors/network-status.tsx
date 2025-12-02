@@ -1,7 +1,7 @@
 import {
   Activity,
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   RefreshCw,
   Wifi,
   WifiOff,
@@ -330,7 +330,7 @@ export function NetworkInfo({ className = "" }: { className?: string }) {
             </div>
             <div className="ml-auto">
               {networkInfo.online ? (
-                <CheckCircle className="h-5 w-5 text-green-600" />
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
               ) : (
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               )}

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   FileText,
   Shield,
@@ -29,7 +29,7 @@ function CompliancePage() {
       case "MEDIUM":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case "LOW":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }
@@ -107,7 +107,7 @@ function CompliancePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="font-medium text-sm">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">47</div>

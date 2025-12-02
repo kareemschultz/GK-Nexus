@@ -269,14 +269,14 @@ export const updateTaxRateSchema = createTaxRateSchema.partial().extend({
 export const taxCalculationQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  clientId: z.string().optional(),
-  taxType: taxTypeSchema.optional(),
-  status: calculationStatusSchema.optional(),
-  taxYear: z.coerce.number().int().min(2020).max(2050).optional(),
-  taxMonth: z.coerce.number().int().min(1).max(12).optional(),
-  taxQuarter: z.coerce.number().int().min(1).max(4).optional(),
-  dueDateFrom: z.date().optional(),
-  dueDateTo: z.date().optional(),
+  clientId: z.string().nullish(),
+  taxType: taxTypeSchema.nullish(),
+  status: calculationStatusSchema.nullish(),
+  taxYear: z.coerce.number().int().min(2020).max(2050).nullish(),
+  taxMonth: z.coerce.number().int().min(1).max(12).nullish(),
+  taxQuarter: z.coerce.number().int().min(1).max(4).nullish(),
+  dueDateFrom: z.date().nullish(),
+  dueDateTo: z.date().nullish(),
   sortBy: z
     .enum(["dueDate", "taxYear", "status", "taxDue", "createdAt"])
     .default("dueDate"),

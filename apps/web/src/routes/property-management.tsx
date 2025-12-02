@@ -93,7 +93,7 @@ function PropertyManagementPage() {
       },
     ],
     queryFn: () =>
-      orpc.propertyManagement.properties.list({
+      orpc.propertyManagement.propertiesList({
         search: searchTerm || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
         page: 1,
@@ -104,7 +104,7 @@ function PropertyManagementPage() {
   const tenantsQuery = useQuery({
     queryKey: ["tenants"],
     queryFn: () =>
-      orpc.propertyManagement.tenants.list({
+      orpc.propertyManagement.tenantsList({
         page: 1,
         limit: 50,
       }),
@@ -112,7 +112,7 @@ function PropertyManagementPage() {
 
   const statsQuery = useQuery({
     queryKey: ["propertyStats"],
-    queryFn: () => orpc.propertyManagement.properties.stats({}),
+    queryFn: () => orpc.propertyManagement.propertiesStats({}),
   });
 
   // Mutations
@@ -124,7 +124,7 @@ function PropertyManagementPage() {
       city: string;
       region: string;
       monthlyRent?: number;
-    }) => orpc.propertyManagement.properties.create(data),
+    }) => orpc.propertyManagement.propertiesCreate(data),
     onSuccess: () => {
       toast.success("Property created successfully");
       setShowAddPropertyDialog(false);

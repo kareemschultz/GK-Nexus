@@ -3,6 +3,7 @@ import {
   Calendar,
   Download,
   Eye,
+  File,
   FileIcon,
   FileSpreadsheet,
   FileText,
@@ -177,7 +178,7 @@ const categories = [
 function getFileIcon(fileType: string) {
   switch (fileType) {
     case "pdf":
-      return <FileType aria-hidden="true" className="h-5 w-5 text-red-600" />;
+      return <File aria-hidden="true" className="h-5 w-5 text-red-600" />;
     case "xlsx":
     case "xls":
       return (

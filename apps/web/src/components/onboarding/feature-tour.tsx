@@ -1,7 +1,7 @@
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle,
+  CheckCircle2,
   Eye,
   Lightbulb,
   SkipForward,
@@ -374,7 +374,7 @@ export function FeatureTour({
                 >
                   {isLastStep ? (
                     <>
-                      <CheckCircle className="h-3 w-3" />
+                      <CheckCircle2 className="h-3 w-3" />
                       Complete
                     </>
                   ) : (
@@ -409,7 +409,7 @@ export function TourSelector({
     "getting-started": Eye,
     advanced: Target,
     tips: Lightbulb,
-    "feature-specific": CheckCircle,
+    "feature-specific": CheckCircle2,
   };
 
   const categoryColors = {
@@ -474,7 +474,7 @@ export function TourSelector({
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium text-sm">{tour.title}</h3>
                     {isCompleted && (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
                     )}
                   </div>
                   <p className="mt-1 text-xs opacity-80">{tour.description}</p>

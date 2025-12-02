@@ -1,6 +1,6 @@
 import {
   AlertCircle,
-  CheckCircle,
+  CheckCircle2,
   File,
   Loader2,
   Upload,
@@ -46,7 +46,7 @@ const FileProgressItem = ({
       case "uploading":
         return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
       case "error":
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       case "cancelled":

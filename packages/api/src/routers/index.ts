@@ -2,6 +2,9 @@ import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
 import { aiRouter } from "./ai";
 import { appointmentsRouter } from "./appointments";
+// TEMPORARILY DISABLED - audit and rbac routers have incompatible architecture
+// import { auditRouter } from "./audit";
+// import { rbacRouter } from "./rbac";
 import { backupRouter } from "./backup";
 import { clientsRouter } from "./clients";
 import { complianceRouter } from "./compliance";
@@ -28,6 +31,9 @@ export const appRouter = {
     user: context.user,
   })),
   ai: aiRouter,
+  // TEMPORARILY DISABLED - incompatible router architecture
+  // audit: auditRouter,
+  // rbac: rbacRouter,
   backup: backupRouter,
   clients: clientsRouter,
   users: usersRouter,

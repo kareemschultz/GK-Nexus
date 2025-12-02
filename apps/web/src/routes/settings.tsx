@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
   Bell,
-  CheckCircle,
+  CheckCircle2,
   Palette,
   RotateCcw,
   Save,
@@ -67,7 +67,7 @@ function RouteComponent() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
+                <CheckCircle2 className="h-5 w-5" />
                 System Configuration
               </CardTitle>
               <CardDescription>

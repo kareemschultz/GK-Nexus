@@ -1,6 +1,6 @@
 import {
   AlertTriangle,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   Download,
   Eye,
@@ -408,7 +408,7 @@ export function DocumentManager({
                 </p>
                 <p className="font-bold text-2xl">{documentStats.approved}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -690,7 +690,7 @@ export function DocumentManager({
                               setShowApprovalDialog(true);
                             }}
                           >
-                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
                             Review
                           </DropdownMenuItem>
                         )}
@@ -991,7 +991,7 @@ export function DocumentManager({
                   </CardHeader>
                   <CardContent>
                     <div className="py-8 text-center">
-                      <CheckCircle className="mx-auto h-8 w-8 text-muted-foreground" />
+                      <CheckCircle2 className="mx-auto h-8 w-8 text-muted-foreground" />
                       <p className="mt-2 text-muted-foreground text-sm">
                         Approval workflow details will be displayed here.
                       </p>
@@ -1036,7 +1036,7 @@ export function DocumentManager({
               </Button>
               {selectedDocument.status === "PENDING" && (
                 <Button onClick={() => setShowApprovalDialog(true)}>
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   Review Document
                 </Button>
               )}
@@ -1250,7 +1250,7 @@ export function DocumentManager({
                     setShowApprovalDialog(false);
                   }}
                 >
-                  <CheckCircle className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
                   Approve
                 </Button>
               </div>

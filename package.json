@@ -53,7 +53,9 @@
     "test:ci": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:accessibility": "turbo -F web test:a11y",
     "test:performance": "playwright test --grep='Performance'",
-    "test:security": "playwright test --grep='Security'"
+    "test:security": "playwright test --grep='Security'",
+    "test:visual": "playwright test --config=playwright.visual.config.ts --headed",
+    "test:visual:headless": "playwright test --config=playwright.visual.config.ts"
   },
   "dependencies": {
     "dotenv": "^17.2.2",

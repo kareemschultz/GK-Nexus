@@ -62,10 +62,10 @@ export const updateUserSchema = z.object({
 export const userQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
-  role: roleSchema.optional(),
-  status: userStatusSchema.optional(),
-  department: z.string().optional(),
+  search: z.string().nullish(),
+  role: roleSchema.nullish(),
+  status: userStatusSchema.nullish(),
+  department: z.string().nullish(),
   sortBy: z
     .enum(["name", "email", "role", "status", "createdAt"])
     .default("createdAt"),

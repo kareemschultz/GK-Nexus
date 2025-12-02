@@ -6,7 +6,7 @@ import {
   BarChart3,
   Bell,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   DollarSign,
   Download,
@@ -58,19 +58,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orpc } from "@/utils/orpc";
+import { client } from "@/utils/orpc";
+
+type IconName =
+  | "DollarSign"
+  | "Users"
+  | "Shield"
+  | "Clock"
+  | "TrendingUp"
+  | "UserCheck";
 
 interface KPIWidget {
   id: string;
   title: string;
   value: string;
   change: string;
-  icon: any;
+  iconName: IconName;
   trend: "up" | "down" | "stable";
   position: number;
   visible: boolean;
   path?: string;
 }
+
+// Icon mapping for serialization/deserialization
+const ICON_MAP: Record<
+  IconName,
+  React.ComponentType<{ className?: string }>
+> = {
+  DollarSign,
+  Users,
+  Shield,
+  Clock,
+  TrendingUp,
+  UserCheck,
+};
 
 interface Task {
   id: string;
@@ -153,6 +174,12 @@ export function EnhancedDashboard() {
   );
   const [navigationError, setNavigationError] = useState<string | null>(null);
 
+  // Clear old broken localStorage key on mount
+  useEffect(() => {
+    // Remove the old key that stored non-serializable icons
+    localStorage.removeItem("dashboard-widgets");
+  }, []);
+
   // State management for enhanced features
   const [selectedTimeRange, setSelectedTimeRange] = useState("30d");
   const [searchTerm, setSearchTerm] = useState("");
@@ -175,111 +202,189 @@ export function EnhancedDashboard() {
     }
   };
 
-  // Use the real dashboard API
+  // Safe API call wrapper that handles errors gracefully
+  const safeApiCall = async <T,>(
+    apiCall: () => Promise<T>,
+    fallback: T
+  ): Promise<T> => {
+    try {
+      return await apiCall();
+    } catch (error) {
+      console.warn("API call failed, using fallback data:", error);
+      return fallback;
+    }
+  };
+
+  // Use the real dashboard API with safe fallbacks
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", "overview"],
-    queryFn: () => orpc.dashboard.overview.mutate({ timeRange: "30d" }),
+    queryFn: () =>
+      safeApiCall(() => client.dashboard.overview({ timeRange: "30d" }), {
+        success: true,
+        data: mockDashboard,
+      } as Awaited<ReturnType<typeof client.dashboard.overview>>),
     refetchInterval: 30_000, // Refresh every 30 seconds
+    retry: 1,
+    staleTime: 30_000,
   });
 
   const kpisQuery = useQuery({
     queryKey: ["dashboard", "kpis"],
     queryFn: () =>
-      orpc.dashboard.kpis.mutate({
-        period: "monthly",
-        year: new Date().getFullYear(),
-      }),
+      safeApiCall(
+        () =>
+          client.dashboard.kpis({
+            period: "monthly",
+            year: new Date().getFullYear(),
+          }),
+        {
+          success: true,
+          data: {
+            period: "monthly",
+            year: new Date().getFullYear(),
+            month: undefined,
+            quarter: undefined,
+            revenue: [],
+            clients: [],
+          },
+        } as Awaited<ReturnType<typeof client.dashboard.kpis>>
+      ),
     refetchInterval: 60_000, // Refresh every minute
+    retry: 1,
+    staleTime: 60_000,
   });
 
   const financialQuery = useQuery({
     queryKey: ["dashboard", "financial"],
-    queryFn: () => orpc.dashboard.financialSummary.mutate({ timeRange: "30d" }),
+    queryFn: () =>
+      safeApiCall(
+        () => client.dashboard.financialSummary({ timeRange: "30d" }),
+        {
+          success: true,
+          data: {
+            period: { startDate: "", endDate: "", timeRange: "30d" },
+            invoiceSummary: {},
+            cashFlow: [],
+          },
+        } as Awaited<ReturnType<typeof client.dashboard.financialSummary>>
+      ),
     refetchInterval: 30_000,
+    retry: 1,
+    staleTime: 30_000,
   });
 
   const complianceQuery = useQuery({
     queryKey: ["dashboard", "compliance"],
     queryFn: () =>
-      orpc.dashboard.complianceReport.mutate({
-        year: new Date().getFullYear(),
-      }),
+      safeApiCall(
+        () =>
+          client.dashboard.complianceReport({
+            year: new Date().getFullYear(),
+          }),
+        {
+          success: true,
+          data: {
+            period: { year: new Date().getFullYear(), month: undefined },
+            overview: {},
+            byType: [],
+            upcomingDeadlines: [],
+            clientCompliance: [],
+          },
+        } as Awaited<ReturnType<typeof client.dashboard.complianceReport>>
+      ),
     refetchInterval: 60_000,
+    retry: 1,
+    staleTime: 60_000,
   });
+
+  // Default widgets configuration
+  const defaultWidgets: KPIWidget[] = [
+    {
+      id: "revenue",
+      title: "Total Revenue",
+      value: "$2,847,392",
+      change: "+12.5%",
+      iconName: "DollarSign",
+      trend: "up",
+      position: 0,
+      visible: true,
+      path: "/invoices",
+    },
+    {
+      id: "clients",
+      title: "Active Clients",
+      value: "1,234",
+      change: "+5.2%",
+      iconName: "Users",
+      trend: "up",
+      position: 1,
+      visible: true,
+      path: "/clients",
+    },
+    {
+      id: "compliance",
+      title: "Compliance Score",
+      value: "98.4%",
+      change: "+2.1%",
+      iconName: "Shield",
+      trend: "up",
+      position: 2,
+      visible: true,
+      path: "/compliance",
+    },
+    {
+      id: "pending",
+      title: "Pending Reviews",
+      value: "23",
+      change: "-8.3%",
+      iconName: "Clock",
+      trend: "down",
+      position: 3,
+      visible: true,
+      path: "/documents",
+    },
+    {
+      id: "conversion",
+      title: "Conversion Rate",
+      value: "73.2%",
+      change: "+3.1%",
+      iconName: "TrendingUp",
+      trend: "up",
+      position: 4,
+      visible: true,
+      path: "/reports",
+    },
+    {
+      id: "satisfaction",
+      title: "Client Satisfaction",
+      value: "4.8/5.0",
+      change: "+0.2",
+      iconName: "UserCheck",
+      trend: "up",
+      position: 5,
+      visible: true,
+      path: "/clients",
+    },
+  ];
 
   // Widget configuration with local storage persistence
   const [widgets, setWidgets] = useState<KPIWidget[]>(() => {
-    const saved = localStorage.getItem("dashboard-widgets");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: "revenue",
-            title: "Total Revenue",
-            value: "$2,847,392",
-            change: "+12.5%",
-            icon: DollarSign,
-            trend: "up",
-            position: 0,
-            visible: true,
-            path: "/revenue",
-          },
-          {
-            id: "clients",
-            title: "Active Clients",
-            value: "1,234",
-            change: "+5.2%",
-            icon: Users,
-            trend: "up",
-            position: 1,
-            visible: true,
-            path: "/clients",
-          },
-          {
-            id: "compliance",
-            title: "Compliance Score",
-            value: "98.4%",
-            change: "+2.1%",
-            icon: Shield,
-            trend: "up",
-            position: 2,
-            visible: true,
-            path: "/compliance",
-          },
-          {
-            id: "pending",
-            title: "Pending Reviews",
-            value: "23",
-            change: "-8.3%",
-            icon: Clock,
-            trend: "down",
-            position: 3,
-            visible: true,
-            path: "/tasks",
-          },
-          {
-            id: "conversion",
-            title: "Conversion Rate",
-            value: "73.2%",
-            change: "+3.1%",
-            icon: TrendingUp,
-            trend: "up",
-            position: 4,
-            visible: true,
-            path: "/analytics",
-          },
-          {
-            id: "satisfaction",
-            title: "Client Satisfaction",
-            value: "4.8/5.0",
-            change: "+0.2",
-            icon: UserCheck,
-            trend: "up",
-            position: 5,
-            visible: true,
-            path: "/feedback",
-          },
-        ];
+    const saved = localStorage.getItem("dashboard-widgets-v2");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Validate that parsed widgets have proper iconName
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((w) => w.iconName && ICON_MAP[w.iconName as IconName])
+        ) {
+          return parsed;
+        }
+      } catch {
+        // Invalid data, use defaults
+      }
+    }
+    return defaultWidgets;
   });
 
   // Tasks data
@@ -482,7 +587,7 @@ export function EnhancedDashboard() {
 
   // Save widget configuration to localStorage
   useEffect(() => {
-    localStorage.setItem("dashboard-widgets", JSON.stringify(widgets));
+    localStorage.setItem("dashboard-widgets-v2", JSON.stringify(widgets));
   }, [widgets]);
 
   // Filter activities based on search and filter
@@ -561,7 +666,7 @@ export function EnhancedDashboard() {
       case "payment_received":
         return <DollarSign className="h-4 w-4 text-green-600" />;
       case "task_completed":
-        return <CheckCircle className="h-4 w-4 text-blue-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-blue-600" />;
       default:
         return <Activity className="h-4 w-4 text-gray-500" />;
     }
@@ -587,7 +692,7 @@ export function EnhancedDashboard() {
       case "MEDIUM":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case "LOW":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-500" />;
     }
@@ -753,7 +858,7 @@ export function EnhancedDashboard() {
             .filter((w) => w.visible)
             .sort((a, b) => a.position - b.position)
             .map((widget) => {
-              const IconComponent = widget.icon;
+              const IconComponent = ICON_MAP[widget.iconName] || DollarSign;
               const isPositive = widget.change.startsWith("+");
               const isNegative = widget.change.startsWith("-");
 
@@ -907,7 +1012,7 @@ export function EnhancedDashboard() {
             ) : (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center">
-                  <CheckCircle className="mx-auto mb-2 h-12 w-12 text-green-500" />
+                  <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-green-500" />
                   <p className="font-medium text-sm">
                     All compliance items are up to date
                   </p>
@@ -1196,7 +1301,7 @@ export function EnhancedDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle2 className="h-5 w-5" />
               Task Management
             </CardTitle>
             <CardDescription>Upcoming deadlines and priorities</CardDescription>

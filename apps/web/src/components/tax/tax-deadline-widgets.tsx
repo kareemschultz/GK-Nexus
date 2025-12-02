@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Calendar, CheckCircle, Clock } from "lucide-react";
+import { AlertTriangle, Calendar, CheckCircle2, Clock } from "lucide-react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,7 +102,7 @@ export function TaxDeadlineWidgets({
   const getStatusIcon = (status: TaxDeadline["status"]) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "overdue":
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
       case "due_soon":
@@ -358,7 +358,7 @@ export function TaxDeadlineWidgets({
 
         {displayDeadlines.length === 0 && (
           <div className="py-8 text-center">
-            <CheckCircle className="mx-auto mb-2 h-12 w-12 text-green-500" />
+            <CheckCircle2 className="mx-auto mb-2 h-12 w-12 text-green-500" />
             <p className="font-medium text-sm">All deadlines are up to date</p>
             <p className="text-muted-foreground text-xs">
               No immediate compliance actions required

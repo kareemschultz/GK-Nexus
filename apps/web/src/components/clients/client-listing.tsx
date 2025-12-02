@@ -3,7 +3,7 @@ import {
   Activity,
   Building2,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Download,
   Edit,
   Eye,
@@ -436,7 +436,7 @@ export function ClientListing({
                 </p>
                 <p className="font-bold text-2xl">{clientStats.active}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle2 className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -492,7 +492,7 @@ export function ClientListing({
                   {clientStats.averageComplianceScore}%
                 </p>
               </div>
-              <CheckCircle className="h-8 w-8 text-muted-foreground" />
+              <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>
@@ -931,7 +931,7 @@ export function ClientListing({
                               {client.documentsCount} docs
                             </span>
                             <span className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3" />
+                              <CheckCircle2 className="h-3 w-3" />
                               {client.complianceScore}% compliance
                             </span>
                           </div>

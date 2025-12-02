@@ -3,7 +3,7 @@ import {
   AlertCircle,
   Building2,
   Calendar,
-  CheckCircle,
+  CheckCircle2,
   Clock,
   Download,
   Eye,
@@ -643,7 +643,7 @@ function RouteComponent() {
   const getTimelineStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
       case "pending":
         return <Clock className="h-4 w-4 text-blue-500" />;
       case "overdue":
@@ -1041,7 +1041,7 @@ function RouteComponent() {
                     }
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
