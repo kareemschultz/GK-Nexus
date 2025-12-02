@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🧙‍♂️ **v1.2.0 - Wizards & API Integration** (2025-12-02)
+
+#### **New Wizards**
+- 📊 **Tax Filing Wizard** - 6-step wizard for PAYE, VAT, Income Tax, and NIS filings with GRA form generation
+- 💰 **Invoice Creation Wizard** - 5-step wizard with service catalog, VAT calculations, and payment terms
+
+#### **API Integration**
+- 🔗 **Compliance Alerts** - Connected to real complianceRouter.getAlerts with loading/empty states
+- 📅 **Appointments Calendar** - Connected to appointmentsRouter.list with type and status filtering
+
+#### **UX Improvements**
+- ⏳ Added loading spinners to API-connected pages
+- 📭 Added empty states with contextual messages
+- 🎯 Proper error handling for API failures
+
+---
+
 ### 🏢 **v1.1.0 - Phase 5 Extended Business Modules** (2025-12-01)
 
 #### **New Modules Added**
