@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -59,6 +60,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/immigration")({
   component: RouteComponent,
@@ -177,324 +179,75 @@ function RouteComponent() {
     "list"
   );
 
-  // Mock immigration cases data
-  const mockImmigrationCases: ImmigrationCase[] = [
-    {
-      id: "1",
-      caseNumber: "H1B-2024-001",
-      petitionType: "H-1B",
-      visaCategory: "H-1B Specialty Occupation",
-      beneficiaryName: "Raj Patel",
-      beneficiaryEmail: "raj.patel@techcorp.com",
-      clientId: "1",
-      clientName: "TechCorp Inc.",
-      status: "approved",
-      priority: "premium",
-      filingDate: "2024-03-01",
-      currentStep: "Consular Processing",
-      nextAction: "Schedule visa interview",
-      nextActionDate: "2024-12-15",
-      attorney: "Sarah Johnson",
-      estimatedCompletion: "2025-01-30",
-      progressPercentage: 85,
-      documents: [
-        {
-          id: "1",
-          name: "Form I-129",
-          description: "Petition for Nonimmigrant Worker",
-          required: true,
-          status: "approved",
-          submittedDate: "2024-03-01",
-          approvedDate: "2024-06-15",
-          reviewer: "USCIS",
-        },
-        {
-          id: "2",
-          name: "Labor Condition Application",
-          description: "DOL LCA approval",
-          required: true,
-          status: "approved",
-          submittedDate: "2024-02-15",
-          approvedDate: "2024-02-28",
-          reviewer: "DOL",
-        },
-        {
-          id: "3",
-          name: "Educational Credentials",
-          description: "Degree evaluation and transcripts",
-          required: true,
-          status: "approved",
-          submittedDate: "2024-02-20",
-          approvedDate: "2024-03-01",
-        },
-      ],
-      timeline: [
-        {
-          id: "1",
-          date: "2024-03-01",
-          title: "Petition Filed",
-          description:
-            "H-1B petition submitted to USCIS with premium processing",
-          type: "filing",
-          status: "completed",
-          responsible: "Sarah Johnson",
-        },
-        {
-          id: "2",
-          date: "2024-06-15",
-          title: "Petition Approved",
-          description: "USCIS approved the H-1B petition",
-          type: "decision",
-          status: "completed",
-        },
-        {
-          id: "3",
-          date: "2024-12-15",
-          title: "Visa Interview",
-          description: "Schedule consular interview at US Embassy",
-          type: "deadline",
-          status: "pending",
-          responsible: "Raj Patel",
-        },
-      ],
-      fees: {
-        governmentFee: 1265,
-        attorneyFee: 3500,
-        premiumProcessing: 2805,
-        total: 7570,
-        paid: 7570,
-        outstanding: 0,
-      },
-      tags: ["h1b", "premium", "techcorp", "approved"],
-      riskLevel: "low",
-      lastUpdated: "2024-11-25",
-    },
-    {
-      id: "2",
-      caseNumber: "L1A-2024-002",
-      petitionType: "L-1A",
-      visaCategory: "L-1A Intracompany Transferee Executive",
-      beneficiaryName: "Maria Rodriguez",
-      beneficiaryEmail: "maria.rodriguez@globalmfg.com",
-      clientId: "6",
-      clientName: "Global Manufacturing",
-      status: "rfe",
-      priority: "premium",
-      filingDate: "2024-09-15",
-      currentStep: "RFE Response",
-      nextAction: "Submit RFE response",
-      nextActionDate: "2024-12-05",
-      attorney: "Michael Chen",
-      estimatedCompletion: "2024-12-20",
-      progressPercentage: 65,
-      documents: [
-        {
-          id: "4",
-          name: "Form I-129",
-          description: "Petition for Nonimmigrant Worker",
-          required: true,
-          status: "submitted",
-          submittedDate: "2024-09-15",
-        },
-        {
-          id: "5",
-          name: "Organizational Charts",
-          description: "US and foreign company structure",
-          required: true,
-          status: "pending",
-          dueDate: "2024-12-05",
-        },
-        {
-          id: "6",
-          name: "Financial Documents",
-          description: "Additional financial evidence requested",
-          required: true,
-          status: "pending",
-          dueDate: "2024-12-05",
-        },
-      ],
-      timeline: [
-        {
-          id: "4",
-          date: "2024-09-15",
-          title: "Petition Filed",
-          description: "L-1A petition submitted with premium processing",
-          type: "filing",
-          status: "completed",
-          responsible: "Michael Chen",
-        },
-        {
-          id: "5",
-          date: "2024-11-05",
-          title: "RFE Received",
-          description: "USCIS requested additional evidence",
-          type: "response",
-          status: "completed",
-        },
-        {
-          id: "6",
-          date: "2024-12-05",
-          title: "RFE Response Due",
-          description: "Deadline to submit response to RFE",
-          type: "deadline",
-          status: "pending",
-          responsible: "Michael Chen",
-        },
-      ],
-      fees: {
-        governmentFee: 1440,
-        attorneyFee: 4500,
-        premiumProcessing: 2805,
-        total: 8745,
-        paid: 6000,
-        outstanding: 2745,
-      },
-      tags: ["l1a", "premium", "rfe", "global-mfg"],
-      riskLevel: "medium",
-      lastUpdated: "2024-11-28",
-    },
-    {
-      id: "3",
-      caseNumber: "O1-2024-003",
-      petitionType: "O-1",
-      visaCategory: "O-1 Extraordinary Ability",
-      beneficiaryName: "Dr. James Wilson",
-      beneficiaryEmail: "james.wilson@healthcareplus.com",
-      clientId: "5",
-      clientName: "Healthcare Plus",
-      status: "pending",
-      priority: "normal",
-      filingDate: "2024-11-01",
-      currentStep: "USCIS Review",
-      nextAction: "Await USCIS decision",
-      nextActionDate: "2025-01-15",
-      attorney: "Emily Davis",
-      estimatedCompletion: "2025-02-15",
-      progressPercentage: 45,
-      documents: [
-        {
-          id: "7",
-          name: "Form I-129",
-          description: "Petition for Nonimmigrant Worker",
-          required: true,
-          status: "submitted",
-          submittedDate: "2024-11-01",
-        },
-        {
-          id: "8",
-          name: "Evidence of Extraordinary Ability",
-          description: "Publications, awards, and recognition",
-          required: true,
-          status: "submitted",
-          submittedDate: "2024-11-01",
-        },
-        {
-          id: "9",
-          name: "Consultation Letters",
-          description: "Peer group consultation letters",
-          required: true,
-          status: "submitted",
-          submittedDate: "2024-11-01",
-        },
-      ],
-      timeline: [
-        {
-          id: "7",
-          date: "2024-11-01",
-          title: "Petition Filed",
-          description: "O-1 petition submitted to USCIS",
-          type: "filing",
-          status: "completed",
-          responsible: "Emily Davis",
-        },
-        {
-          id: "8",
-          date: "2025-01-15",
-          title: "Expected Decision",
-          description: "USCIS decision expected by this date",
-          type: "deadline",
-          status: "pending",
-        },
-      ],
-      fees: {
-        governmentFee: 845,
-        attorneyFee: 5000,
-        total: 5845,
-        paid: 3000,
-        outstanding: 2845,
-      },
-      tags: ["o1", "extraordinary", "healthcare", "doctor"],
-      riskLevel: "low",
-      lastUpdated: "2024-11-20",
-    },
-    {
-      id: "4",
-      caseNumber: "PERM-2024-004",
-      petitionType: "PERM",
-      visaCategory: "PERM Labor Certification",
-      beneficiaryName: "Li Wei",
-      beneficiaryEmail: "li.wei@techcorp.com",
-      clientId: "1",
-      clientName: "TechCorp Inc.",
-      status: "pending",
-      priority: "normal",
-      filingDate: "2024-06-01",
-      currentStep: "DOL Review",
-      nextAction: "Monitor application status",
-      nextActionDate: "2025-01-01",
-      attorney: "Sarah Johnson",
-      estimatedCompletion: "2025-08-01",
-      progressPercentage: 30,
-      documents: [
-        {
-          id: "10",
-          name: "Form ETA-9089",
-          description: "Application for Permanent Employment Certification",
-          required: true,
-          status: "submitted",
-          submittedDate: "2024-06-01",
-        },
-        {
-          id: "11",
-          name: "Recruitment Report",
-          description: "Evidence of recruitment efforts",
-          required: true,
-          status: "approved",
-          submittedDate: "2024-05-15",
-          approvedDate: "2024-05-30",
-        },
-      ],
-      timeline: [
-        {
-          id: "9",
-          date: "2024-06-01",
-          title: "PERM Application Filed",
-          description: "Labor certification application submitted to DOL",
-          type: "filing",
-          status: "completed",
-          responsible: "Sarah Johnson",
-        },
-        {
-          id: "10",
-          date: "2025-01-01",
-          title: "Status Review",
-          description: "Review application status with DOL",
-          type: "deadline",
-          status: "pending",
-        },
-      ],
+  // Fetch immigration cases from API
+  const casesQuery = useQuery({
+    queryKey: ["immigrationCases", filters.searchTerm],
+    queryFn: () =>
+      orpc.immigration.listCases({
+        page: 1,
+        limit: 100,
+        search: filters.searchTerm || undefined,
+      }),
+  });
+
+  // Map API response to ImmigrationCase type
+  const mockImmigrationCases: ImmigrationCase[] = useMemo(() => {
+    if (!casesQuery.data?.data?.items) return [];
+
+    return casesQuery.data.data.items.map((apiCase: {
+      id: string;
+      caseNumber: string;
+      caseType: string;
+      priority: string;
+      status: string;
+      title: string;
+      clientId: string;
+      assignedTo: string | null;
+      applicationDate: string | Date | null;
+      targetCompletionDate: string | Date | null;
+      currentStage: string | null;
+      updatedAt: string | Date | null;
+    }) => ({
+      id: apiCase.id,
+      caseNumber: apiCase.caseNumber || "N/A",
+      petitionType: apiCase.caseType?.replace(/_/g, " ").toUpperCase() || "N/A",
+      visaCategory: apiCase.caseType?.replace(/_/g, " ") || "N/A",
+      beneficiaryName: apiCase.title || "Unnamed Case",
+      beneficiaryEmail: "",
+      clientId: apiCase.clientId || "",
+      clientName: "Client",
+      status: (apiCase.status?.toLowerCase() || "pending") as ImmigrationCase["status"],
+      priority: (apiCase.priority?.toLowerCase() || "normal") as ImmigrationCase["priority"],
+      filingDate: apiCase.applicationDate
+        ? new Date(apiCase.applicationDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      currentStep: apiCase.currentStage || "Processing",
+      nextAction: "Review case",
+      nextActionDate: apiCase.targetCompletionDate
+        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      attorney: apiCase.assignedTo || "Unassigned",
+      estimatedCompletion: apiCase.targetCompletionDate
+        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+        : "TBD",
+      progressPercentage: 50,
+      documents: [],
+      timeline: [],
       fees: {
         governmentFee: 0,
-        attorneyFee: 8500,
-        total: 8500,
-        paid: 4000,
-        outstanding: 4500,
+        attorneyFee: 0,
+        total: 0,
+        paid: 0,
+        outstanding: 0,
       },
-      tags: ["perm", "labor-cert", "techcorp", "software"],
-      riskLevel: "medium",
-      lastUpdated: "2024-11-15",
-    },
-  ];
+      tags: [],
+      riskLevel: "medium" as const,
+      lastUpdated: apiCase.updatedAt
+        ? new Date(apiCase.updatedAt).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+    }));
+  }, [casesQuery.data]);
+
 
   const filteredCases = useMemo(
     () =>

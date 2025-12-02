@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
@@ -67,6 +68,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/clients")({
   component: RouteComponent,
@@ -145,167 +147,90 @@ function RouteComponent() {
     "list"
   );
 
-  // Enhanced mock client data
-  const mockClients: Client[] = [
-    {
-      id: "1",
-      name: "TechCorp Inc.",
-      type: "enterprise",
-      status: "active",
-      industry: "Technology",
-      contactPerson: "John Smith",
-      email: "john.smith@techcorp.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Innovation Drive, Silicon Valley, CA",
-      revenue: 50_000_000,
-      employees: 500,
-      joinDate: "2023-01-15",
-      lastActivity: "2024-11-27",
-      complianceScore: 98,
-      documents: 24,
-      tags: ["tech", "enterprise", "priority"],
-      priority: "high",
-      immigrationCases: 12,
-      lastContact: "2024-11-25",
-      nextFollowUp: "2024-12-05",
-      relationshipManager: "Sarah Johnson",
-      communicationPreference: "email",
-      avatar: "/avatars/techcorp.jpg",
-      notes: "Key enterprise client with multiple H-1B applications pending",
-      riskLevel: "low",
-    },
-    {
-      id: "2",
-      name: "DataFlow Solutions",
-      type: "mid-market",
-      status: "onboarding",
-      industry: "Data Analytics",
-      contactPerson: "Sarah Johnson",
-      email: "sarah@dataflow.com",
-      phone: "+1 (555) 234-5678",
-      address: "456 Analytics Blvd, Austin, TX",
-      revenue: 15_000_000,
-      employees: 150,
-      joinDate: "2024-11-20",
-      lastActivity: "2024-11-28",
-      complianceScore: 85,
-      documents: 8,
-      tags: ["analytics", "onboarding", "new"],
-      priority: "medium",
-      immigrationCases: 3,
-      lastContact: "2024-11-28",
-      relationshipManager: "Michael Chen",
-      communicationPreference: "video",
-      notes: "New client requiring L-1 visa support for international transfer",
-      riskLevel: "medium",
-    },
-    {
-      id: "3",
-      name: "Green Energy Co.",
-      type: "enterprise",
-      status: "active",
-      industry: "Renewable Energy",
-      contactPerson: "Michael Chen",
-      email: "m.chen@greenenergy.com",
-      phone: "+1 (555) 345-6789",
-      address: "789 Sustainability St, Portland, OR",
-      revenue: 75_000_000,
-      employees: 800,
-      joinDate: "2022-06-10",
-      lastActivity: "2024-11-26",
-      complianceScore: 96,
-      documents: 45,
-      tags: ["green-energy", "sustainable", "enterprise"],
-      priority: "high",
-      immigrationCases: 8,
-      lastContact: "2024-11-26",
-      nextFollowUp: "2024-12-10",
-      relationshipManager: "Emily Davis",
-      communicationPreference: "phone",
-      notes: "Long-standing client with EB-1 and O-1 visa requirements",
-      riskLevel: "low",
-    },
-    {
-      id: "4",
-      name: "Local Retail LLC",
-      type: "smb",
-      status: "suspended",
-      industry: "Retail",
-      contactPerson: "Emily Davis",
-      email: "emily@localretail.com",
-      phone: "+1 (555) 456-7890",
-      address: "321 Main St, Springfield, IL",
-      revenue: 2_000_000,
-      employees: 25,
-      joinDate: "2023-08-22",
-      lastActivity: "2024-10-15",
-      complianceScore: 72,
-      documents: 12,
-      tags: ["retail", "suspended", "payment-issues"],
-      priority: "low",
-      immigrationCases: 1,
-      lastContact: "2024-10-15",
-      relationshipManager: "David Wilson",
-      communicationPreference: "email",
-      notes:
-        "Account suspended due to payment issues, single E-2 visa case on hold",
-      riskLevel: "high",
-    },
-    {
-      id: "5",
-      name: "Healthcare Plus",
-      type: "mid-market",
-      status: "active",
-      industry: "Healthcare",
-      contactPerson: "Dr. Robert Wilson",
-      email: "r.wilson@healthcareplus.com",
-      phone: "+1 (555) 567-8901",
-      address: "654 Medical Center Dr, Boston, MA",
-      revenue: 25_000_000,
-      employees: 300,
-      joinDate: "2023-03-14",
-      lastActivity: "2024-11-28",
-      complianceScore: 94,
-      documents: 38,
-      tags: ["healthcare", "medical", "professionals"],
-      priority: "medium",
-      immigrationCases: 15,
-      lastContact: "2024-11-28",
-      nextFollowUp: "2024-12-01",
-      relationshipManager: "Lisa Chen",
-      communicationPreference: "in-person",
-      notes:
-        "Healthcare organization with ongoing H-1B cap cases for medical professionals",
-      riskLevel: "low",
-    },
-    {
-      id: "6",
-      name: "Global Manufacturing",
-      type: "enterprise",
-      status: "active",
-      industry: "Manufacturing",
-      contactPerson: "James Rodriguez",
-      email: "j.rodriguez@globalmfg.com",
-      phone: "+1 (555) 678-9012",
-      address: "987 Industrial Way, Detroit, MI",
-      revenue: 120_000_000,
-      employees: 1200,
-      joinDate: "2021-09-05",
-      lastActivity: "2024-11-29",
-      complianceScore: 92,
-      documents: 67,
-      tags: ["manufacturing", "global", "established"],
-      priority: "high",
-      immigrationCases: 25,
-      lastContact: "2024-11-29",
-      nextFollowUp: "2024-12-15",
-      relationshipManager: "Anna Thompson",
-      communicationPreference: "email",
-      notes:
-        "Major manufacturing client with complex PERM and EB-2/EB-3 pipeline",
-      riskLevel: "low",
-    },
-  ];
+  // Fetch clients from API
+  const clientsQuery = useQuery({
+    queryKey: ["clients", filters.searchTerm],
+    queryFn: () =>
+      orpc.clients.list({
+        page: 1,
+        limit: 100,
+        search: filters.searchTerm || undefined,
+      }),
+  });
+
+  // Fetch client stats
+  const statsQuery = useQuery({
+    queryKey: ["clientStats"],
+    queryFn: () => orpc.clients.stats(),
+  });
+
+  // Map API response to Client type
+  const mapEntityTypeToType = (
+    entityType: string
+  ): "enterprise" | "mid-market" | "smb" => {
+    switch (entityType?.toLowerCase()) {
+      case "corporation":
+      case "llc":
+        return "enterprise";
+      case "partnership":
+        return "mid-market";
+      case "sole_proprietor":
+      case "individual":
+        return "smb";
+      default:
+        return "mid-market";
+    }
+  };
+
+  const mapComplianceStatusToScore = (status: string): number => {
+    switch (status?.toLowerCase()) {
+      case "compliant":
+        return 95;
+      case "pending_review":
+        return 80;
+      case "non_compliant":
+        return 60;
+      default:
+        return 85;
+    }
+  };
+
+  const mockClients: Client[] = useMemo(() => {
+    if (!clientsQuery.data?.data?.items) return [];
+
+    return clientsQuery.data.data.items.map((apiClient) => ({
+      id: apiClient.id,
+      name: apiClient.name,
+      type: mapEntityTypeToType(apiClient.entityType || ""),
+      status: (apiClient.status as Client["status"]) || "active",
+      industry: "Business Services", // Default - API doesn't provide this
+      contactPerson: apiClient.assignedAccountant || "Not assigned",
+      email: apiClient.email || "",
+      phone: apiClient.phoneNumber || "",
+      address: "", // API doesn't provide address in list
+      revenue: 0, // Not in API response
+      employees: 0, // Not in API response
+      joinDate: apiClient.clientSince
+        ? new Date(apiClient.clientSince).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      lastActivity: apiClient.updatedAt
+        ? new Date(apiClient.updatedAt).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      complianceScore: mapComplianceStatusToScore(
+        apiClient.complianceStatus || ""
+      ),
+      documents: 0, // Would need separate query
+      tags: [], // Not in list response
+      priority: "medium" as const,
+      immigrationCases: 0, // Would need separate query
+      lastContact: apiClient.updatedAt
+        ? new Date(apiClient.updatedAt).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      relationshipManager: apiClient.assignedManager || "Not assigned",
+      communicationPreference: "email" as const,
+      riskLevel: (apiClient.riskLevel as Client["riskLevel"]) || "low",
+    }));
+  }, [clientsQuery.data]);
 
   const filteredClients = useMemo(() => {
     return mockClients.filter((client) => {
