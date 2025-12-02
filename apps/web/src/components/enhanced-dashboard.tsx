@@ -1344,9 +1344,16 @@ export function EnhancedDashboard() {
                 </div>
               ))}
             </div>
-            <Button className="mt-4 w-full" variant="outline">
+            <Button
+              className="mt-4 w-full"
+              disabled={navigationLoading === "/appointments"}
+              onClick={() => handleNavigation("/appointments")}
+              variant="outline"
+            >
               <Plus className="mr-2 h-4 w-4" />
-              View All Tasks
+              {navigationLoading === "/appointments"
+                ? "Loading..."
+                : "View All Tasks"}
             </Button>
           </CardContent>
         </Card>
@@ -1453,9 +1460,16 @@ export function EnhancedDashboard() {
                 </div>
               </div>
             </div>
-            <Button className="mt-4 w-full" variant="outline">
+            <Button
+              className="mt-4 w-full"
+              disabled={navigationLoading === "/appointments/calendar"}
+              onClick={() => handleNavigation("/appointments/calendar")}
+              variant="outline"
+            >
               <Calendar className="mr-2 h-4 w-4" />
-              View Full Calendar
+              {navigationLoading === "/appointments/calendar"
+                ? "Loading..."
+                : "View Full Calendar"}
             </Button>
           </CardContent>
         </Card>

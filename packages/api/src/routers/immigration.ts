@@ -1,4 +1,4 @@
-import { businessSchema, immigrationSchema } from "@GK-Nexus/db";
+import { immigrationSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import {
   and,
@@ -871,7 +871,10 @@ export const immigrationRouter = {
         .select()
         .from(immigrationSchema.immigrationDocumentRequirements)
         .where(
-          eq(immigrationSchema.immigrationDocumentRequirements.caseId, input.caseId)
+          eq(
+            immigrationSchema.immigrationDocumentRequirements.caseId,
+            input.caseId
+          )
         )
         .orderBy(
           asc(immigrationSchema.immigrationDocumentRequirements.sortOrder),
@@ -971,7 +974,8 @@ export const immigrationRouter = {
             documentType:
               immigrationSchema.immigrationDocumentRequirements.documentType,
             status: immigrationSchema.immigrationDocumentRequirements.status,
-            updatedAt: immigrationSchema.immigrationDocumentRequirements.updatedAt,
+            updatedAt:
+              immigrationSchema.immigrationDocumentRequirements.updatedAt,
           });
 
         if (!updatedRequirement) {
@@ -1096,7 +1100,9 @@ export const immigrationRouter = {
         .select()
         .from(immigrationSchema.immigrationInterviews)
         .where(eq(immigrationSchema.immigrationInterviews.caseId, input.caseId))
-        .orderBy(asc(immigrationSchema.immigrationInterviews.scheduledDateTime));
+        .orderBy(
+          asc(immigrationSchema.immigrationInterviews.scheduledDateTime)
+        );
 
       // Parse JSON fields
       const parsedInterviews = interviews.map((interview) => ({
@@ -1141,7 +1147,8 @@ export const immigrationRouter = {
           .returning({
             id: immigrationSchema.immigrationInterviews.id,
             title: immigrationSchema.immigrationInterviews.title,
-            interviewType: immigrationSchema.immigrationInterviews.interviewType,
+            interviewType:
+              immigrationSchema.immigrationInterviews.interviewType,
             scheduledDateTime:
               immigrationSchema.immigrationInterviews.scheduledDateTime,
             status: immigrationSchema.immigrationInterviews.status,

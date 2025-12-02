@@ -236,7 +236,10 @@ export const graIntegrationRouter = {
           .from(graIntegrationSchema.graApiCredential)
           .where(
             and(
-              eq(graIntegrationSchema.graApiCredential.clientId, submission.clientId),
+              eq(
+                graIntegrationSchema.graApiCredential.clientId,
+                submission.clientId
+              ),
               gte(graIntegrationSchema.graApiCredential.expiresAt, new Date())
             )
           )
