@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -6,6 +7,7 @@ import {
   Clock,
   Edit,
   Filter,
+  Loader2,
   MapPin,
   Phone,
   Plus,
@@ -40,79 +42,28 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/appointments")({
   component: AppointmentsPage,
 });
 
-const mockAppointments = [
-  {
-    id: 1,
-    title: "Quarterly Tax Review",
-    type: "Tax Consultation",
-    consultant: "Sarah Johnson",
-    consultantAvatar: "",
-    consultantTitle: "Senior Tax Advisor",
-    date: "2024-12-05",
-    time: "10:00 AM",
-    duration: 60,
-    mode: "video",
-    status: "confirmed",
-    description: "Review Q4 2024 tax obligations and planning for 2025",
-    location: "Video Call - Zoom",
-    notes: "Please have your financial statements ready for review",
-  },
-  {
-    id: 2,
-    title: "Compliance Strategy Meeting",
-    type: "Compliance Review",
-    consultant: "Michael Chen",
-    consultantAvatar: "",
-    consultantTitle: "Compliance Specialist",
-    date: "2024-12-12",
-    time: "2:00 PM",
-    duration: 90,
-    mode: "in-person",
-    status: "confirmed",
-    description:
-      "Discuss upcoming GRA compliance requirements and filing deadlines",
-    location: "GK-Nexus Office, Georgetown",
-    notes: "Bring all pending compliance documents",
-  },
-  {
-    id: 3,
-    title: "Financial Planning Session",
-    type: "Financial Advisory",
-    consultant: "Jennifer Williams",
-    consultantAvatar: "",
-    consultantTitle: "Financial Planner",
-    date: "2024-11-30",
-    time: "11:00 AM",
-    duration: 45,
-    mode: "phone",
-    status: "completed",
-    description: "Business financial health assessment and growth planning",
-    location: "Phone Call",
-    notes: "Completed - Follow-up email sent with recommendations",
-  },
-  {
-    id: 4,
-    title: "VAT Registration Consultation",
-    type: "Business Setup",
-    consultant: "David Rodriguez",
-    consultantAvatar: "",
-    consultantTitle: "Business Consultant",
-    date: "2024-12-20",
-    time: "3:30 PM",
-    duration: 60,
-    mode: "video",
-    status: "pending",
-    description:
-      "Guide through VAT registration process for business expansion",
-    location: "Video Call - Teams",
-    notes: "Awaiting client confirmation",
-  },
-];
+interface AppointmentView {
+  id: string;
+  title: string;
+  type: string;
+  consultant: string;
+  consultantAvatar: string;
+  consultantTitle: string;
+  date: string;
+  time: string;
+  duration: number;
+  mode: string;
+  status: string;
+  description: string;
+  location: string;
+  notes: string;
+}
 
 const consultants = [
   {
@@ -171,8 +122,9 @@ const timeSlots = [
 ];
 
 function getStatusColor(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "confirmed":
+    case "scheduled":
       return "default";
     case "completed":
       return "secondary";
@@ -186,8 +138,9 @@ function getStatusColor(status: string) {
 }
 
 function getStatusIcon(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "confirmed":
+    case "scheduled":
       return <CheckCircle2 aria-hidden="true" className="h-4 w-4" />;
     case "completed":
       return <CheckCircle2 aria-hidden="true" className="h-4 w-4" />;
@@ -201,12 +154,13 @@ function getStatusIcon(status: string) {
 }
 
 function getModeIcon(mode: string) {
-  switch (mode) {
+  switch (mode?.toLowerCase()) {
     case "video":
       return <Video aria-hidden="true" className="h-4 w-4" />;
     case "phone":
       return <Phone aria-hidden="true" className="h-4 w-4" />;
     case "in-person":
+    case "in_person":
       return <MapPin aria-hidden="true" className="h-4 w-4" />;
     default:
       return <Calendar aria-hidden="true" className="h-4 w-4" />;
@@ -214,6 +168,7 @@ function getModeIcon(mode: string) {
 }
 
 function AppointmentsPage() {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
@@ -225,38 +180,59 @@ function AppointmentsPage() {
   const [appointmentTitle, setAppointmentTitle] = useState("");
   const [appointmentDescription, setAppointmentDescription] = useState("");
 
-  const filteredAppointments = mockAppointments.filter((appointment) => {
-    const matchesSearch =
-      appointment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appointment.consultant
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      appointment.type.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" || appointment.status === filterStatus;
-    return matchesSearch && matchesStatus;
+  // Fetch appointments from API
+  const { data: appointmentsResponse, isLoading } = useQuery({
+    queryKey: ["appointments"],
+    queryFn: () => orpc.appointments.list({ page: 1, limit: 100 }),
   });
 
-  const upcomingAppointments = filteredAppointments.filter(
-    (apt) => apt.status === "confirmed" || apt.status === "pending"
-  );
-  const pastAppointments = filteredAppointments.filter(
-    (apt) => apt.status === "completed" || apt.status === "cancelled"
-  );
+  // Map API response to component format
+  const appointments: AppointmentView[] = (
+    appointmentsResponse?.data?.items || []
+  ).map((apt: any) => ({
+    id: apt.id,
+    title: apt.title || "Untitled Appointment",
+    type: apt.appointmentType || "General",
+    consultant: apt.staffName || "Staff Member",
+    consultantAvatar: "",
+    consultantTitle: "Consultant",
+    date: apt.scheduledAt
+      ? new Date(apt.scheduledAt).toISOString().split("T")[0]
+      : "",
+    time: apt.scheduledAt
+      ? new Date(apt.scheduledAt).toLocaleTimeString("en-US", {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "",
+    duration: apt.duration || 60,
+    mode: apt.meetingType || "in-person",
+    status: apt.status || "pending",
+    description: apt.description || "",
+    location: apt.location || "",
+    notes: apt.notes || "",
+  }));
 
-  const handleBookAppointment = () => {
-    // In real app, this would create the appointment via API
-    console.log("Booking appointment:", {
-      date: selectedDate,
-      time: selectedTime,
-      consultant: selectedConsultant,
-      type: appointmentType,
-      mode: appointmentMode,
-      title: appointmentTitle,
-      description: appointmentDescription,
-    });
-    setIsBookingDialogOpen(false);
-    // Reset form
+  // Create appointment mutation
+  const createMutation = useMutation({
+    mutationFn: (data: {
+      title: string;
+      appointmentType: string;
+      staffId?: string;
+      scheduledAt: string;
+      duration: number;
+      meetingType: string;
+      description?: string;
+    }) => orpc.appointments.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      setIsBookingDialogOpen(false);
+      resetForm();
+    },
+  });
+
+  const resetForm = () => {
     setSelectedDate("");
     setSelectedTime("");
     setSelectedConsultant("");
@@ -265,6 +241,62 @@ function AppointmentsPage() {
     setAppointmentTitle("");
     setAppointmentDescription("");
   };
+
+  const filteredAppointments = appointments.filter((appointment) => {
+    const matchesSearch =
+      appointment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appointment.consultant
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      appointment.type.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" ||
+      appointment.status.toLowerCase() === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const upcomingAppointments = filteredAppointments.filter(
+    (apt) =>
+      apt.status.toLowerCase() === "confirmed" ||
+      apt.status.toLowerCase() === "scheduled" ||
+      apt.status.toLowerCase() === "pending"
+  );
+  const pastAppointments = filteredAppointments.filter(
+    (apt) =>
+      apt.status.toLowerCase() === "completed" ||
+      apt.status.toLowerCase() === "cancelled"
+  );
+
+  const handleBookAppointment = () => {
+    if (!(selectedDate && selectedTime && appointmentTitle)) return;
+
+    // Convert time to ISO datetime
+    const [time, period] = selectedTime.split(" ");
+    const [hours, minutes] = time.split(":");
+    let hour = Number.parseInt(hours);
+    if (period === "PM" && hour !== 12) hour += 12;
+    if (period === "AM" && hour === 12) hour = 0;
+
+    const scheduledAt = new Date(selectedDate);
+    scheduledAt.setHours(hour, Number.parseInt(minutes), 0);
+
+    createMutation.mutate({
+      title: appointmentTitle,
+      appointmentType: appointmentType || "General Inquiry",
+      scheduledAt: scheduledAt.toISOString(),
+      duration: 60,
+      meetingType: appointmentMode || "in-person",
+      description: appointmentDescription,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -423,7 +455,19 @@ function AppointmentsPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={handleBookAppointment}>Book Appointment</Button>
+              <Button
+                disabled={createMutation.isPending}
+                onClick={handleBookAppointment}
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Booking...
+                  </>
+                ) : (
+                  "Book Appointment"
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -462,8 +506,9 @@ function AppointmentsPage() {
               <div>
                 <p className="font-semibold text-2xl text-foreground">
                   {
-                    mockAppointments.filter((a) => a.status === "completed")
-                      .length
+                    appointments.filter(
+                      (a) => a.status.toLowerCase() === "completed"
+                    ).length
                   }
                 </p>
                 <p className="text-muted-foreground text-xs">Completed</p>
@@ -484,8 +529,9 @@ function AppointmentsPage() {
               <div>
                 <p className="font-semibold text-2xl text-foreground">
                   {
-                    mockAppointments.filter((a) => a.status === "pending")
-                      .length
+                    appointments.filter(
+                      (a) => a.status.toLowerCase() === "pending"
+                    ).length
                   }
                 </p>
                 <p className="text-muted-foreground text-xs">Pending</p>
@@ -631,7 +677,7 @@ function AppointmentsPage() {
                                 <div className="flex items-center space-x-1">
                                   {getModeIcon(appointment.mode)}
                                   <span className="capitalize">
-                                    {appointment.mode.replace("-", " ")}
+                                    {appointment.mode.replace(/[-_]/g, " ")}
                                   </span>
                                 </div>
                               </div>
@@ -749,7 +795,7 @@ function AppointmentsPage() {
                                 <div className="flex items-center space-x-1">
                                   {getModeIcon(appointment.mode)}
                                   <span className="capitalize">
-                                    {appointment.mode.replace("-", " ")}
+                                    {appointment.mode.replace(/[-_]/g, " ")}
                                   </span>
                                 </div>
                               </div>

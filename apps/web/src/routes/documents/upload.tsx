@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -5,6 +6,7 @@ import {
   CheckCircle2,
   FileText,
   FolderOpen,
+  Loader2,
   Shield,
   Tags,
   Upload,
@@ -33,14 +35,20 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/useDocuments";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/upload")({
   component: DocumentUploadPage,
 });
 
+interface ClientOption {
+  id: string;
+  name: string;
+}
+
 function DocumentUploadPage() {
   const navigate = useNavigate();
-  const { folderTree, createFolder } = useDocuments();
+  const { folderTree } = useDocuments();
 
   const [selectedFolder, setSelectedFolder] = useState<string>("");
   const [isConfidential, setIsConfidential] = useState(false);
@@ -56,6 +64,19 @@ function DocumentUploadPage() {
     total: number;
     currentFile?: string;
   }>({ completed: 0, total: 0 });
+
+  // Fetch clients from API
+  const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => orpc.clients.list({ page: 1, limit: 100 }),
+  });
+
+  const clients: ClientOption[] = (clientsResponse?.data?.items || []).map(
+    (client: { id: string; name: string }) => ({
+      id: client.id,
+      name: client.name,
+    })
+  );
 
   const documentTypes = [
     "Financial Report",
@@ -85,13 +106,6 @@ function DocumentUploadPage() {
     "compliance",
     "client",
     "internal",
-  ];
-
-  const mockClients = [
-    { id: "client_1", name: "Acme Corp" },
-    { id: "client_2", name: "TechStart Inc" },
-    { id: "client_3", name: "Local Business Ltd" },
-    { id: "client_4", name: "Global Services" },
   ];
 
   const handleAddTag = () => {
@@ -344,11 +358,17 @@ function DocumentUploadPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">None</SelectItem>
-                    {mockClients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
+                    {isLoadingClients ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : (
+                      clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -455,6 +475,7 @@ function DocumentUploadPage() {
                         <button
                           className="ml-1 hover:text-destructive"
                           onClick={() => handleRemoveTag(tag)}
+                          type="button"
                         >
                           ×
                         </button>

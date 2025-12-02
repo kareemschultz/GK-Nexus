@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -56,7 +57,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-
+import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/$id/documents")({
   component: RouteComponent,
   beforeLoad: async () => {
@@ -123,192 +124,108 @@ function RouteComponent() {
   const [showDocumentDetails, setShowDocumentDetails] = useState(false);
 
   // Mock client data
-  const mockClients: Client[] = [
-    {
-      id: "1",
-      name: "TechCorp Inc.",
-      type: "enterprise",
-      status: "active",
-      industry: "Technology",
-      contactPerson: "John Smith",
-      email: "john.smith@techcorp.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Innovation Drive, Silicon Valley, CA 94025",
-      revenue: 50_000_000,
-      employees: 500,
-      joinDate: "2023-01-15",
-      lastActivity: "2024-11-27",
-      complianceScore: 98,
-      documents: 24,
-    },
-    {
-      id: "2",
-      name: "DataFlow Solutions",
-      type: "mid-market",
-      status: "onboarding",
-      industry: "Data Analytics",
-      contactPerson: "Sarah Johnson",
-      email: "sarah@dataflow.com",
-      phone: "+1 (555) 234-5678",
-      address: "456 Analytics Blvd, Austin, TX 78701",
-      revenue: 15_000_000,
-      employees: 150,
-      joinDate: "2024-11-20",
-      lastActivity: "2024-11-28",
-      complianceScore: 85,
-      documents: 8,
-    },
-    {
-      id: "3",
-      name: "Green Energy Co.",
-      type: "enterprise",
-      status: "active",
-      industry: "Renewable Energy",
-      contactPerson: "Michael Chen",
-      email: "m.chen@greenenergy.com",
-      phone: "+1 (555) 345-6789",
-      address: "789 Sustainability St, Portland, OR 97201",
-      revenue: 75_000_000,
-      employees: 800,
-      joinDate: "2022-06-10",
-      lastActivity: "2024-11-26",
-      complianceScore: 96,
-      documents: 45,
-    },
-    {
-      id: "4",
-      name: "Local Retail LLC",
-      type: "smb",
-      status: "suspended",
-      industry: "Retail",
-      contactPerson: "Emily Davis",
-      email: "emily@localretail.com",
-      phone: "+1 (555) 456-7890",
-      address: "321 Main St, Springfield, IL 62701",
-      revenue: 2_000_000,
-      employees: 25,
-      joinDate: "2023-08-22",
-      lastActivity: "2024-10-15",
-      complianceScore: 72,
-      documents: 12,
-    },
-    {
-      id: "5",
-      name: "Healthcare Plus",
-      type: "mid-market",
-      status: "active",
-      industry: "Healthcare",
-      contactPerson: "Dr. Robert Wilson",
-      email: "r.wilson@healthcareplus.com",
-      phone: "+1 (555) 567-8901",
-      address: "654 Medical Center Dr, Boston, MA 02101",
-      revenue: 25_000_000,
-      employees: 300,
-      joinDate: "2023-03-14",
-      lastActivity: "2024-11-28",
-      complianceScore: 94,
-      documents: 38,
-    },
-  ];
 
-  // Mock documents data
-  const mockDocuments: Document[] = [
-    {
-      id: "doc-1",
-      clientId: "1",
-      name: "2024 Corporate Tax Return",
-      type: "tax-return",
-      category: "tax",
-      uploadDate: "2024-03-15",
-      lastModified: "2024-03-20",
-      size: 2_500_000, // 2.5MB
-      status: "approved",
-      uploadedBy: "Sarah Williams",
-      description: "Annual corporate tax return for fiscal year 2024",
-      tags: ["tax", "2024", "annual", "corporate"],
-      confidential: true,
-    },
-    {
-      id: "doc-2",
-      clientId: "1",
-      name: "Q3 Financial Statements",
-      type: "financial-statement",
-      category: "financial",
-      uploadDate: "2024-10-15",
-      lastModified: "2024-10-18",
-      size: 1_800_000, // 1.8MB
-      status: "reviewed",
-      uploadedBy: "Mike Chen",
-      description:
-        "Third quarter financial statements including P&L and balance sheet",
-      tags: ["financial", "Q3", "2024", "statements"],
-      confidential: true,
-    },
-    {
-      id: "doc-3",
-      clientId: "1",
-      name: "Annual Audit Report 2024",
-      type: "audit-report",
-      category: "compliance",
-      uploadDate: "2024-11-01",
-      lastModified: "2024-11-05",
-      size: 4_200_000, // 4.2MB
-      status: "processing",
-      uploadedBy: "Jennifer Davis",
-      description: "Independent audit report for 2024 fiscal year",
-      tags: ["audit", "2024", "compliance", "annual"],
-      confidential: true,
-    },
-    {
-      id: "doc-4",
-      clientId: "1",
-      name: "Service Agreement Amendment",
-      type: "contract",
-      category: "legal",
-      uploadDate: "2024-11-20",
-      lastModified: "2024-11-22",
-      size: 450_000, // 450KB
-      status: "uploaded",
-      uploadedBy: "Tom Wilson",
-      description: "Amendment to existing service agreement terms",
-      tags: ["contract", "amendment", "legal"],
-      confidential: false,
-    },
-    {
-      id: "doc-5",
-      clientId: "1",
-      name: "October Invoice #2024-10-001",
-      type: "invoice",
-      category: "operational",
-      uploadDate: "2024-11-01",
-      lastModified: "2024-11-01",
-      size: 125_000, // 125KB
-      status: "approved",
-      uploadedBy: "Lisa Thompson",
-      description: "Monthly service invoice for October 2024",
-      tags: ["invoice", "october", "2024"],
-      confidential: false,
-    },
-    // Add documents for other clients with different IDs
-    {
-      id: "doc-6",
-      clientId: "2",
-      name: "2024 Tax Documents Setup",
-      type: "tax-return",
-      category: "tax",
-      uploadDate: "2024-11-25",
-      lastModified: "2024-11-26",
-      size: 890_000,
-      status: "uploaded",
-      uploadedBy: "Sarah Williams",
-      description: "Initial tax document setup for new client",
-      tags: ["tax", "setup", "2024"],
-      confidential: true,
-    },
-  ];
+  // Fetch client data from API
+  const { data: clientResponse, isLoading: clientLoading } = useQuery({
+    queryKey: ["client", id],
+    queryFn: () => orpc.clients.getById({ id }),
+  });
 
-  const client = mockClients.find((c) => c.id === id);
-  const clientDocuments = mockDocuments.filter((doc) => doc.clientId === id);
+  // Fetch documents for this client from API
+  const { data: documentsResponse, isLoading: docsLoading } = useQuery({
+    queryKey: ["clientDocuments", id],
+    queryFn: () => orpc.documents.list({ clientId: id, page: 1, limit: 100 }),
+    enabled: !!id,
+  });
+
+  // Map client API response
+  const client: Client | null = clientResponse?.data
+    ? {
+        id: clientResponse.data.id,
+        name: clientResponse.data.name || "",
+        type: (clientResponse.data.entityType?.toLowerCase() === "individual"
+          ? "smb"
+          : clientResponse.data.entityType?.toLowerCase() === "corporation"
+            ? "enterprise"
+            : "mid-market") as Client["type"],
+        status: (clientResponse.data.status?.toLowerCase() ||
+          "active") as Client["status"],
+        industry: clientResponse.data.industry || "General",
+        contactPerson: clientResponse.data.contactPerson || "",
+        email: clientResponse.data.email || "",
+        phone: clientResponse.data.phoneNumber || "",
+        address: clientResponse.data.address || "",
+        revenue: 0,
+        employees: 0,
+        joinDate:
+          clientResponse.data.clientSince?.toString() ||
+          new Date().toISOString(),
+        lastActivity:
+          clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
+        complianceScore: 0,
+        documents: documentsResponse?.data?.items?.length || 0,
+      }
+    : null;
+
+  // Map documents API response
+  const documents: Document[] = (documentsResponse?.data?.items || []).map(
+    (doc: {
+      id: string;
+      clientId: string;
+      name: string;
+      category: string;
+      subcategory: string | null;
+      fileName: string;
+      fileSize: number;
+      status: string;
+      uploadedBy: string | null;
+      description: string | null;
+      tags: string[] | null;
+      isConfidential: boolean;
+      createdAt: string | Date | null;
+      updatedAt: string | Date | null;
+    }) => ({
+      id: doc.id,
+      clientId: doc.clientId,
+      name: doc.name || doc.fileName,
+      type: (doc.category?.toLowerCase().includes("tax")
+        ? "tax-return"
+        : doc.category?.toLowerCase().includes("financial")
+          ? "financial-statement"
+          : doc.category?.toLowerCase().includes("audit")
+            ? "audit-report"
+            : doc.category?.toLowerCase().includes("contract")
+              ? "contract"
+              : "other") as Document["type"],
+      category: (doc.category?.toLowerCase() ||
+        "other") as Document["category"],
+      uploadDate:
+        doc.createdAt?.toString().split("T")[0] ||
+        new Date().toISOString().split("T")[0],
+      lastModified:
+        doc.updatedAt?.toString().split("T")[0] ||
+        new Date().toISOString().split("T")[0],
+      size: doc.fileSize || 0,
+      status: (doc.status?.toLowerCase() || "uploaded") as Document["status"],
+      uploadedBy: doc.uploadedBy || "Unknown",
+      description: doc.description || "",
+      tags: doc.tags || [],
+      confidential: doc.isConfidential,
+    })
+  );
+
+  const isLoading = clientLoading || docsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading documents...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!client) {
     return (

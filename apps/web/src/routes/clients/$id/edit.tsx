@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Building2, Save } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/clients/$id/edit")({
   component: RouteComponent,
@@ -101,121 +103,81 @@ function RouteComponent() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
-  // Mock client data - in a real app this would be fetched from an API
-  const mockClients: Client[] = [
-    {
-      id: "1",
-      name: "TechCorp Inc.",
-      type: "enterprise",
-      status: "active",
-      industry: "Technology",
-      contactPerson: "John Smith",
-      email: "john.smith@techcorp.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Innovation Drive, Silicon Valley, CA 94025",
-      revenue: 50_000_000,
-      employees: 500,
-      joinDate: "2023-01-15",
-      lastActivity: "2024-11-27",
-      complianceScore: 98,
-      documents: 24,
-      taxYear: "2024",
-      filingStatus: "Filed",
-      nextDeadline: "2025-03-15",
-      riskLevel: "low",
-      accountManager: "Sarah Williams",
-    },
-    {
-      id: "2",
-      name: "DataFlow Solutions",
-      type: "mid-market",
-      status: "onboarding",
-      industry: "Data Analytics",
-      contactPerson: "Sarah Johnson",
-      email: "sarah@dataflow.com",
-      phone: "+1 (555) 234-5678",
-      address: "456 Analytics Blvd, Austin, TX 78701",
-      revenue: 15_000_000,
-      employees: 150,
-      joinDate: "2024-11-20",
-      lastActivity: "2024-11-28",
-      complianceScore: 85,
-      documents: 8,
-      taxYear: "2024",
-      filingStatus: "In Progress",
-      nextDeadline: "2025-01-15",
-      riskLevel: "medium",
-      accountManager: "Mike Chen",
-    },
-    {
-      id: "3",
-      name: "Green Energy Co.",
-      type: "enterprise",
-      status: "active",
-      industry: "Renewable Energy",
-      contactPerson: "Michael Chen",
-      email: "m.chen@greenenergy.com",
-      phone: "+1 (555) 345-6789",
-      address: "789 Sustainability St, Portland, OR 97201",
-      revenue: 75_000_000,
-      employees: 800,
-      joinDate: "2022-06-10",
-      lastActivity: "2024-11-26",
-      complianceScore: 96,
-      documents: 45,
-      taxYear: "2024",
-      filingStatus: "Filed",
-      nextDeadline: "2025-03-15",
-      riskLevel: "low",
-      accountManager: "Jennifer Davis",
-    },
-    {
-      id: "4",
-      name: "Local Retail LLC",
-      type: "smb",
-      status: "suspended",
-      industry: "Retail",
-      contactPerson: "Emily Davis",
-      email: "emily@localretail.com",
-      phone: "+1 (555) 456-7890",
-      address: "321 Main St, Springfield, IL 62701",
-      revenue: 2_000_000,
-      employees: 25,
-      joinDate: "2023-08-22",
-      lastActivity: "2024-10-15",
-      complianceScore: 72,
-      documents: 12,
-      taxYear: "2024",
-      filingStatus: "Overdue",
-      nextDeadline: "2024-12-15",
-      riskLevel: "high",
-      accountManager: "Tom Wilson",
-    },
-    {
-      id: "5",
-      name: "Healthcare Plus",
-      type: "mid-market",
-      status: "active",
-      industry: "Healthcare",
-      contactPerson: "Dr. Robert Wilson",
-      email: "r.wilson@healthcareplus.com",
-      phone: "+1 (555) 567-8901",
-      address: "654 Medical Center Dr, Boston, MA 02101",
-      revenue: 25_000_000,
-      employees: 300,
-      joinDate: "2023-03-14",
-      lastActivity: "2024-11-28",
-      complianceScore: 94,
-      documents: 38,
-      taxYear: "2024",
-      filingStatus: "Filed",
-      nextDeadline: "2025-03-15",
-      riskLevel: "low",
-      accountManager: "Lisa Thompson",
-    },
-  ];
+  const queryClient = useQueryClient();
 
-  const client = mockClients.find((c) => c.id === id);
+  // Fetch client data from API
+  const { data: clientResponse, isLoading } = useQuery({
+    queryKey: ["client", id],
+    queryFn: () => orpc.clients.getById({ id }),
+  });
+
+  // Update client mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: ClientFormData) =>
+      orpc.clients.update({
+        id,
+        data: {
+          name: data.name,
+          status: data.status,
+          industry: data.industry,
+          contactPerson: data.contactPerson,
+          email: data.email,
+          phoneNumber: data.phone,
+          address: data.address,
+          riskLevel: data.riskLevel,
+          assignedManager: data.accountManager,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client", id] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Client updated successfully!", {
+        description: "The client information has been updated.",
+      });
+      navigate({ to: `/clients/${id}` });
+    },
+    onError: () => {
+      toast.error("Failed to update client", {
+        description:
+          "Please try again or contact support if the problem persists.",
+      });
+    },
+  });
+
+  // Map API response to Client type for display
+  const client: Client | null = clientResponse?.data
+    ? {
+        id: clientResponse.data.id,
+        name: clientResponse.data.name || "",
+        type: (clientResponse.data.entityType?.toLowerCase() === "individual"
+          ? "smb"
+          : clientResponse.data.entityType?.toLowerCase() === "corporation"
+            ? "enterprise"
+            : "mid-market") as Client["type"],
+        status: (clientResponse.data.status?.toLowerCase() ||
+          "active") as Client["status"],
+        industry: clientResponse.data.industry || "",
+        contactPerson: clientResponse.data.contactPerson || "",
+        email: clientResponse.data.email || "",
+        phone: clientResponse.data.phoneNumber || "",
+        address: clientResponse.data.address || "",
+        revenue: 0,
+        employees: 0,
+        joinDate:
+          clientResponse.data.clientSince?.toString() ||
+          new Date().toISOString(),
+        lastActivity:
+          clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
+        complianceScore: 0,
+        documents: 0,
+        taxYear: "",
+        filingStatus: "",
+        nextDeadline: "",
+        riskLevel: (clientResponse.data.riskLevel?.toLowerCase() ||
+          "medium") as Client["riskLevel"],
+        accountManager: clientResponse.data.assignedManager || "",
+      }
+    : null;
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
@@ -250,6 +212,17 @@ function RouteComponent() {
         },
   });
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading client...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!client) {
     return (
       <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -273,21 +246,7 @@ function RouteComponent() {
   }
 
   const onSubmit = async (data: ClientFormData) => {
-    try {
-      // In a real app, this would be an API call
-      console.log("Updating client:", data);
-
-      toast.success("Client updated successfully!", {
-        description: `${data.name} has been updated in the system.`,
-      });
-
-      navigate({ to: `/clients/${id}` });
-    } catch (error) {
-      toast.error("Failed to update client", {
-        description:
-          "Please try again or contact support if the problem persists.",
-      });
-    }
+    updateMutation.mutate(data);
   };
 
   const getStatusBadge = (status: string) => {

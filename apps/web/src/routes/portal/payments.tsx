@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -11,6 +12,7 @@ import {
   Eye,
   FileText,
   Filter,
+  Loader2,
   Receipt,
   Search,
 } from "lucide-react";
@@ -43,116 +45,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/payments")({
   component: PaymentsPage,
 });
 
-const mockInvoices = [
-  {
-    id: 1,
-    invoiceNumber: "INV-2024-011",
-    description: "November 2024 Tax Consulting Services",
-    amount: 2450.0,
-    currency: "GYD",
-    issueDate: "2024-11-30",
-    dueDate: "2024-12-15",
-    status: "outstanding",
-    category: "consulting",
-    services: [
-      "GIT Monthly Return Preparation",
-      "PAYE Submission",
-      "Tax Consultation (2 hours)",
-    ],
-  },
-  {
-    id: 2,
-    invoiceNumber: "INV-2024-010",
-    description: "October 2024 Compliance Services",
-    amount: 1800.0,
-    currency: "GYD",
-    issueDate: "2024-10-31",
-    dueDate: "2024-11-15",
-    status: "paid",
-    paidDate: "2024-11-10",
-    paymentMethod: "Bank Transfer",
-    category: "compliance",
-    services: [
-      "Quarterly Compliance Review",
-      "WHT Return Preparation",
-      "Document Filing",
-    ],
-  },
-  {
-    id: 3,
-    invoiceNumber: "INV-2024-009",
-    description: "September 2024 Financial Advisory",
-    amount: 3200.0,
-    currency: "GYD",
-    issueDate: "2024-09-30",
-    dueDate: "2024-10-15",
-    status: "paid",
-    paidDate: "2024-10-12",
-    paymentMethod: "Credit Card",
-    category: "advisory",
-    services: [
-      "Business Financial Health Assessment",
-      "Tax Planning Strategy",
-      "Investment Advisory (3 hours)",
-    ],
-  },
-  {
-    id: 4,
-    invoiceNumber: "INV-2024-008",
-    description: "August 2024 Tax Services",
-    amount: 2100.0,
-    currency: "GYD",
-    issueDate: "2024-08-31",
-    dueDate: "2024-09-15",
-    status: "overdue",
-    category: "tax",
-    services: [
-      "Corporation Tax Return",
-      "GIT Monthly Returns",
-      "Tax Compliance Review",
-    ],
-  },
-  {
-    id: 5,
-    invoiceNumber: "INV-2024-007",
-    description: "July 2024 Setup Services",
-    amount: 5500.0,
-    currency: "GYD",
-    issueDate: "2024-07-31",
-    dueDate: "2024-08-15",
-    status: "paid",
-    paidDate: "2024-08-10",
-    paymentMethod: "Bank Transfer",
-    category: "setup",
-    services: [
-      "VAT Registration",
-      "Business Registration Assistance",
-      "Initial Compliance Setup",
-    ],
-  },
-  {
-    id: 6,
-    invoiceNumber: "INV-2024-006",
-    description: "June 2024 Monthly Services",
-    amount: 1950.0,
-    currency: "GYD",
-    issueDate: "2024-06-30",
-    dueDate: "2024-07-15",
-    status: "partially_paid",
-    partialAmount: 1000.0,
-    category: "monthly",
-    services: [
-      "Monthly Bookkeeping",
-      "PAYE Submissions",
-      "Financial Reporting",
-    ],
-  },
-];
+interface InvoiceView {
+  id: string;
+  invoiceNumber: string;
+  description: string;
+  amount: number;
+  currency: string;
+  issueDate: string;
+  dueDate: string;
+  status: string;
+  category: string;
+  services: string[];
+  paidDate?: string;
+  paymentMethod?: string;
+  partialAmount?: number;
+}
 
 const paymentMethods = [
   {
@@ -186,10 +99,12 @@ const paymentMethods = [
 ];
 
 function getStatusColor(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "paid":
       return "default";
     case "outstanding":
+    case "draft":
+    case "sent":
       return "secondary";
     case "overdue":
       return "destructive";
@@ -201,10 +116,12 @@ function getStatusColor(status: string) {
 }
 
 function getStatusIcon(status: string) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case "paid":
       return <CheckCircle2 aria-hidden="true" className="h-4 w-4" />;
     case "outstanding":
+    case "draft":
+    case "sent":
       return <Clock aria-hidden="true" className="h-4 w-4" />;
     case "overdue":
       return <AlertTriangle aria-hidden="true" className="h-4 w-4" />;
@@ -216,7 +133,7 @@ function getStatusIcon(status: string) {
 }
 
 function getCategoryColor(category: string) {
-  switch (category) {
+  switch (category?.toLowerCase()) {
     case "consulting":
       return "bg-blue-50 dark:bg-blue-950 text-blue-600";
     case "compliance":
@@ -238,12 +155,39 @@ function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  const [selectedInvoice, setSelectedInvoice] = useState<
-    (typeof mockInvoices)[0] | null
-  >(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<InvoiceView | null>(
+    null
+  );
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
-  const filteredInvoices = mockInvoices.filter((invoice) => {
+  // Fetch invoices from API
+  const { data: invoicesResponse, isLoading } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: () => orpc.invoices.list({ page: 1, limit: 100 }),
+  });
+
+  // Map API response to component format
+  const invoices: InvoiceView[] = (invoicesResponse?.data?.items || []).map(
+    (inv: any) => ({
+      id: inv.id,
+      invoiceNumber:
+        inv.invoiceNumber || `INV-${inv.id.slice(0, 8).toUpperCase()}`,
+      description: inv.notes || inv.description || "Invoice",
+      amount: Number(inv.totalAmount) || 0,
+      currency: inv.currency || "GYD",
+      issueDate: inv.issueDate || inv.createdAt,
+      dueDate: inv.dueDate || inv.createdAt,
+      status: inv.status || "draft",
+      category: inv.category || "consulting",
+      services:
+        inv.items?.map((item: any) => item.description || item.name) || [],
+      paidDate: inv.paidDate,
+      paymentMethod: inv.paymentMethod,
+      partialAmount: inv.paidAmount ? Number(inv.paidAmount) : undefined,
+    })
+  );
+
+  const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
       invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -251,40 +195,43 @@ function PaymentsPage() {
         service.toLowerCase().includes(searchQuery.toLowerCase())
       );
     const matchesStatus =
-      filterStatus === "all" || invoice.status === filterStatus;
+      filterStatus === "all" || invoice.status.toLowerCase() === filterStatus;
     const matchesCategory =
-      filterCategory === "all" || invoice.category === filterCategory;
+      filterCategory === "all" ||
+      invoice.category.toLowerCase() === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const totalOutstanding = mockInvoices
+  const totalOutstanding = invoices
     .filter(
       (inv) =>
-        inv.status === "outstanding" ||
-        inv.status === "overdue" ||
-        inv.status === "partially_paid"
+        inv.status.toLowerCase() === "outstanding" ||
+        inv.status.toLowerCase() === "overdue" ||
+        inv.status.toLowerCase() === "sent" ||
+        inv.status.toLowerCase() === "partially_paid"
     )
     .reduce((sum, inv) => {
       const remaining =
-        inv.status === "partially_paid"
+        inv.status.toLowerCase() === "partially_paid"
           ? inv.amount - (inv.partialAmount || 0)
           : inv.amount;
       return sum + remaining;
     }, 0);
 
-  const totalPaidThisYear = mockInvoices
+  const totalPaidThisYear = invoices
     .filter(
       (inv) =>
-        inv.status === "paid" &&
-        new Date(inv.paidDate || "").getFullYear() === 2024
+        inv.status.toLowerCase() === "paid" &&
+        inv.paidDate &&
+        new Date(inv.paidDate).getFullYear() === new Date().getFullYear()
     )
     .reduce((sum, inv) => sum + inv.amount, 0);
 
-  const overdueCount = mockInvoices.filter(
-    (inv) => inv.status === "overdue"
+  const overdueCount = invoices.filter(
+    (inv) => inv.status.toLowerCase() === "overdue"
   ).length;
 
-  const handleMakePayment = (invoice: (typeof mockInvoices)[0]) => {
+  const handleMakePayment = (invoice: InvoiceView) => {
     setSelectedInvoice(invoice);
     setIsPaymentDialogOpen(true);
   };
@@ -295,6 +242,14 @@ function PaymentsPage() {
     setIsPaymentDialogOpen(false);
     setSelectedInvoice(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -370,7 +325,7 @@ function PaymentsPage() {
               </div>
               <div>
                 <p className="font-semibold text-2xl text-foreground">
-                  {mockInvoices.length}
+                  {invoices.length}
                 </p>
                 <p className="text-muted-foreground text-xs">Total Invoices</p>
               </div>
@@ -380,8 +335,11 @@ function PaymentsPage() {
       </div>
 
       {/* Outstanding Payments */}
-      {mockInvoices.filter(
-        (inv) => inv.status === "outstanding" || inv.status === "overdue"
+      {invoices.filter(
+        (inv) =>
+          inv.status.toLowerCase() === "outstanding" ||
+          inv.status.toLowerCase() === "overdue" ||
+          inv.status.toLowerCase() === "sent"
       ).length > 0 && (
         <Card>
           <CardHeader>
@@ -395,10 +353,12 @@ function PaymentsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockInvoices
+              {invoices
                 .filter(
                   (inv) =>
-                    inv.status === "outstanding" || inv.status === "overdue"
+                    inv.status.toLowerCase() === "outstanding" ||
+                    inv.status.toLowerCase() === "overdue" ||
+                    inv.status.toLowerCase() === "sent"
                 )
                 .map((invoice) => (
                   <div
@@ -408,7 +368,7 @@ function PaymentsPage() {
                     <div className="flex items-center space-x-4">
                       <div
                         className={`rounded-full p-2 ${
-                          invoice.status === "overdue"
+                          invoice.status.toLowerCase() === "overdue"
                             ? "bg-red-50 dark:bg-red-950"
                             : "bg-amber-50 dark:bg-amber-950"
                         }`}
@@ -433,14 +393,14 @@ function PaymentsPage() {
                           {invoice.currency} {invoice.amount.toLocaleString()}
                         </p>
                         <Badge variant={getStatusColor(invoice.status)}>
-                          {invoice.status === "overdue"
+                          {invoice.status.toLowerCase() === "overdue"
                             ? "OVERDUE"
                             : "Outstanding"}
                         </Badge>
                       </div>
                       <Button
                         className={
-                          invoice.status === "overdue"
+                          invoice.status.toLowerCase() === "overdue"
                             ? "bg-red-600 hover:bg-red-700"
                             : ""
                         }
@@ -558,7 +518,8 @@ function PaymentsPage() {
                         </TableCell>
                         <TableCell className="font-medium text-foreground">
                           {invoice.currency} {invoice.amount.toLocaleString()}
-                          {invoice.status === "partially_paid" && (
+                          {invoice.status.toLowerCase() ===
+                            "partially_paid" && (
                             <p className="text-muted-foreground text-xs">
                               Paid: {invoice.currency}{" "}
                               {(invoice.partialAmount || 0).toLocaleString()}
@@ -598,8 +559,9 @@ function PaymentsPage() {
                                 className="h-4 w-4"
                               />
                             </Button>
-                            {(invoice.status === "outstanding" ||
-                              invoice.status === "overdue") && (
+                            {(invoice.status.toLowerCase() === "outstanding" ||
+                              invoice.status.toLowerCase() === "overdue" ||
+                              invoice.status.toLowerCase() === "sent") && (
                               <Button
                                 onClick={() => handleMakePayment(invoice)}
                                 size="sm"
@@ -678,7 +640,8 @@ function PaymentsPage() {
                               {invoice.amount.toLocaleString()}
                             </span>
                           </div>
-                          {invoice.status === "partially_paid" && (
+                          {invoice.status.toLowerCase() ===
+                            "partially_paid" && (
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">
                                 Remaining:
@@ -734,8 +697,9 @@ function PaymentsPage() {
                             />
                             Download
                           </Button>
-                          {(invoice.status === "outstanding" ||
-                            invoice.status === "overdue") && (
+                          {(invoice.status.toLowerCase() === "outstanding" ||
+                            invoice.status.toLowerCase() === "overdue" ||
+                            invoice.status.toLowerCase() === "sent") && (
                             <Button
                               className="flex-1"
                               onClick={() => handleMakePayment(invoice)}

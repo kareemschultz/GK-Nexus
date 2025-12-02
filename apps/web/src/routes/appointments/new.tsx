@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CalendarDays, Clock, MapPin, User, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -23,58 +24,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/new")({
   component: NewAppointmentPage,
 });
-
-// Mock data for clients and services - in real app, these would come from API
-const mockClients = [
-  { id: "1", name: "Acme Corp", type: "COMPANY", tin: "123456789" },
-  { id: "2", name: "John Doe", type: "INDIVIDUAL", tin: "987654321" },
-  { id: "3", name: "TechStart Inc", type: "COMPANY", tin: "456789123" },
-];
-
-const mockServices = [
-  {
-    id: "1",
-    name: "Tax Consultation",
-    department: "KAJ",
-    serviceType: "TAX_CONSULTATION",
-    duration: 60,
-    price: 150.0,
-  },
-  {
-    id: "2",
-    name: "VAT Return Preparation",
-    department: "KAJ",
-    serviceType: "VAT_RETURN",
-    duration: 90,
-    price: 200.0,
-  },
-  {
-    id: "3",
-    name: "Business Registration",
-    department: "GCMC",
-    serviceType: "BUSINESS_REGISTRATION",
-    duration: 120,
-    price: 300.0,
-  },
-  {
-    id: "4",
-    name: "Compliance Review",
-    department: "COMPLIANCE",
-    serviceType: "COMPLIANCE_REVIEW",
-    duration: 75,
-    price: 250.0,
-  },
-];
-
-const mockStaff = [
-  { id: "1", name: "Sarah Johnson", role: "Senior Tax Advisor" },
-  { id: "2", name: "Michael Chen", role: "Compliance Manager" },
-  { id: "3", name: "Emily Davis", role: "Business Consultant" },
-];
 
 const appointmentSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -90,8 +44,141 @@ const appointmentSchema = z.object({
   internalNotes: z.string().optional(),
 });
 
+interface ClientOption {
+  id: string;
+  name: string;
+  type: string;
+  tin: string;
+}
+
+interface ServiceOption {
+  id: string;
+  name: string;
+  department: string;
+  serviceType: string;
+  duration: number;
+  price: number;
+}
+
+interface StaffOption {
+  id: string;
+  name: string;
+  role: string;
+}
+
 function NewAppointmentPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Fetch clients from API
+  const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => orpc.clients.list({ page: 1, limit: 100 }),
+  });
+
+  // Fetch users/staff from API
+  const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => orpc.users.list({ page: 1, limit: 100 }),
+  });
+
+  // Map API responses to component format
+  const clients: ClientOption[] = (clientsResponse?.data?.items || []).map(
+    (client: {
+      id: string;
+      name: string;
+      clientType: string | null;
+      tinNumber: string | null;
+    }) => ({
+      id: client.id,
+      name: client.name,
+      type: client.clientType || "INDIVIDUAL",
+      tin: client.tinNumber || "",
+    })
+  );
+
+  const staff: StaffOption[] = (usersResponse?.data?.items || []).map(
+    (user: { id: string; name: string | null; role: string | null }) => ({
+      id: user.id,
+      name: user.name || "Unknown",
+      role: user.role || "Staff",
+    })
+  );
+
+  // Static services for now (since serviceCatalog requires organizationId)
+  const services: ServiceOption[] = [
+    {
+      id: "1",
+      name: "Tax Consultation",
+      department: "KAJ",
+      serviceType: "TAX_CONSULTATION",
+      duration: 60,
+      price: 150.0,
+    },
+    {
+      id: "2",
+      name: "VAT Return Preparation",
+      department: "KAJ",
+      serviceType: "VAT_RETURN",
+      duration: 90,
+      price: 200.0,
+    },
+    {
+      id: "3",
+      name: "Business Registration",
+      department: "GCMC",
+      serviceType: "BUSINESS_REGISTRATION",
+      duration: 120,
+      price: 300.0,
+    },
+    {
+      id: "4",
+      name: "Compliance Review",
+      department: "COMPLIANCE",
+      serviceType: "COMPLIANCE_REVIEW",
+      duration: 75,
+      price: 250.0,
+    },
+  ];
+
+  // Create appointment mutation
+  const createMutation = useMutation({
+    mutationFn: (data: {
+      title: string;
+      clientId: string;
+      startTime: string;
+      endTime: string;
+      type: string;
+      priority: string;
+      location: string;
+      description: string;
+      notes: string;
+    }) =>
+      orpc.appointments.create({
+        title: data.title,
+        clientId: data.clientId,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        type: data.type as
+          | "CONSULTATION"
+          | "DOCUMENT_REVIEW"
+          | "TAX_PREPARATION"
+          | "COMPLIANCE_MEETING"
+          | "OTHER",
+        priority: data.priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT",
+        location: data.location,
+        description: data.description,
+        notes: data.notes,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment created successfully!");
+      navigate({ to: "/appointments" });
+    },
+    onError: () => {
+      toast.error("Failed to create appointment. Please try again.");
+    },
+  });
 
   const form = useForm({
     defaultValues: {
@@ -108,29 +195,37 @@ function NewAppointmentPage() {
       internalNotes: "",
     },
     onSubmit: async ({ value }) => {
-      try {
-        // In a real app, this would make an API call
-        console.log("Creating appointment:", value);
+      const selectedService = services.find((s) => s.id === value.serviceId);
+      const startTime = new Date(
+        value.scheduledDate + "T" + value.scheduledTime + ":00"
+      ).toISOString();
+      const endTime = new Date(
+        new Date(startTime).getTime() +
+          (selectedService?.duration || 60) * 60 * 1000
+      ).toISOString();
 
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        toast.success("Appointment created successfully!");
-        navigate({ to: "/appointments" });
-      } catch (error) {
-        toast.error("Failed to create appointment. Please try again.");
-      }
+      createMutation.mutate({
+        title: value.title,
+        clientId: value.clientId,
+        startTime,
+        endTime,
+        type: selectedService?.serviceType || "CONSULTATION",
+        priority: value.priority,
+        location: value.location,
+        description: value.description || "",
+        notes: value.clientNotes || "",
+      });
     },
     validators: {
       onSubmit: appointmentSchema,
     },
   });
 
-  const selectedService = mockServices.find(
+  const selectedService = services.find(
     (service) => service.id === form.state.values.serviceId
   );
 
-  const selectedClient = mockClients.find(
+  const selectedClient = clients.find(
     (client) => client.id === form.state.values.clientId
   );
 
@@ -148,6 +243,19 @@ function NewAppointmentPage() {
         return "default";
     }
   };
+
+  const isLoading = isLoadingClients || isLoadingUsers;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -208,7 +316,7 @@ function NewAppointmentPage() {
                           placeholder="e.g., Tax consultation meeting"
                           value={field.state.value}
                         />
-                        {field.state.meta.errors.map((error, index) => (
+                        {field.state.meta.errors.map((error) => (
                           <FormError
                             key={error?.message}
                             message={error?.message}
@@ -230,7 +338,7 @@ function NewAppointmentPage() {
                             <SelectValue placeholder="Select a client" />
                           </SelectTrigger>
                           <SelectContent>
-                            {mockClients.map((client) => (
+                            {clients.map((client) => (
                               <SelectItem key={client.id} value={client.id}>
                                 <div className="flex w-full items-center justify-between">
                                   <span>{client.name}</span>
@@ -242,7 +350,7 @@ function NewAppointmentPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {field.state.meta.errors.map((error, index) => (
+                        {field.state.meta.errors.map((error) => (
                           <FormError
                             key={error?.message}
                             message={error?.message}
@@ -264,7 +372,7 @@ function NewAppointmentPage() {
                             <SelectValue placeholder="Select a service" />
                           </SelectTrigger>
                           <SelectContent>
-                            {mockServices.map((service) => (
+                            {services.map((service) => (
                               <SelectItem key={service.id} value={service.id}>
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2">
@@ -289,7 +397,7 @@ function NewAppointmentPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {field.state.meta.errors.map((error, index) => (
+                        {field.state.meta.errors.map((error) => (
                           <FormError
                             key={error?.message}
                             message={error?.message}
@@ -311,19 +419,19 @@ function NewAppointmentPage() {
                             <SelectValue placeholder="Select staff member" />
                           </SelectTrigger>
                           <SelectContent>
-                            {mockStaff.map((staff) => (
-                              <SelectItem key={staff.id} value={staff.id}>
+                            {staff.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
                                 <div className="flex flex-col">
-                                  <span>{staff.name}</span>
+                                  <span>{s.name}</span>
                                   <span className="text-muted-foreground text-xs">
-                                    {staff.role}
+                                    {s.role}
                                   </span>
                                 </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        {field.state.meta.errors.map((error, index) => (
+                        {field.state.meta.errors.map((error) => (
                           <FormError
                             key={error?.message}
                             message={error?.message}
@@ -352,7 +460,7 @@ function NewAppointmentPage() {
                             type="date"
                             value={field.state.value}
                           />
-                          {field.state.meta.errors.map((error, index) => (
+                          {field.state.meta.errors.map((error) => (
                             <FormError
                               key={error?.message}
                               message={error?.message}
@@ -375,7 +483,7 @@ function NewAppointmentPage() {
                             type="time"
                             value={field.state.value}
                           />
-                          {field.state.meta.errors.map((error, index) => (
+                          {field.state.meta.errors.map((error) => (
                             <FormError
                               key={error?.message}
                               message={error?.message}
@@ -418,7 +526,7 @@ function NewAppointmentPage() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        {field.state.meta.errors.map((error, index) => (
+                        {field.state.meta.errors.map((error) => (
                           <FormError
                             key={error?.message}
                             message={error?.message}
@@ -526,10 +634,14 @@ function NewAppointmentPage() {
                     {(state) => (
                       <Button
                         className="min-w-[120px]"
-                        disabled={!state.canSubmit || state.isSubmitting}
+                        disabled={
+                          !state.canSubmit ||
+                          state.isSubmitting ||
+                          createMutation.isPending
+                        }
                         type="submit"
                       >
-                        {state.isSubmitting
+                        {state.isSubmitting || createMutation.isPending
                           ? "Creating..."
                           : "Create Appointment"}
                       </Button>
@@ -612,23 +724,23 @@ function NewAppointmentPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex gap-2">
-                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">-</span>
                 <span>
                   Appointments require confirmation from assigned staff
                 </span>
               </div>
               <div className="flex gap-2">
-                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">-</span>
                 <span>Reminders are automatically sent 24 hours before</span>
               </div>
               <div className="flex gap-2">
-                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">-</span>
                 <span>
                   High priority appointments will show in red on calendar
                 </span>
               </div>
               <div className="flex gap-2">
-                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">-</span>
                 <span>
                   Online appointments automatically include meeting links
                 </span>

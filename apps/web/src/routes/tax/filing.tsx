@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -5,9 +6,10 @@ import {
   CheckCircle2,
   Clock,
   FileText,
+  Loader2,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +22,7 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TaxFilingWizard from "@/components/wizards/tax-filing-wizard";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/tax/filing")({
   component: TaxFilingPage,
@@ -43,41 +46,6 @@ interface FilingDeadline {
   status: "upcoming" | "due-soon" | "overdue" | "completed";
   filingType: string;
 }
-
-const mockDeadlines: FilingDeadline[] = [
-  {
-    id: "1",
-    name: "Q4 2024 VAT Return",
-    description: "Quarterly VAT submission to GRA",
-    dueDate: "2025-01-15",
-    status: "due-soon",
-    filingType: "VAT",
-  },
-  {
-    id: "2",
-    name: "December 2024 PAYE",
-    description: "Monthly PAYE submission",
-    dueDate: "2025-01-14",
-    status: "due-soon",
-    filingType: "PAYE",
-  },
-  {
-    id: "3",
-    name: "Annual Corporate Tax Return",
-    description: "2024 Corporate tax filing",
-    dueDate: "2025-04-30",
-    status: "upcoming",
-    filingType: "Corporate",
-  },
-  {
-    id: "4",
-    name: "November 2024 NIS",
-    description: "NIS contributions submission",
-    dueDate: "2024-12-15",
-    status: "completed",
-    filingType: "NIS",
-  },
-];
 
 const statusConfig = {
   upcoming: {
@@ -104,6 +72,45 @@ const statusConfig = {
 
 function TaxFilingPage() {
   const [showWizard, setShowWizard] = useState(false);
+
+  // Fetch tax deadlines from API
+  const { data: deadlinesResponse, isLoading } = useQuery({
+    queryKey: ["tax-deadlines"],
+    queryFn: () => orpc.tax.getTaxDeadlines({ upcomingOnly: false }),
+  });
+
+  // Map API response to component format
+  const deadlines: FilingDeadline[] = useMemo(() => {
+    const apiDeadlines = deadlinesResponse?.data?.deadlines || [];
+    return apiDeadlines.map((d: any) => {
+      let status: FilingDeadline["status"] = "upcoming";
+
+      if (d.status === "COMPLETED" || d.status === "FILED") {
+        status = "completed";
+      } else if (d.warningLevel === "CRITICAL" || d.daysUntilDue <= 7) {
+        status = d.daysUntilDue < 0 ? "overdue" : "due-soon";
+      } else if (d.warningLevel === "WARNING" || d.daysUntilDue <= 30) {
+        status = "due-soon";
+      }
+
+      return {
+        id: d.id,
+        name: d.title,
+        description: `${d.type?.replace(/_/g, " ")} for period ${d.period}`,
+        dueDate: new Date(d.dueDate).toISOString().split("T")[0],
+        status,
+        filingType: d.type?.replace(/_/g, " ").split(" ")[0] || "Tax",
+      };
+    });
+  }, [deadlinesResponse]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -135,7 +142,7 @@ function TaxFilingPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl">
-              {mockDeadlines.filter((d) => d.status !== "completed").length}
+              {deadlines.filter((d) => d.status !== "completed").length}
             </div>
           </CardContent>
         </Card>
@@ -145,7 +152,7 @@ function TaxFilingPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl text-amber-500">
-              {mockDeadlines.filter((d) => d.status === "due-soon").length}
+              {deadlines.filter((d) => d.status === "due-soon").length}
             </div>
           </CardContent>
         </Card>
@@ -155,7 +162,7 @@ function TaxFilingPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl text-destructive">
-              {mockDeadlines.filter((d) => d.status === "overdue").length}
+              {deadlines.filter((d) => d.status === "overdue").length}
             </div>
           </CardContent>
         </Card>
@@ -165,7 +172,7 @@ function TaxFilingPage() {
           </CardHeader>
           <CardContent>
             <div className="font-bold text-2xl text-green-600">
-              {mockDeadlines.filter((d) => d.status === "completed").length}
+              {deadlines.filter((d) => d.status === "completed").length}
             </div>
           </CardContent>
         </Card>
@@ -188,37 +195,47 @@ function TaxFilingPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockDeadlines.map((deadline) => {
-              const StatusIcon = statusConfig[deadline.status].icon;
-              return (
-                <div
-                  className="flex items-center justify-between rounded-lg border p-4"
-                  key={deadline.id}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                      <FileText className="h-5 w-5 text-primary" />
+            {deadlines.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                No filing deadlines found
+              </div>
+            ) : (
+              deadlines.map((deadline) => {
+                const StatusIcon = statusConfig[deadline.status].icon;
+                return (
+                  <div
+                    className="flex items-center justify-between rounded-lg border p-4"
+                    key={deadline.id}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{deadline.name}</h3>
+                        <p className="text-muted-foreground text-sm">
+                          {deadline.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{deadline.name}</h3>
-                      <p className="text-muted-foreground text-sm">
-                        {deadline.description}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-medium text-sm">
+                          {deadline.dueDate}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          Due Date
+                        </p>
+                      </div>
+                      <Badge variant={statusConfig[deadline.status].variant}>
+                        <StatusIcon className="mr-1 h-3 w-3" />
+                        {statusConfig[deadline.status].label}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-medium text-sm">{deadline.dueDate}</p>
-                      <p className="text-muted-foreground text-xs">Due Date</p>
-                    </div>
-                    <Badge variant={statusConfig[deadline.status].variant}>
-                      <StatusIcon className="mr-1 h-3 w-3" />
-                      {statusConfig[deadline.status].label}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>

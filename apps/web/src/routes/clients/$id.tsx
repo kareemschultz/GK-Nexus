@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -43,7 +44,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
-
+import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/$id")({
   component: RouteComponent,
   beforeLoad: async () => {
@@ -136,188 +137,159 @@ function RouteComponent() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Enhanced mock client data
-  const mockClients: Client[] = [
-    {
-      id: "1",
-      name: "TechCorp Inc.",
-      type: "enterprise",
-      status: "active",
-      industry: "Technology",
-      contactPerson: "John Smith",
-      email: "john.smith@techcorp.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Innovation Drive, Silicon Valley, CA 94025",
-      revenue: 50_000_000,
-      employees: 500,
-      joinDate: "2023-01-15",
-      lastActivity: "2024-11-27",
-      complianceScore: 98,
-      documents: 24,
-      taxYear: "2024",
-      filingStatus: "Filed",
-      nextDeadline: "2025-03-15",
-      riskLevel: "low",
-      accountManager: "Sarah Williams",
-      tags: ["tech", "enterprise", "priority"],
-      priority: "high",
-      immigrationCases: 12,
-      lastContact: "2024-11-25",
-      nextFollowUp: "2024-12-05",
-      relationshipManager: "Sarah Johnson",
-      communicationPreference: "email",
-      avatar: "/avatars/techcorp.jpg",
-      notes: "Key enterprise client with multiple H-1B applications pending",
-      totalBilled: 125_000,
-      outstandingAmount: 15_000,
-      clientSince: "2023-01-15",
-      referralSource: "Industry Partner",
-      lifetimeValue: 450_000,
-    },
-    // Add more mock data for other clients as needed
-  ];
+  // Fetch client data from API
+  const {
+    data: clientResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["client", id],
+    queryFn: () => orpc.clients.getById({ id }),
+  });
 
-  // Mock communication history
-  const mockCommunications: CommunicationRecord[] = [
-    {
-      id: "1",
-      type: "email",
-      subject: "H-1B Filing Update - Quarterly Review",
-      date: "2024-11-25",
-      participants: ["John Smith", "Sarah Johnson"],
-      summary:
-        "Discussed progress on H-1B applications and upcoming deadlines. Client expressed satisfaction with current timeline.",
-      followUpRequired: true,
-      attachments: ["h1b_status_report.pdf"],
-    },
-    {
-      id: "2",
-      type: "meeting",
-      subject: "Compliance Strategy Meeting",
-      date: "2024-11-20",
-      duration: "60 minutes",
-      participants: ["John Smith", "Sarah Johnson", "Michael Chen"],
-      summary:
-        "Reviewed compliance requirements for 2024 and discussed new regulatory changes affecting tech companies.",
-      followUpRequired: false,
-    },
-    {
-      id: "3",
-      type: "phone",
-      subject: "Emergency L-1 Processing",
-      date: "2024-11-18",
-      duration: "30 minutes",
-      participants: ["John Smith", "Sarah Johnson"],
-      summary:
-        "Urgent call regarding expedited L-1 processing for key executive. Agreed to premium processing.",
-      followUpRequired: true,
-    },
-    {
-      id: "4",
-      type: "video",
-      subject: "Monthly Check-in",
-      date: "2024-11-15",
-      duration: "45 minutes",
-      participants: ["John Smith", "Sarah Johnson", "Emily Davis"],
-      summary:
-        "Regular monthly review of all active cases and upcoming requirements. Discussed budget allocation for next quarter.",
-      followUpRequired: false,
-    },
-  ];
+  // Fetch immigration status from API
+  const { data: immigrationResponse } = useQuery({
+    queryKey: ["clientImmigration", id],
+    queryFn: () => orpc.clients.getImmigrationStatus({ clientId: id }),
+    enabled: !!id,
+  });
 
-  // Mock immigration cases
-  const mockImmigrationCases: ImmigrationCase[] = [
-    {
-      id: "1",
-      petitionType: "H-1B",
-      beneficiaryName: "Raj Patel",
-      status: "approved",
-      filingDate: "2024-03-01",
-      priority: "normal",
-      currentStep: "Consular Processing",
-      nextAction: "Schedule visa interview",
-      nextActionDate: "2024-12-15",
-      attorney: "Sarah Johnson",
-      estimatedCompletion: "2025-01-30",
-    },
-    {
-      id: "2",
-      petitionType: "L-1A",
-      beneficiaryName: "Maria Rodriguez",
-      status: "in-review",
-      filingDate: "2024-09-15",
-      priority: "premium",
-      currentStep: "USCIS Review",
-      nextAction: "Await decision",
-      nextActionDate: "2024-12-10",
-      attorney: "Michael Chen",
-      estimatedCompletion: "2024-12-20",
-    },
-    {
-      id: "3",
-      petitionType: "O-1",
-      beneficiaryName: "Dr. James Wilson",
-      status: "pending",
-      filingDate: "2024-11-01",
-      priority: "normal",
-      currentStep: "Document Collection",
-      nextAction: "Submit complete petition",
-      nextActionDate: "2024-12-05",
-      attorney: "Emily Davis",
-      estimatedCompletion: "2025-02-15",
-    },
-    {
-      id: "4",
-      petitionType: "PERM",
-      beneficiaryName: "Li Wei",
-      status: "submitted",
-      filingDate: "2024-06-01",
-      priority: "normal",
-      currentStep: "Department of Labor Review",
-      nextAction: "Monitor application status",
-      nextActionDate: "2025-01-01",
-      attorney: "Sarah Johnson",
-      estimatedCompletion: "2025-08-01",
-    },
-  ];
+  // Fetch client contacts from API
+  const { data: contactsResponse } = useQuery({
+    queryKey: ["clientContacts", id],
+    queryFn: () => orpc.clients.contacts.list({ clientId: id }),
+    enabled: !!id,
+  });
 
-  // Mock relationships
-  const mockRelationships: Relationship[] = [
-    {
-      id: "1",
-      type: "subsidiary",
-      relatedClientId: "2",
-      relatedClientName: "TechCorp Europe Ltd.",
-      relationshipDetails:
-        "European subsidiary handling EU operations and talent acquisition",
-      startDate: "2023-06-01",
-      status: "active",
-    },
-    {
-      id: "2",
-      type: "partner",
-      relatedClientId: "3",
-      relatedClientName: "InnovateAI Partners",
-      relationshipDetails:
-        "Strategic partnership for AI development and shared H-1B sponsorship",
-      startDate: "2024-01-15",
-      status: "active",
-    },
-    {
-      id: "3",
-      type: "vendor",
-      relatedClientId: "4",
-      relatedClientName: "Legal Support Services",
-      relationshipDetails:
-        "Provides additional legal support for complex immigration cases",
-      startDate: "2023-03-01",
-      status: "active",
-    },
-  ];
+  // Map API response to Client type - API returns flat structure, we map to expected type
+  const client: Client | null = clientResponse?.data
+    ? {
+        id: clientResponse.data.id,
+        name: clientResponse.data.name || "",
+        type: (clientResponse.data.entityType?.toLowerCase() === "individual"
+          ? "smb"
+          : clientResponse.data.entityType?.toLowerCase() === "corporation"
+            ? "enterprise"
+            : "mid-market") as Client["type"],
+        status: (clientResponse.data.status?.toLowerCase() ||
+          "active") as Client["status"],
+        industry: clientResponse.data.industry || "General",
+        contactPerson:
+          clientResponse.data.contactPerson || clientResponse.data.name || "",
+        email: clientResponse.data.email || "",
+        phone: clientResponse.data.phoneNumber || "",
+        address: clientResponse.data.address || "",
+        revenue: 0,
+        employees: 0,
+        joinDate:
+          clientResponse.data.clientSince?.toString() ||
+          new Date().toISOString(),
+        lastActivity:
+          clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
+        complianceScore:
+          clientResponse.data.complianceStatus === "compliant"
+            ? 98
+            : clientResponse.data.complianceStatus === "pending"
+              ? 75
+              : 50,
+        documents: 0,
+        taxYear: new Date().getFullYear().toString(),
+        filingStatus: "Filed",
+        nextDeadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        riskLevel: (clientResponse.data.riskLevel?.toLowerCase() ||
+          "medium") as Client["riskLevel"],
+        accountManager: clientResponse.data.assignedManager || "Unassigned",
+        tags: Array.isArray(clientResponse.data.tags)
+          ? clientResponse.data.tags
+          : typeof clientResponse.data.tags === "string"
+            ? JSON.parse(clientResponse.data.tags || "[]")
+            : [],
+        priority: "medium" as const,
+        immigrationCases: 0,
+        lastContact:
+          clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
+        nextFollowUp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        relationshipManager:
+          clientResponse.data.assignedManager || "Unassigned",
+        communicationPreference: "email" as const,
+        avatar: undefined,
+        notes: clientResponse.data.notes || undefined,
+        totalBilled: 0,
+        outstandingAmount: 0,
+        clientSince:
+          clientResponse.data.clientSince?.toString() ||
+          new Date().toISOString(),
+        referralSource: clientResponse.data.referralSource || "Direct",
+        lifetimeValue: 0,
+      }
+    : null;
 
-  const client = mockClients.find((c) => c.id === id);
+  // Map immigration data to ImmigrationCase type
+  const immigrationCases: ImmigrationCase[] = immigrationResponse?.data
+    ? [
+        {
+          id: immigrationResponse.data.id || "1",
+          petitionType:
+            immigrationResponse.data.visaType?.replace(/_/g, " ") ||
+            "Work Permit",
+          beneficiaryName: client?.name || "Beneficiary",
+          status: (immigrationResponse.data.currentStatus
+            ?.toLowerCase()
+            .includes("approved")
+            ? "approved"
+            : immigrationResponse.data.currentStatus
+                  ?.toLowerCase()
+                  .includes("submitted")
+              ? "submitted"
+              : immigrationResponse.data.currentStatus
+                    ?.toLowerCase()
+                    .includes("review")
+                ? "in-review"
+                : immigrationResponse.data.currentStatus
+                      ?.toLowerCase()
+                      .includes("denied")
+                  ? "denied"
+                  : "pending") as ImmigrationCase["status"],
+          filingDate:
+            immigrationResponse.data.applicationDate?.toString() ||
+            new Date().toISOString().split("T")[0],
+          priority: "normal" as const,
+          currentStep:
+            immigrationResponse.data.currentStatus?.replace(/_/g, " ") ||
+            "Processing",
+          nextAction: immigrationResponse.data.nextAction || "Review case",
+          nextActionDate:
+            immigrationResponse.data.nextActionDate?.toString() ||
+            new Date().toISOString().split("T")[0],
+          attorney: immigrationResponse.data.assignedOfficer || "Unassigned",
+          estimatedCompletion:
+            immigrationResponse.data.expiryDate?.toString() || "TBD",
+        },
+      ]
+    : [];
 
-  if (!client) {
+  // Communications - no direct API, will be empty for now
+  const communications: CommunicationRecord[] = [];
+
+  // Relationships - no direct API, will be empty for now
+  const relationships: Relationship[] = [];
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading client details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !client) {
     return (
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="text-center">
@@ -879,7 +851,7 @@ function RouteComponent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockImmigrationCases.map((case_) => (
+                  {immigrationCases.map((case_) => (
                     <TableRow key={case_.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -936,14 +908,14 @@ function RouteComponent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockCommunications.map((comm, index) => (
+                {communications.map((comm, index) => (
                   <div key={comm.id}>
                     <div className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                           {getCommunicationIcon(comm.type)}
                         </div>
-                        {index < mockCommunications.length - 1 && (
+                        {index < communications.length - 1 && (
                           <div className="mt-2 h-16 w-0.5 bg-border" />
                         )}
                       </div>
@@ -1009,7 +981,7 @@ function RouteComponent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockRelationships.map((relationship) => (
+                {relationships.map((relationship) => (
                   <div
                     className="flex items-center justify-between rounded-lg border p-4"
                     key={relationship.id}

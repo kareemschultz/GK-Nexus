@@ -1,8 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Grid3X3,
   List,
+  Loader2,
   Plus,
   Save,
   Search,
@@ -33,6 +35,7 @@ import {
   type DocumentSort,
   useDocuments,
 } from "@/hooks/useDocuments";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/search")({
   component: DocumentAdvancedSearchPage,
@@ -47,8 +50,26 @@ interface SavedSearch {
   resultCount: number;
 }
 
+interface ClientOption {
+  id: string;
+  name: string;
+}
+
 function DocumentAdvancedSearchPage() {
   const { getDocuments, folderTree } = useDocuments();
+
+  // Fetch clients from API
+  const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: () => orpc.clients.list({ page: 1, limit: 100 }),
+  });
+
+  const clients: ClientOption[] = (clientsResponse?.data?.items || []).map(
+    (client: { id: string; name: string }) => ({
+      id: client.id,
+      name: client.name,
+    })
+  );
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,13 +143,6 @@ function DocumentAdvancedSearchPage() {
     "internal",
     "2024",
     "2023",
-  ];
-
-  const mockClients = [
-    { id: "client_1", name: "Acme Corp" },
-    { id: "client_2", name: "TechStart Inc" },
-    { id: "client_3", name: "Local Business Ltd" },
-    { id: "client_4", name: "Global Services" },
   ];
 
   useEffect(() => {
@@ -359,11 +373,17 @@ function DocumentAdvancedSearchPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">All Clients</SelectItem>
-                    {mockClients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
+                    {isLoadingClients ? (
+                      <div className="flex items-center justify-center py-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : (
+                      clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -524,6 +544,7 @@ function DocumentAdvancedSearchPage() {
                         <button
                           className="ml-1 hover:text-destructive"
                           onClick={() => removeTag(tag)}
+                          type="button"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -577,6 +598,13 @@ function DocumentAdvancedSearchPage() {
                     <div
                       className="flex-1 cursor-pointer"
                       onClick={() => loadSavedSearch(search)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          loadSavedSearch(search);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                     >
                       <p className="font-medium text-sm">{search.name}</p>
                       <p className="text-muted-foreground text-xs">

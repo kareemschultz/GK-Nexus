@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Calendar,
@@ -12,6 +13,7 @@ import {
   Grid,
   Image,
   List,
+  Loader2,
   MoreVertical,
   Search,
   Share2,
@@ -19,7 +21,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,138 +47,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/documents")({
   component: DocumentsPage,
 });
 
-const mockDocuments = [
-  {
-    id: 1,
-    name: "Q3 2024 Tax Return",
-    type: "Tax Filing",
-    fileType: "pdf",
-    size: "2.4 MB",
-    uploadDate: "2024-10-15",
-    status: "Filed",
-    category: "tax",
-    description: "Quarterly tax return submission for Q3 2024",
-  },
-  {
-    id: 2,
-    name: "Business Registration Certificate",
-    type: "Legal Document",
-    fileType: "pdf",
-    size: "850 KB",
-    uploadDate: "2024-08-01",
-    status: "Active",
-    category: "legal",
-    description: "Official business registration certificate",
-  },
-  {
-    id: 3,
-    name: "October 2024 Financial Statements",
-    type: "Financial Report",
-    fileType: "xlsx",
-    size: "1.8 MB",
-    uploadDate: "2024-11-05",
-    status: "Reviewed",
-    category: "financial",
-    description: "Monthly financial statements and P&L",
-  },
-  {
-    id: 4,
-    name: "VAT Registration Documents",
-    type: "Tax Registration",
-    fileType: "pdf",
-    size: "1.2 MB",
-    uploadDate: "2024-07-20",
-    status: "Approved",
-    category: "tax",
-    description: "VAT registration application and approval",
-  },
-  {
-    id: 5,
-    name: "Employee Handbook 2024",
-    type: "HR Document",
-    fileType: "pdf",
-    size: "3.1 MB",
-    uploadDate: "2024-01-15",
-    status: "Current",
-    category: "hr",
-    description: "Updated employee handbook and policies",
-  },
-  {
-    id: 6,
-    name: "Insurance Policy Documentation",
-    type: "Insurance",
-    fileType: "pdf",
-    size: "920 KB",
-    uploadDate: "2024-06-10",
-    status: "Active",
-    category: "insurance",
-    description: "Business insurance policy documents",
-  },
-  {
-    id: 7,
-    name: "Compliance Checklist Q4",
-    type: "Compliance",
-    fileType: "xlsx",
-    size: "650 KB",
-    uploadDate: "2024-11-01",
-    status: "In Progress",
-    category: "compliance",
-    description: "Q4 2024 compliance requirements checklist",
-  },
-  {
-    id: 8,
-    name: "Bank Statements October 2024",
-    type: "Banking",
-    fileType: "pdf",
-    size: "1.5 MB",
-    uploadDate: "2024-11-02",
-    status: "Reconciled",
-    category: "financial",
-    description: "Business bank statements for October 2024",
-  },
-];
-
-const categories = [
-  { value: "all", label: "All Categories", count: mockDocuments.length },
-  {
-    value: "tax",
-    label: "Tax Documents",
-    count: mockDocuments.filter((d) => d.category === "tax").length,
-  },
-  {
-    value: "financial",
-    label: "Financial",
-    count: mockDocuments.filter((d) => d.category === "financial").length,
-  },
-  {
-    value: "legal",
-    label: "Legal",
-    count: mockDocuments.filter((d) => d.category === "legal").length,
-  },
-  {
-    value: "hr",
-    label: "HR Documents",
-    count: mockDocuments.filter((d) => d.category === "hr").length,
-  },
-  {
-    value: "compliance",
-    label: "Compliance",
-    count: mockDocuments.filter((d) => d.category === "compliance").length,
-  },
-  {
-    value: "insurance",
-    label: "Insurance",
-    count: mockDocuments.filter((d) => d.category === "insurance").length,
-  },
-];
+interface DocumentView {
+  id: string;
+  name: string;
+  type: string;
+  fileType: string;
+  size: string;
+  uploadDate: string;
+  status: string;
+  category: string;
+  description: string;
+}
 
 function getFileIcon(fileType: string) {
-  switch (fileType) {
+  switch (fileType?.toLowerCase()) {
     case "pdf":
       return <File aria-hidden="true" className="h-5 w-5 text-red-600" />;
     case "xlsx":
@@ -197,7 +87,7 @@ function getFileIcon(fileType: string) {
 }
 
 function getStatusColor(status: string) {
-  switch (status.toLowerCase()) {
+  switch (status?.toLowerCase()) {
     case "filed":
     case "active":
     case "current":
@@ -207,10 +97,17 @@ function getStatusColor(status: string) {
     case "reconciled":
       return "secondary";
     case "in progress":
+    case "draft":
       return "outline";
     default:
       return "secondary";
   }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function DocumentsPage() {
@@ -219,7 +116,72 @@ function DocumentsPage() {
   const [sortBy, setSortBy] = useState("uploadDate");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
-  const filteredDocuments = mockDocuments.filter((doc) => {
+  // Fetch documents from API
+  const { data: documentsResponse, isLoading } = useQuery({
+    queryKey: ["documents"],
+    queryFn: () => orpc.documents.list({ page: 1, limit: 100 }),
+  });
+
+  // Map API response to component format
+  const documents: DocumentView[] = useMemo(
+    () =>
+      (documentsResponse?.data?.items || []).map((doc: any) => {
+        const extension =
+          doc.fileName?.split(".").pop()?.toLowerCase() || "pdf";
+        return {
+          id: doc.id,
+          name: doc.fileName || doc.title || "Untitled Document",
+          type: doc.documentType || "Document",
+          fileType: extension,
+          size: formatFileSize(doc.fileSize || 0),
+          uploadDate:
+            doc.createdAt || doc.uploadDate || new Date().toISOString(),
+          status: doc.status || "active",
+          category: doc.category?.toLowerCase() || "other",
+          description: doc.description || "",
+        };
+      }),
+    [documentsResponse]
+  );
+
+  // Build categories from documents data
+  const categories = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    categoryMap.set("all", documents.length);
+
+    for (const doc of documents) {
+      const cat = doc.category;
+      categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
+    }
+
+    const result = [
+      { value: "all", label: "All Categories", count: documents.length },
+    ];
+
+    const categoryLabels: Record<string, string> = {
+      tax: "Tax Documents",
+      financial: "Financial",
+      legal: "Legal",
+      hr: "HR Documents",
+      compliance: "Compliance",
+      insurance: "Insurance",
+      other: "Other",
+    };
+
+    for (const [value, count] of categoryMap) {
+      if (value !== "all" && count > 0) {
+        result.push({
+          value,
+          label: categoryLabels[value] || value,
+          count,
+        });
+      }
+    }
+
+    return result;
+  }, [documents]);
+
+  const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
       doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.type.toLowerCase().includes(searchQuery.toLowerCase());
@@ -248,15 +210,42 @@ function DocumentsPage() {
     }
   });
 
-  const handleDownload = (document: (typeof mockDocuments)[0]) => {
+  const handleDownload = (document: DocumentView) => {
     // In real app, this would trigger actual download
     console.log(`Downloading ${document.name}`);
   };
 
-  const handleView = (document: (typeof mockDocuments)[0]) => {
+  const handleView = (document: DocumentView) => {
     // In real app, this would open document viewer
     console.log(`Viewing ${document.name}`);
   };
+
+  // Calculate stats
+  const totalSize = documents.reduce((sum, doc) => {
+    const size = Number.parseFloat(doc.size.split(" ")[0]);
+    const unit = doc.size.split(" ")[1];
+    let bytes = size;
+    if (unit === "KB") bytes = size * 1024;
+    if (unit === "MB") bytes = size * 1024 * 1024;
+    return sum + bytes;
+  }, 0);
+
+  const thisMonth = documents.filter((doc) => {
+    const docDate = new Date(doc.uploadDate);
+    const now = new Date();
+    return (
+      docDate.getMonth() === now.getMonth() &&
+      docDate.getFullYear() === now.getFullYear()
+    );
+  }).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -289,7 +278,7 @@ function DocumentsPage() {
               </div>
               <div>
                 <p className="font-semibold text-2xl text-foreground">
-                  {mockDocuments.length}
+                  {documents.length}
                 </p>
                 <p className="text-muted-foreground text-xs">Total Documents</p>
               </div>
@@ -304,7 +293,9 @@ function DocumentsPage() {
                 <Folder aria-hidden="true" className="h-4 w-4 text-green-600" />
               </div>
               <div>
-                <p className="font-semibold text-2xl text-foreground">6</p>
+                <p className="font-semibold text-2xl text-foreground">
+                  {categories.length - 1}
+                </p>
                 <p className="text-muted-foreground text-xs">Categories</p>
               </div>
             </div>
@@ -321,7 +312,9 @@ function DocumentsPage() {
                 />
               </div>
               <div>
-                <p className="font-semibold text-2xl text-foreground">3</p>
+                <p className="font-semibold text-2xl text-foreground">
+                  {thisMonth}
+                </p>
                 <p className="text-muted-foreground text-xs">This Month</p>
               </div>
             </div>
@@ -339,7 +332,7 @@ function DocumentsPage() {
               </div>
               <div>
                 <p className="font-semibold text-2xl text-foreground">
-                  12.8 MB
+                  {formatFileSize(totalSize)}
                 </p>
                 <p className="text-muted-foreground text-xs">Total Size</p>
               </div>
@@ -637,7 +630,7 @@ function DocumentsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {mockDocuments.slice(0, 3).map((document) => (
+            {documents.slice(0, 3).map((document) => (
               <div
                 className="flex items-center space-x-4 rounded-lg border p-3 transition-colors hover:bg-muted/50"
                 key={document.id}

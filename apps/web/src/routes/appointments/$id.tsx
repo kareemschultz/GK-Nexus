@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Calendar,
@@ -13,7 +14,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,60 +44,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/$id")({
   component: AppointmentDetailPage,
 });
-
-// Mock appointment data - in a real app, this would come from API
-const mockAppointment = {
-  id: "1",
-  appointmentNumber: "APT-2024-001",
-  title: "Tax Consultation Meeting",
-  status: "SCHEDULED",
-  priority: "MEDIUM",
-  client: {
-    id: "1",
-    name: "Acme Corp",
-    type: "COMPANY",
-    email: "contact@acme.com",
-    phone: "+592-555-0123",
-    tin: "123456789",
-  },
-  service: {
-    id: "1",
-    name: "Tax Consultation",
-    department: "KAJ",
-    serviceType: "TAX_CONSULTATION",
-    duration: 60,
-    price: 150.0,
-  },
-  assignedTo: {
-    id: "1",
-    name: "Sarah Johnson",
-    role: "Senior Tax Advisor",
-    email: "sarah.johnson@gknexus.com",
-  },
-  scheduling: {
-    scheduledAt: "2024-01-15T10:00:00Z",
-    estimatedEndTime: "2024-01-15T11:00:00Z",
-    location: "Office",
-    meetingLink: null,
-  },
-  description:
-    "Quarterly tax review and planning session for Acme Corp. We'll review their Q4 2023 performance and discuss tax optimization strategies for 2024.",
-  clientNotes:
-    "Please bring your Q4 2023 financial statements, receipts for business expenses, and any questions about deductions.",
-  internalNotes:
-    "Client has been expanding their operations and may need guidance on expense categorization. Review their previous year's returns before meeting.",
-  isChargeable: true,
-  chargedAmount: 150.0,
-  paymentStatus: "PENDING",
-  requiresFollowUp: true,
-  followUpDate: "2024-01-22T10:00:00Z",
-  createdAt: "2024-01-10T14:30:00Z",
-  updatedAt: "2024-01-12T09:15:00Z",
-};
 
 const statusOptions = [
   { value: "SCHEDULED", label: "Scheduled", variant: "default" as const },
@@ -105,7 +57,6 @@ const statusOptions = [
   { value: "COMPLETED", label: "Completed", variant: "secondary" as const },
   { value: "CANCELLED", label: "Cancelled", variant: "destructive" as const },
   { value: "NO_SHOW", label: "No Show", variant: "destructive" as const },
-  { value: "RESCHEDULED", label: "Rescheduled", variant: "outline" as const },
 ];
 
 const priorityOptions = [
@@ -115,75 +66,236 @@ const priorityOptions = [
   { value: "URGENT", label: "Urgent", variant: "destructive" as const },
 ];
 
+interface AppointmentView {
+  id: string;
+  appointmentNumber: string;
+  title: string;
+  status: string;
+  priority: string;
+  client: {
+    id: string;
+    name: string;
+    type: string;
+    email: string;
+    phone: string;
+    tin: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    department: string;
+    serviceType: string;
+    duration: number;
+    price: number;
+  };
+  assignedTo: {
+    id: string;
+    name: string;
+    role: string;
+    email: string;
+  };
+  scheduling: {
+    scheduledAt: string;
+    estimatedEndTime: string;
+    location: string;
+    meetingLink: string | null;
+  };
+  description: string;
+  clientNotes: string;
+  internalNotes: string;
+  isChargeable: boolean;
+  chargedAmount: number;
+  paymentStatus: string;
+  requiresFollowUp: boolean;
+  followUpDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 function AppointmentDetailPage() {
   const navigate = useNavigate();
-  const [appointment, setAppointment] = useState(mockAppointment);
+  const { id } = Route.useParams();
+  const queryClient = useQueryClient();
+
+  // Fetch appointment from API
+  const {
+    data: appointmentResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["appointment", id],
+    queryFn: () => orpc.appointments.getById({ id }),
+  });
+
+  const [appointment, setAppointment] = useState<AppointmentView | null>(null);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState({
-    clientNotes: appointment.clientNotes,
-    internalNotes: appointment.internalNotes,
+    clientNotes: "",
+    internalNotes: "",
   });
   const [cancelReason, setCancelReason] = useState("");
   const [showCancelDialog, setShowCancelDialog] = useState(false);
 
-  const handleStatusChange = async (newStatus: string) => {
+  // Update local state when API data changes
+  useEffect(() => {
+    if (appointmentResponse?.data && !appointment) {
+      const data = appointmentResponse.data;
+      const mappedAppointment: AppointmentView = {
+        id: data.id,
+        appointmentNumber: "APT-" + data.id.slice(0, 8).toUpperCase(),
+        title: data.title || "Untitled Appointment",
+        status: data.status || "SCHEDULED",
+        priority: data.priority || "MEDIUM",
+        client: {
+          id: data.clientId || "",
+          name: data.externalClientName || "Unknown Client",
+          type: "COMPANY",
+          email: data.externalClientEmail || "",
+          phone: data.externalClientPhone || "",
+          tin: "",
+        },
+        service: {
+          id: "1",
+          name: (data.type || "CONSULTATION").replace(/_/g, " "),
+          department: "KAJ",
+          serviceType: data.type || "CONSULTATION",
+          duration: 60,
+          price: 150.0,
+        },
+        assignedTo: {
+          id: data.assignedTo || "",
+          name: "Staff Member",
+          role: "Advisor",
+          email: "",
+        },
+        scheduling: {
+          scheduledAt: data.startTime || new Date().toISOString(),
+          estimatedEndTime: data.endTime || new Date().toISOString(),
+          location: data.location || "Office",
+          meetingLink: data.meetingLink || null,
+        },
+        description: data.description || "",
+        clientNotes: data.notes || "",
+        internalNotes: "",
+        isChargeable: true,
+        chargedAmount: 150.0,
+        paymentStatus: "PENDING",
+        requiresFollowUp: false,
+        followUpDate: null,
+        createdAt: data.createdAt || new Date().toISOString(),
+        updatedAt: data.updatedAt || new Date().toISOString(),
+      };
+      setAppointment(mappedAppointment);
+      setEditedNotes({
+        clientNotes: mappedAppointment.clientNotes,
+        internalNotes: mappedAppointment.internalNotes,
+      });
+    }
+  }, [appointmentResponse, appointment]);
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: {
+      status?: string;
+      priority?: string;
+      notes?: string;
+    }) =>
+      orpc.appointments.update({
+        id,
+        ...data,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointment", id] });
+    },
+  });
+
+  // Cancel mutation
+  const cancelMutation = useMutation({
+    mutationFn: (reason: string) =>
+      orpc.appointments.cancel({
+        id,
+        reason,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointment", id] });
+      setShowCancelDialog(false);
+      setCancelReason("");
+      toast.success("Appointment cancelled successfully");
+    },
+    onError: () => {
+      toast.error("Failed to cancel appointment");
+    },
+  });
+
+  const handleStatusChange = (newStatus: string) => {
     if (newStatus === "CANCELLED") {
       setShowCancelDialog(true);
       return;
     }
 
-    try {
-      // In a real app, this would make an API call
-      setAppointment({ ...appointment, status: newStatus });
-      toast.success(`Appointment status updated to ${newStatus.toLowerCase()}`);
-    } catch (error) {
-      toast.error("Failed to update appointment status");
-    }
+    updateMutation.mutate(
+      { status: newStatus },
+      {
+        onSuccess: () => {
+          if (appointment) {
+            setAppointment({ ...appointment, status: newStatus });
+          }
+          toast.success(
+            "Appointment status updated to " + newStatus.toLowerCase()
+          );
+        },
+        onError: () => {
+          toast.error("Failed to update appointment status");
+        },
+      }
+    );
   };
 
-  const handleCancelAppointment = async () => {
+  const handleCancelAppointment = () => {
     if (!cancelReason.trim()) {
       toast.error("Please provide a cancellation reason");
       return;
     }
-
-    try {
-      // In a real app, this would make an API call
-      setAppointment({
-        ...appointment,
-        status: "CANCELLED",
-        cancellationReason: cancelReason,
-        cancelledAt: new Date().toISOString(),
-      });
-      setShowCancelDialog(false);
-      setCancelReason("");
-      toast.success("Appointment cancelled successfully");
-    } catch (error) {
-      toast.error("Failed to cancel appointment");
-    }
+    cancelMutation.mutate(cancelReason);
   };
 
-  const handlePriorityChange = async (newPriority: string) => {
-    try {
-      setAppointment({ ...appointment, priority: newPriority });
-      toast.success(`Priority updated to ${newPriority.toLowerCase()}`);
-    } catch (error) {
-      toast.error("Failed to update priority");
-    }
+  const handlePriorityChange = (newPriority: string) => {
+    updateMutation.mutate(
+      { priority: newPriority },
+      {
+        onSuccess: () => {
+          if (appointment) {
+            setAppointment({ ...appointment, priority: newPriority });
+          }
+          toast.success("Priority updated to " + newPriority.toLowerCase());
+        },
+        onError: () => {
+          toast.error("Failed to update priority");
+        },
+      }
+    );
   };
 
-  const handleSaveNotes = async () => {
-    try {
-      setAppointment({
-        ...appointment,
-        clientNotes: editedNotes.clientNotes,
-        internalNotes: editedNotes.internalNotes,
-      });
-      setIsEditingNotes(false);
-      toast.success("Notes updated successfully");
-    } catch (error) {
-      toast.error("Failed to update notes");
-    }
+  const handleSaveNotes = () => {
+    updateMutation.mutate(
+      { notes: editedNotes.clientNotes },
+      {
+        onSuccess: () => {
+          if (appointment) {
+            setAppointment({
+              ...appointment,
+              clientNotes: editedNotes.clientNotes,
+              internalNotes: editedNotes.internalNotes,
+            });
+          }
+          setIsEditingNotes(false);
+          toast.success("Notes updated successfully");
+        },
+        onError: () => {
+          toast.error("Failed to update notes");
+        },
+      }
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -232,6 +344,41 @@ function AppointmentDetailPage() {
         return "default";
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <span className="ml-3">Loading appointment...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error or not found state
+  if (error || !appointment) {
+    return (
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <Card className="py-12 text-center">
+          <CardContent>
+            <h3 className="font-semibold text-lg">Appointment Not Found</h3>
+            <p className="text-muted-foreground">
+              The appointment you are looking for does not exist or has been
+              removed.
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => navigate({ to: "/appointments" })}
+            >
+              Back to Appointments
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -586,41 +733,49 @@ function AppointmentDetailPage() {
                 </Badge>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    className="text-muted-foreground text-sm hover:text-foreground"
-                    href={`mailto:${appointment.client.email}`}
-                  >
-                    {appointment.client.email}
-                  </a>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a
-                    className="text-muted-foreground text-sm hover:text-foreground"
-                    href={`tel:${appointment.client.phone}`}
-                  >
-                    {appointment.client.phone}
-                  </a>
-                </div>
+                {appointment.client.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a
+                      className="text-muted-foreground text-sm hover:text-foreground"
+                      href={"mailto:" + appointment.client.email}
+                    >
+                      {appointment.client.email}
+                    </a>
+                  </div>
+                )}
+                {appointment.client.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a
+                      className="text-muted-foreground text-sm hover:text-foreground"
+                      href={"tel:" + appointment.client.phone}
+                    >
+                      {appointment.client.phone}
+                    </a>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="font-medium text-sm">TIN Number</p>
-                <p className="text-muted-foreground text-sm">
-                  {appointment.client.tin}
-                </p>
-              </div>
-              <Button
-                className="w-full"
-                onClick={() =>
-                  navigate({ to: `/clients/${appointment.client.id}` })
-                }
-                size="sm"
-                variant="outline"
-              >
-                View Client Profile
-              </Button>
+              {appointment.client.tin && (
+                <div>
+                  <p className="font-medium text-sm">TIN Number</p>
+                  <p className="text-muted-foreground text-sm">
+                    {appointment.client.tin}
+                  </p>
+                </div>
+              )}
+              {appointment.client.id && (
+                <Button
+                  className="w-full"
+                  onClick={() =>
+                    navigate({ to: "/clients/" + appointment.client.id })
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  View Client Profile
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -639,20 +794,22 @@ function AppointmentDetailPage() {
                   {appointment.assignedTo.role}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a
-                  className="text-muted-foreground text-sm hover:text-foreground"
-                  href={`mailto:${appointment.assignedTo.email}`}
-                >
-                  {appointment.assignedTo.email}
-                </a>
-              </div>
+              {appointment.assignedTo.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    className="text-muted-foreground text-sm hover:text-foreground"
+                    href={"mailto:" + appointment.assignedTo.email}
+                  >
+                    {appointment.assignedTo.email}
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Follow-up Information */}
-          {appointment.requiresFollowUp && (
+          {appointment.requiresFollowUp && appointment.followUpDate && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Follow-up</CardTitle>
@@ -686,13 +843,6 @@ function AppointmentDetailPage() {
                 <span className="text-muted-foreground">Last Updated</span>
                 <span>{formatDate(appointment.updatedAt)}</span>
               </div>
-              {appointment.status === "CANCELLED" &&
-                appointment.cancelledAt && (
-                  <div className="flex justify-between text-destructive">
-                    <span>Cancelled</span>
-                    <span>{formatDate(appointment.cancelledAt)}</span>
-                  </div>
-                )}
             </CardContent>
           </Card>
         </div>
