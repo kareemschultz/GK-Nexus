@@ -1,14 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   Clock,
   Filter,
+  Loader2,
   MapPin,
   Plus,
   User,
-  Users,
 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-states";
 import {
   Select,
   SelectContent,
@@ -35,74 +37,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/calendar")({
   component: CalendarPage,
+  beforeLoad: async () => {
+    const session = await authClient.getSession();
+    if (!session.data) {
+      redirect({
+        to: "/login",
+        throw: true,
+      });
+    }
+    return { session };
+  },
 });
-
-// Mock appointment data for the calendar
-const mockAppointments = [
-  {
-    id: "1",
-    title: "Tax Consultation",
-    client: "Acme Corp",
-    time: "10:00",
-    duration: 60,
-    status: "SCHEDULED",
-    priority: "MEDIUM",
-    assignedTo: "Sarah Johnson",
-    location: "Office",
-    department: "KAJ",
-  },
-  {
-    id: "2",
-    title: "VAT Return Review",
-    client: "TechStart Inc",
-    time: "14:00",
-    duration: 90,
-    status: "CONFIRMED",
-    priority: "HIGH",
-    assignedTo: "Michael Chen",
-    location: "Online",
-    department: "KAJ",
-  },
-  {
-    id: "3",
-    title: "Compliance Check",
-    client: "Local Business Ltd",
-    time: "11:00",
-    duration: 45,
-    status: "COMPLETED",
-    priority: "LOW",
-    assignedTo: "Emily Davis",
-    location: "Client Site",
-    department: "COMPLIANCE",
-  },
-  {
-    id: "4",
-    title: "Business Registration",
-    client: "StartUp Co",
-    time: "09:00",
-    duration: 120,
-    status: "IN_PROGRESS",
-    priority: "URGENT",
-    assignedTo: "Sarah Johnson",
-    location: "Office",
-    department: "GCMC",
-  },
-  {
-    id: "5",
-    title: "Advisory Meeting",
-    client: "Growth Corp",
-    time: "16:00",
-    duration: 60,
-    status: "SCHEDULED",
-    priority: "MEDIUM",
-    assignedTo: "Michael Chen",
-    location: "Office",
-    department: "ADVISORY",
-  },
-];
 
 // Generate calendar days
 const generateCalendarDays = (year: number, month: number) => {
@@ -143,24 +93,24 @@ const timeSlots = [
   "18:00",
 ];
 
-const departmentColors = {
-  KAJ: "bg-blue-100 text-blue-800 border-blue-200",
-  GCMC: "bg-green-100 text-green-800 border-green-200",
-  COMPLIANCE: "bg-orange-100 text-orange-800 border-orange-200",
-  ADVISORY: "bg-purple-100 text-purple-800 border-purple-200",
+const typeColors: Record<string, string> = {
+  CONSULTATION: "bg-blue-100 text-blue-800 border-blue-200",
+  DOCUMENT_REVIEW: "bg-green-100 text-green-800 border-green-200",
+  TAX_PREPARATION: "bg-orange-100 text-orange-800 border-orange-200",
+  COMPLIANCE_MEETING: "bg-purple-100 text-purple-800 border-purple-200",
+  OTHER: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
-const statusColors = {
+const statusColors: Record<string, string> = {
   SCHEDULED: "border-l-gray-400",
   CONFIRMED: "border-l-blue-500",
   IN_PROGRESS: "border-l-yellow-500",
   COMPLETED: "border-l-green-500",
   CANCELLED: "border-l-red-500",
   NO_SHOW: "border-l-red-300",
-  RESCHEDULED: "border-l-purple-500",
 };
 
-const priorityColors = {
+const priorityColors: Record<string, string> = {
   LOW: "border-r-gray-300",
   MEDIUM: "border-r-yellow-400",
   HIGH: "border-r-orange-500",
@@ -172,12 +122,41 @@ function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const calendarDays = generateCalendarDays(year, month);
+
+  // Fetch appointments from API
+  const { data: appointmentsData, isLoading } = useQuery(
+    orpc.appointments.list.queryOptions({
+      page: 1,
+      limit: 100,
+      status:
+        filterStatus !== "all"
+          ? (filterStatus as
+              | "SCHEDULED"
+              | "CONFIRMED"
+              | "IN_PROGRESS"
+              | "COMPLETED"
+              | "CANCELLED"
+              | "NO_SHOW")
+          : undefined,
+      type:
+        filterType !== "all"
+          ? (filterType as
+              | "CONSULTATION"
+              | "DOCUMENT_REVIEW"
+              | "TAX_PREPARATION"
+              | "COMPLIANCE_MEETING"
+              | "OTHER")
+          : undefined,
+    })
+  );
+
+  const appointments = appointmentsData?.data?.items || [];
 
   const monthNames = [
     "January",
@@ -208,22 +187,12 @@ function CalendarPage() {
     setCurrentDate(new Date());
   };
 
-  // Filter appointments based on selected filters
-  const filteredAppointments = mockAppointments.filter((appointment) => {
-    if (
-      filterDepartment !== "all" &&
-      appointment.department !== filterDepartment
-    ) {
-      return false;
-    }
-    if (filterStatus !== "all" && appointment.status !== filterStatus) {
-      return false;
-    }
-    return true;
+  // Get appointments for today
+  const today = new Date().toISOString().split("T")[0];
+  const todaysAppointments = appointments.filter((apt) => {
+    const aptDate = new Date(apt.startTime).toISOString().split("T")[0];
+    return aptDate === today;
   });
-
-  // Get appointments for a specific date (today's date for demo)
-  const todaysAppointments = filteredAppointments;
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -255,20 +224,41 @@ function CalendarPage() {
     }
   };
 
-  const getDepartmentBadgeVariant = (department: string) => {
-    switch (department) {
-      case "KAJ":
+  const getTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case "CONSULTATION":
         return "default";
-      case "GCMC":
+      case "TAX_PREPARATION":
         return "secondary";
-      case "COMPLIANCE":
+      case "COMPLIANCE_MEETING":
         return "outline";
-      case "ADVISORY":
-        return "destructive";
       default:
         return "default";
     }
   };
+
+  const formatTime = (dateString: string) =>
+    new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+  const getDuration = (startTime: string, endTime: string) => {
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
+    return Math.round((end - start) / (1000 * 60)); // minutes
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -370,55 +360,67 @@ function CalendarPage() {
                     )}
 
                     {/* Calendar Days */}
-                    {calendarDays.map((day, index) => (
-                      <div
-                        className={`min-h-[100px] cursor-pointer rounded-lg border p-2 transition-colors ${day.isCurrentMonth ? "bg-background" : "bg-muted/30"}
-                          ${day.isToday ? "ring-2 ring-primary" : ""}hover:bg-muted/50`}
-                        key={index}
-                        onClick={() => setSelectedDate(day.date)}
-                      >
-                        <div
-                          className={`mb-1 font-medium text-sm ${day.isCurrentMonth ? "text-foreground" : "text-muted-foreground"}
-                          ${day.isToday ? "font-bold text-primary" : ""}
-                        `}
-                        >
-                          {day.date.getDate()}
-                        </div>
+                    {calendarDays.map((day, index) => {
+                      const dateStr = day.date.toISOString().split("T")[0];
+                      const dayAppointments = appointments.filter((apt) => {
+                        const aptDate = new Date(apt.startTime)
+                          .toISOString()
+                          .split("T")[0];
+                        return aptDate === dateStr;
+                      });
 
-                        {/* Sample appointments for today only */}
-                        {day.isToday && (
-                          <div className="space-y-1">
-                            {filteredAppointments
-                              .slice(0, 3)
-                              .map((appointment) => (
-                                <div
-                                  className={`cursor-pointer rounded border-l-2 p-1 text-xs ${departmentColors[appointment.department as keyof typeof departmentColors]}
-                                  ${statusColors[appointment.status as keyof typeof statusColors]}hover:opacity-80`}
-                                  key={appointment.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate({
-                                      to: `/appointments/${appointment.id}`,
-                                    });
-                                  }}
-                                >
-                                  <div className="truncate font-medium">
-                                    {appointment.time} {appointment.title}
-                                  </div>
-                                  <div className="truncate text-xs opacity-75">
-                                    {appointment.client}
-                                  </div>
-                                </div>
-                              ))}
-                            {filteredAppointments.length > 3 && (
-                              <div className="p-1 text-muted-foreground text-xs">
-                                +{filteredAppointments.length - 3} more
-                              </div>
-                            )}
+                      return (
+                        <div
+                          className={`min-h-[100px] cursor-pointer rounded-lg border p-2 transition-colors ${day.isCurrentMonth ? "bg-background" : "bg-muted/30"}
+                            ${day.isToday ? "ring-2 ring-primary" : ""}hover:bg-muted/50`}
+                          key={index}
+                          onClick={() => setSelectedDate(day.date)}
+                        >
+                          <div
+                            className={`mb-1 font-medium text-sm ${day.isCurrentMonth ? "text-foreground" : "text-muted-foreground"}
+                            ${day.isToday ? "font-bold text-primary" : ""}
+                          `}
+                          >
+                            {day.date.getDate()}
                           </div>
-                        )}
-                      </div>
-                    ))}
+
+                          {dayAppointments.length > 0 && (
+                            <div className="space-y-1">
+                              {dayAppointments
+                                .slice(0, 3)
+                                .map((appointment) => (
+                                  <div
+                                    className={`cursor-pointer rounded border-l-2 p-1 text-xs ${typeColors[appointment.type] || typeColors.OTHER}
+                                    ${statusColors[appointment.status]}hover:opacity-80`}
+                                    key={appointment.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate({
+                                        to: "/appointments/$id",
+                                        params: { id: appointment.id },
+                                      });
+                                    }}
+                                  >
+                                    <div className="truncate font-medium">
+                                      {formatTime(appointment.startTime)}{" "}
+                                      {appointment.title}
+                                    </div>
+                                    <div className="truncate text-xs opacity-75">
+                                      {appointment.externalClientName ||
+                                        "Client"}
+                                    </div>
+                                  </div>
+                                ))}
+                              {dayAppointments.length > 3 && (
+                                <div className="p-1 text-muted-foreground text-xs">
+                                  +{dayAppointments.length - 3} more
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -432,9 +434,16 @@ function CalendarPage() {
                   </div>
                   <div className="grid gap-2">
                     {timeSlots.map((time) => {
-                      const appointment = todaysAppointments.find(
-                        (apt) => apt.time === time
-                      );
+                      const selectedDateStr =
+                        selectedDate?.toISOString().split("T")[0] || today;
+                      const appointment = appointments.find((apt) => {
+                        const aptDate = new Date(apt.startTime)
+                          .toISOString()
+                          .split("T")[0];
+                        const aptTime = formatTime(apt.startTime);
+                        return aptDate === selectedDateStr && aptTime === time;
+                      });
+
                       return (
                         <div
                           className="flex items-start gap-4 border-b p-2"
@@ -446,13 +455,14 @@ function CalendarPage() {
                           <div className="flex-1">
                             {appointment ? (
                               <div
-                                className={`cursor-pointer rounded-lg border border-r-4 border-l-4 p-3 transition-all hover:shadow-md ${departmentColors[appointment.department as keyof typeof departmentColors]}
-                                  ${statusColors[appointment.status as keyof typeof statusColors]}
-                                  ${priorityColors[appointment.priority as keyof typeof priorityColors]}
-                                `}
+                                className={`cursor-pointer rounded-lg border border-r-4 border-l-4 p-3 transition-all hover:shadow-md ${typeColors[appointment.type] || typeColors.OTHER}
+                                    ${statusColors[appointment.status]}
+                                    ${priorityColors[appointment.priority]}
+                                  `}
                                 onClick={() =>
                                   navigate({
-                                    to: `/appointments/${appointment.id}`,
+                                    to: "/appointments/$id",
+                                    params: { id: appointment.id },
                                   })
                                 }
                               >
@@ -462,21 +472,24 @@ function CalendarPage() {
                                       {appointment.title}
                                     </div>
                                     <div className="text-muted-foreground text-sm">
-                                      {appointment.client}
+                                      {appointment.externalClientName ||
+                                        "Client"}
                                     </div>
                                     <div className="flex items-center gap-4 text-muted-foreground text-xs">
                                       <span className="flex items-center gap-1">
                                         <Clock className="h-3 w-3" />
-                                        {appointment.duration}min
+                                        {getDuration(
+                                          appointment.startTime,
+                                          appointment.endTime
+                                        )}
+                                        min
                                       </span>
-                                      <span className="flex items-center gap-1">
-                                        <MapPin className="h-3 w-3" />
-                                        {appointment.location}
-                                      </span>
-                                      <span className="flex items-center gap-1">
-                                        <User className="h-3 w-3" />
-                                        {appointment.assignedTo}
-                                      </span>
+                                      {appointment.location && (
+                                        <span className="flex items-center gap-1">
+                                          <MapPin className="h-3 w-3" />
+                                          {appointment.location}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
                                   <div className="flex flex-col gap-1">
@@ -568,22 +581,24 @@ function CalendarPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="mb-2 block font-medium text-sm">
-                  Department
-                </label>
-                <Select
-                  onValueChange={setFilterDepartment}
-                  value={filterDepartment}
-                >
+                <label className="mb-2 block font-medium text-sm">Type</label>
+                <Select onValueChange={setFilterType} value={filterType}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Departments</SelectItem>
-                    <SelectItem value="KAJ">KAJ (Tax & Accounting)</SelectItem>
-                    <SelectItem value="GCMC">GCMC (Legal & Visa)</SelectItem>
-                    <SelectItem value="COMPLIANCE">Compliance</SelectItem>
-                    <SelectItem value="ADVISORY">Advisory</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="CONSULTATION">Consultation</SelectItem>
+                    <SelectItem value="DOCUMENT_REVIEW">
+                      Document Review
+                    </SelectItem>
+                    <SelectItem value="TAX_PREPARATION">
+                      Tax Preparation
+                    </SelectItem>
+                    <SelectItem value="COMPLIANCE_MEETING">
+                      Compliance Meeting
+                    </SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -606,7 +621,7 @@ function CalendarPage() {
               <Button
                 className="w-full"
                 onClick={() => {
-                  setFilterDepartment("all");
+                  setFilterType("all");
                   setFilterStatus("all");
                 }}
                 variant="outline"
@@ -626,18 +641,23 @@ function CalendarPage() {
               <CardDescription>{new Date().toDateString()}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {todaysAppointments.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">
-                    No appointments scheduled
-                  </p>
-                ) : (
-                  todaysAppointments.map((appointment) => (
+              {todaysAppointments.length === 0 ? (
+                <EmptyState
+                  description="No appointments scheduled for today"
+                  icon={<CalendarIcon className="h-8 w-8" />}
+                  title="Free day"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {todaysAppointments.map((appointment) => (
                     <div
                       className="cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/30"
                       key={appointment.id}
                       onClick={() =>
-                        navigate({ to: `/appointments/${appointment.id}` })
+                        navigate({
+                          to: "/appointments/$id",
+                          params: { id: appointment.id },
+                        })
                       }
                     >
                       <div className="mb-2 flex items-start justify-between">
@@ -647,11 +667,9 @@ function CalendarPage() {
                         <div className="flex gap-1">
                           <Badge
                             className="text-xs"
-                            variant={getDepartmentBadgeVariant(
-                              appointment.department
-                            )}
+                            variant={getTypeBadgeVariant(appointment.type)}
                           >
-                            {appointment.department}
+                            {appointment.type}
                           </Badge>
                           <Badge
                             className="text-xs"
@@ -664,21 +682,22 @@ function CalendarPage() {
                       <div className="space-y-1 text-muted-foreground text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {appointment.time} ({appointment.duration}min)
+                          {formatTime(appointment.startTime)} (
+                          {getDuration(
+                            appointment.startTime,
+                            appointment.endTime
+                          )}
+                          min)
                         </div>
                         <div className="flex items-center gap-1">
                           <User className="h-3 w-3" />
-                          {appointment.client}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {appointment.assignedTo}
+                          {appointment.externalClientName || "Client"}
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -689,12 +708,12 @@ function CalendarPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="mb-2 font-medium text-sm">Departments</h4>
+                <h4 className="mb-2 font-medium text-sm">Types</h4>
                 <div className="space-y-2">
-                  {Object.entries(departmentColors).map(([dept, color]) => (
-                    <div className="flex items-center gap-2" key={dept}>
+                  {Object.entries(typeColors).map(([type, color]) => (
+                    <div className="flex items-center gap-2" key={type}>
                       <div className={`h-3 w-3 rounded border ${color}`} />
-                      <span className="text-xs">{dept}</span>
+                      <span className="text-xs">{type}</span>
                     </div>
                   ))}
                 </div>

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -6,6 +7,7 @@ import {
   CheckCircle2,
   Clock,
   Info,
+  Loader2,
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +19,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-states";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/compliance/alerts")({
   component: ComplianceAlertsPage,
@@ -32,69 +36,6 @@ export const Route = createFileRoute("/compliance/alerts")({
     return { session };
   },
 });
-
-interface ComplianceAlert {
-  id: string;
-  title: string;
-  description: string;
-  type: "warning" | "error" | "info" | "success";
-  category: "deadline" | "document" | "filing" | "audit";
-  date: string;
-  isRead: boolean;
-}
-
-const alerts: ComplianceAlert[] = [
-  {
-    id: "1",
-    title: "PAYE Filing Deadline Approaching",
-    description:
-      "Monthly PAYE return for December 2024 is due in 3 days. Ensure all employee data is up to date.",
-    type: "warning",
-    category: "deadline",
-    date: "2025-01-11",
-    isRead: false,
-  },
-  {
-    id: "2",
-    title: "VAT Return Due Soon",
-    description:
-      "Q4 2024 VAT return must be submitted by January 15, 2025. Review your VAT calculations.",
-    type: "warning",
-    category: "deadline",
-    date: "2025-01-10",
-    isRead: false,
-  },
-  {
-    id: "3",
-    title: "Missing Client Documents",
-    description:
-      "3 clients have incomplete tax documentation. Review and request missing items.",
-    type: "error",
-    category: "document",
-    date: "2025-01-09",
-    isRead: false,
-  },
-  {
-    id: "4",
-    title: "November PAYE Accepted",
-    description:
-      "Your November 2024 PAYE return has been accepted by GRA. No further action required.",
-    type: "success",
-    category: "filing",
-    date: "2024-12-20",
-    isRead: true,
-  },
-  {
-    id: "5",
-    title: "New GRA Regulation Update",
-    description:
-      "GRA has issued new guidelines for 2025 tax filings. Review the updated requirements.",
-    type: "info",
-    category: "audit",
-    date: "2024-12-15",
-    isRead: true,
-  },
-];
 
 const typeConfig = {
   warning: {
@@ -131,7 +72,61 @@ const categoryConfig = {
 };
 
 function ComplianceAlertsPage() {
+  // Fetch compliance alerts from API
+  const { data: alertsData, isLoading } = useQuery(
+    orpc.compliance.getAlerts.queryOptions({
+      daysAhead: 30,
+      limit: 50,
+    })
+  );
+
+  // Transform API data to display format
+  const alerts = [
+    ...(alertsData?.overdue || []).map((alert) => ({
+      id: alert.id,
+      title: alert.requirement?.title || "Overdue Filing",
+      description: `${alert.filingPeriod} - Due: ${alert.dueDate}. Status: ${alert.percentComplete || 0}% complete.`,
+      type: "error" as const,
+      category: "deadline" as const,
+      date: alert.dueDate,
+      isRead: false,
+      client: alert.client?.businessName,
+    })),
+    ...(alertsData?.urgent || []).map((alert) => ({
+      id: alert.id,
+      title: alert.requirement?.title || "Urgent Filing",
+      description: `${alert.filingPeriod} - Due: ${alert.dueDate}. Status: ${alert.percentComplete || 0}% complete.`,
+      type: "warning" as const,
+      category: "deadline" as const,
+      date: alert.dueDate,
+      isRead: false,
+      client: alert.client?.businessName,
+    })),
+    ...(alertsData?.upcoming || []).map((alert) => ({
+      id: alert.id,
+      title: alert.requirement?.title || "Upcoming Filing",
+      description: `${alert.filingPeriod} - Due: ${alert.dueDate}. Status: ${alert.percentComplete || 0}% complete.`,
+      type: "info" as const,
+      category: "filing" as const,
+      date: alert.dueDate,
+      isRead: true,
+      client: alert.client?.businessName,
+    })),
+  ];
+
   const unreadCount = alerts.filter((a) => !a.isRead).length;
+  const overdueCount = alertsData?.overdue?.length || 0;
+  const urgentCount = alertsData?.urgent?.length || 0;
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl px-4 py-8">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
@@ -165,21 +160,21 @@ function ComplianceAlertsPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Warnings</CardTitle>
+            <CardTitle className="text-sm">Overdue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl text-amber-500">
-              {alerts.filter((a) => a.type === "warning").length}
+            <div className="font-bold text-2xl text-red-500">
+              {overdueCount}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Critical</CardTitle>
+            <CardTitle className="text-sm">Urgent</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl text-red-500">
-              {alerts.filter((a) => a.type === "error").length}
+            <div className="font-bold text-2xl text-amber-500">
+              {urgentCount}
             </div>
           </CardContent>
         </Card>
@@ -188,7 +183,7 @@ function ComplianceAlertsPage() {
             <CardTitle className="text-sm">Total Alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="font-bold text-2xl">{alerts.length}</div>
+            <div className="font-bold text-2xl">{alertsData?.total || 0}</div>
           </CardContent>
         </Card>
       </div>
@@ -204,51 +199,66 @@ function ComplianceAlertsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {alerts.map((alert) => {
-              const config = typeConfig[alert.type];
-              const AlertIcon = config.icon;
-              return (
-                <div
-                  className={`rounded-lg border p-4 ${config.bg} ${config.border} ${
-                    alert.isRead ? "" : "ring-2 ring-primary/20"
-                  }`}
-                  key={alert.id}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <AlertIcon className={`mt-0.5 h-5 w-5 ${config.color}`} />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{alert.title}</h3>
-                          {!alert.isRead && (
-                            <Badge variant="default">New</Badge>
+          {alerts.length === 0 ? (
+            <EmptyState
+              description="No compliance alerts or deadlines at this time."
+              icon={<CheckCircle2 className="h-12 w-12" />}
+              title="All caught up!"
+            />
+          ) : (
+            <div className="space-y-4">
+              {alerts.map((alert) => {
+                const config = typeConfig[alert.type];
+                const AlertIcon = config.icon;
+                return (
+                  <div
+                    className={`rounded-lg border p-4 ${config.bg} ${config.border} ${
+                      alert.isRead ? "" : "ring-2 ring-primary/20"
+                    }`}
+                    key={alert.id}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <AlertIcon
+                          className={`mt-0.5 h-5 w-5 ${config.color}`}
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{alert.title}</h3>
+                            {!alert.isRead && (
+                              <Badge variant="default">New</Badge>
+                            )}
+                          </div>
+                          {alert.client && (
+                            <p className="text-muted-foreground text-sm">
+                              Client: {alert.client}
+                            </p>
                           )}
-                        </div>
-                        <p className="mt-1 text-muted-foreground text-sm">
-                          {alert.description}
-                        </p>
-                        <div className="mt-2 flex items-center gap-4">
-                          <Badge
-                            variant={categoryConfig[alert.category].variant}
-                          >
-                            {categoryConfig[alert.category].label}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                            <Calendar className="h-3 w-3" />
-                            <span>{alert.date}</span>
+                          <p className="mt-1 text-muted-foreground text-sm">
+                            {alert.description}
+                          </p>
+                          <div className="mt-2 flex items-center gap-4">
+                            <Badge
+                              variant={categoryConfig[alert.category].variant}
+                            >
+                              {categoryConfig[alert.category].label}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                              <Calendar className="h-3 w-3" />
+                              <span>{alert.date}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
+                      <Button size="sm" variant="ghost">
+                        <Clock className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <Button size="sm" variant="ghost">
-                      <Clock className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
