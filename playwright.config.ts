@@ -23,9 +23,8 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ["html", { outputFolder: "test-results/html-report" }],
-    ["junit", { outputFile: "test-results/junit.xml" }],
     ["json", { outputFile: "test-results/test-results.json" }],
-    ["allure-playwright", { outputFolder: "test-results/allure-results" }],
+    ["line"],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -103,9 +102,9 @@ export default defineConfig({
     },
   ],
 
-  /* Global setup and teardown */
-  globalSetup: require.resolve("./tests/global-setup.ts"),
-  globalTeardown: require.resolve("./tests/global-teardown.ts"),
+  /* Global setup and teardown - disabled for quick tests */
+  // globalSetup: "./tests/global-setup.ts",
+  // globalTeardown: "./tests/global-teardown.ts",
 
   /* Test timeout */
   timeout: 60_000,

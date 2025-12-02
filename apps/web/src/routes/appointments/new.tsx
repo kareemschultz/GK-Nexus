@@ -24,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/new")({
   component: NewAppointmentPage,
@@ -73,13 +72,19 @@ function NewAppointmentPage() {
   // Fetch clients from API
   const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
     queryKey: ["clients"],
-    queryFn: () => orpc.clients.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.list({ page: 1, limit: 100 });
+    },
   });
 
   // Fetch users/staff from API
   const { data: usersResponse, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
-    queryFn: () => orpc.users.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.list({ page: 1, limit: 100 });
+    },
   });
 
   // Map API responses to component format
@@ -143,7 +148,7 @@ function NewAppointmentPage() {
 
   // Create appointment mutation
   const createMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       title: string;
       clientId: string;
       startTime: string;
@@ -153,8 +158,9 @@ function NewAppointmentPage() {
       location: string;
       description: string;
       notes: string;
-    }) =>
-      orpc.appointments.create({
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.create({
         title: data.title,
         clientId: data.clientId,
         startTime: data.startTime,
@@ -169,7 +175,8 @@ function NewAppointmentPage() {
         location: data.location,
         description: data.description,
         notes: data.notes,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       toast.success("Appointment created successfully!");

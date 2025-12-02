@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/invoices/new")({
   component: RouteComponent,
@@ -94,11 +93,17 @@ function RouteComponent() {
   // Fetch clients for dropdown
   const clientsQuery = useQuery({
     queryKey: ["clients"],
-    queryFn: () => orpc.clients.list({ limit: 100, offset: 0 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.list({ limit: 100, offset: 0 });
+    },
   });
 
   const createInvoiceMutation = useMutation({
-    mutationFn: (data: CreateInvoiceData) => orpc.invoices.create(data),
+    mutationFn: async (data: CreateInvoiceData) => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.create(data);
+    },
     onSuccess: (invoice) => {
       navigate({ to: "/invoices/$id", params: { id: invoice.id } });
     },
