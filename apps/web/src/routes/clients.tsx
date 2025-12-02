@@ -68,7 +68,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/clients")({
   component: RouteComponent,
@@ -150,18 +149,23 @@ function RouteComponent() {
   // Fetch clients from API
   const clientsQuery = useQuery({
     queryKey: ["clients", filters.searchTerm],
-    queryFn: () =>
-      orpc.clients.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.list({
         page: 1,
         limit: 100,
         search: filters.searchTerm || undefined,
-      }),
+      });
+    },
   });
 
   // Fetch client stats
   const statsQuery = useQuery({
     queryKey: ["clientStats"],
-    queryFn: () => orpc.clients.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.stats({});
+    },
   });
 
   // Map API response to Client type

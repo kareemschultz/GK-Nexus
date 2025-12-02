@@ -67,7 +67,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/partner-network")({
   component: PartnerNetworkPage,
@@ -163,8 +162,9 @@ function PartnerNetworkPage() {
         type: typeFilter !== "all" ? typeFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.partnerNetwork.partners.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.partners.list({
         search: searchTerm || undefined,
         partnerType:
           typeFilter !== "all"
@@ -172,38 +172,46 @@ function PartnerNetworkPage() {
             : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch referrals
   const referralsQuery = useQuery({
     queryKey: ["referrals"],
-    queryFn: () =>
-      orpc.partnerNetwork.referrals.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.referrals.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch agreements
   const agreementsQuery = useQuery({
     queryKey: ["agreements"],
-    queryFn: () =>
-      orpc.partnerNetwork.agreements.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.agreements.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["partnerStats"],
-    queryFn: () => orpc.partnerNetwork.partners.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.partners.stats();
+    },
   });
 
   // Create partner mutation
   const createPartnerMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       companyName: string;
       tradeName?: string;
       partnerType: (typeof partnerTypes)[number];
@@ -215,7 +223,10 @@ function PartnerNetworkPage() {
       city?: string;
       country?: string;
       notes?: string;
-    }) => orpc.partnerNetwork.partners.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.partners.create(data);
+    },
     onSuccess: () => {
       toast.success("Partner created successfully");
       setShowAddPartnerDialog(false);
@@ -229,14 +240,16 @@ function PartnerNetworkPage() {
 
   // Update partner status mutation
   const updatePartnerStatusMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       id: string;
       status: "PENDING" | "ACTIVE" | "INACTIVE" | "SUSPENDED" | "TERMINATED";
-    }) =>
-      orpc.partnerNetwork.partners.update({
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.partnerNetwork.partners.update({
         id: data.id,
         data: { status: data.status },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Partner status updated");
       queryClient.invalidateQueries({ queryKey: ["partners"] });

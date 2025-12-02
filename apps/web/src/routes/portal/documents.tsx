@@ -47,7 +47,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/documents")({
   component: DocumentsPage,
@@ -119,7 +118,10 @@ function DocumentsPage() {
   // Fetch documents from API
   const { data: documentsResponse, isLoading } = useQuery({
     queryKey: ["documents"],
-    queryFn: () => orpc.documents.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.documents.list({ page: 1, limit: 100 });
+    },
   });
 
   // Map API response to component format

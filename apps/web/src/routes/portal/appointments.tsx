@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/appointments")({
   component: AppointmentsPage,
@@ -183,7 +182,10 @@ function AppointmentsPage() {
   // Fetch appointments from API
   const { data: appointmentsResponse, isLoading } = useQuery({
     queryKey: ["appointments"],
-    queryFn: () => orpc.appointments.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.list({ page: 1, limit: 100 });
+    },
   });
 
   // Map API response to component format
@@ -216,7 +218,7 @@ function AppointmentsPage() {
 
   // Create appointment mutation
   const createMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       title: string;
       appointmentType: string;
       staffId?: string;
@@ -224,7 +226,10 @@ function AppointmentsPage() {
       duration: number;
       meetingType: string;
       description?: string;
-    }) => orpc.appointments.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       setIsBookingDialogOpen(false);

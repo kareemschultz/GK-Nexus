@@ -68,7 +68,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/service-catalog")({
   component: ServiceCatalogPage,
@@ -164,8 +163,9 @@ function ServiceCatalogPage() {
         category: categoryFilter !== "all" ? categoryFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.serviceCatalog.servicesList({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.servicesList({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -173,38 +173,46 @@ function ServiceCatalogPage() {
             : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch projects
   const projectsQuery = useQuery({
     queryKey: ["serviceProjects"],
-    queryFn: () =>
-      orpc.serviceCatalog.projectsList({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.projectsList({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch packages
   const packagesQuery = useQuery({
     queryKey: ["servicePackages"],
-    queryFn: () =>
-      orpc.serviceCatalog.packagesList({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.packagesList({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["serviceStats"],
-    queryFn: () => orpc.serviceCatalog.servicesStats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.servicesStats();
+    },
   });
 
   // Create service mutation
   const createServiceMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       name: string;
       description?: string;
       category: (typeof serviceCategories)[number];
@@ -212,7 +220,10 @@ function ServiceCatalogPage() {
       basePrice?: string;
       estimatedDurationHours?: number;
       notes?: string;
-    }) => orpc.serviceCatalog.servicesCreate(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.servicesCreate(data);
+    },
     onSuccess: () => {
       toast.success("Service created successfully");
       setShowAddServiceDialog(false);
@@ -226,7 +237,7 @@ function ServiceCatalogPage() {
 
   // Create package mutation
   const createPackageMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       name: string;
       description?: string;
       price?: string;
@@ -234,7 +245,10 @@ function ServiceCatalogPage() {
       validFrom?: string;
       validUntil?: string;
       notes?: string;
-    }) => orpc.serviceCatalog.packagesCreate(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.packagesCreate(data);
+    },
     onSuccess: () => {
       toast.success("Package created successfully");
       setShowAddPackageDialog(false);
@@ -247,7 +261,10 @@ function ServiceCatalogPage() {
 
   // Publish service mutation
   const publishServiceMutation = useMutation({
-    mutationFn: (id: string) => orpc.serviceCatalog.servicesPublish({ id }),
+    mutationFn: async (id: string) => {
+      const { client } = await import("@/utils/orpc");
+      return client.serviceCatalog.servicesPublish({ id });
+    },
     onSuccess: () => {
       toast.success("Service published successfully");
       queryClient.invalidateQueries({ queryKey: ["services"] });

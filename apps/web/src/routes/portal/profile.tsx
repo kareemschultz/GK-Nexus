@@ -30,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/profile")({
   component: ProfilePage,
@@ -125,7 +124,10 @@ function ProfilePage() {
   // Fetch user profile from API
   const { data: userResponse, isLoading } = useQuery({
     queryKey: ["users", "me"],
-    queryFn: () => orpc.users.me(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.me();
+    },
   });
 
   // Initialize form data from API response

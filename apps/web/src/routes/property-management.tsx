@@ -64,7 +64,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc, queryClient } from "@/utils/orpc";
+import { queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/property-management")({
   component: PropertyManagementPage,
@@ -92,39 +92,49 @@ function PropertyManagementPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.propertyManagement.propertiesList({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.propertyManagement.propertiesList({
         search: searchTerm || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   const tenantsQuery = useQuery({
     queryKey: ["tenants"],
-    queryFn: () =>
-      orpc.propertyManagement.tenantsList({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.propertyManagement.tenantsList({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   const statsQuery = useQuery({
     queryKey: ["propertyStats"],
-    queryFn: () => orpc.propertyManagement.propertiesStats({}),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.propertyManagement.propertiesStats({});
+    },
   });
 
   // Mutations
   const createPropertyMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       name: string;
       propertyType: string;
       addressLine1: string;
       city: string;
       region: string;
       monthlyRent?: number;
-    }) => orpc.propertyManagement.propertiesCreate(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.propertyManagement.propertiesCreate(data);
+    },
     onSuccess: () => {
       toast.success("Property created successfully");
       setShowAddPropertyDialog(false);

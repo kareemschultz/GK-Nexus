@@ -69,7 +69,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/local-content")({
   component: LocalContentPage,
@@ -166,8 +165,9 @@ function LocalContentPage() {
         sector: sectorFilter !== "all" ? sectorFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.localContent.plans.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.list({
         search: searchTerm || undefined,
         industrySector:
           sectorFilter !== "all"
@@ -175,38 +175,46 @@ function LocalContentPage() {
             : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch suppliers
   const suppliersQuery = useQuery({
     queryKey: ["localContentSuppliers"],
-    queryFn: () =>
-      orpc.localContent.suppliers.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.suppliers.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch reports
   const reportsQuery = useQuery({
     queryKey: ["localContentReports"],
-    queryFn: () =>
-      orpc.localContent.reports.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.reports.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["localContentStats"],
-    queryFn: () => orpc.localContent.plans.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.stats();
+    },
   });
 
   // Create plan mutation
   const createPlanMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       companyId: string;
       planYear: number;
       industrySector: (typeof industrySectors)[number];
@@ -214,7 +222,10 @@ function LocalContentPage() {
       procurementTargetPercent?: string;
       trainingTargetHours?: number;
       notes?: string;
-    }) => orpc.localContent.plans.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.create(data);
+    },
     onSuccess: () => {
       toast.success("Local content plan created successfully");
       setShowNewPlanDialog(false);
@@ -228,7 +239,7 @@ function LocalContentPage() {
 
   // Create supplier mutation
   const createSupplierMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       companyName: string;
       tradeName?: string;
       industrySector: (typeof industrySectors)[number];
@@ -240,7 +251,10 @@ function LocalContentPage() {
       contactEmail?: string;
       contactPhone?: string;
       notes?: string;
-    }) => orpc.localContent.suppliers.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.suppliers.create(data);
+    },
     onSuccess: () => {
       toast.success("Supplier registered successfully");
       setShowNewSupplierDialog(false);
@@ -253,7 +267,7 @@ function LocalContentPage() {
 
   // Update plan status mutation
   const updatePlanStatusMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       id: string;
       status:
         | "DRAFT"
@@ -262,11 +276,13 @@ function LocalContentPage() {
         | "APPROVED"
         | "REJECTED"
         | "EXPIRED";
-    }) =>
-      orpc.localContent.plans.update({
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.update({
         id: data.id,
         data: { status: data.status },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Plan status updated successfully");
       queryClient.invalidateQueries({ queryKey: ["localContentPlans"] });

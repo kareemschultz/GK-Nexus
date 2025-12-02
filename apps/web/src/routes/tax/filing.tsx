@@ -22,7 +22,6 @@ import {
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import TaxFilingWizard from "@/components/wizards/tax-filing-wizard";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/tax/filing")({
   component: TaxFilingPage,
@@ -76,7 +75,10 @@ function TaxFilingPage() {
   // Fetch tax deadlines from API
   const { data: deadlinesResponse, isLoading } = useQuery({
     queryKey: ["tax-deadlines"],
-    queryFn: () => orpc.tax.getTaxDeadlines({ upcomingOnly: false }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.tax.getTaxDeadlines({ upcomingOnly: false });
+    },
   });
 
   // Map API response to component format

@@ -45,7 +45,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/portal/payments")({
   component: PaymentsPage,
@@ -163,7 +162,10 @@ function PaymentsPage() {
   // Fetch invoices from API
   const { data: invoicesResponse, isLoading } = useQuery({
     queryKey: ["invoices"],
-    queryFn: () => orpc.invoices.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.list({ page: 1, limit: 100 });
+    },
   });
 
   // Map API response to component format

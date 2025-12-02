@@ -66,7 +66,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/training")({
   component: TrainingPage,
@@ -162,8 +161,9 @@ function TrainingPage() {
         category: categoryFilter !== "all" ? categoryFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.training.courses.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.courses.list({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -171,49 +171,59 @@ function TrainingPage() {
             : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch sessions
   const sessionsQuery = useQuery({
     queryKey: ["trainingSessions"],
-    queryFn: () =>
-      orpc.training.sessions.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.sessions.list({
         page: 1,
         limit: 50,
         upcoming: true,
-      }),
+      });
+    },
   });
 
   // Fetch registrations
   const registrationsQuery = useQuery({
     queryKey: ["trainingRegistrations"],
-    queryFn: () =>
-      orpc.training.registrations.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.registrations.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch certificates
   const certificatesQuery = useQuery({
     queryKey: ["trainingCertificates"],
-    queryFn: () =>
-      orpc.training.certificates.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.certificates.list({
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["trainingStats"],
-    queryFn: () => orpc.training.courses.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.courses.stats();
+    },
   });
 
   // Create course mutation
   const createCourseMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       name: string;
       description?: string;
       category: (typeof trainingCategories)[number];
@@ -223,7 +233,10 @@ function TrainingPage() {
       price?: string;
       certificateOffered?: boolean;
       notes?: string;
-    }) => orpc.training.courses.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.courses.create(data);
+    },
     onSuccess: () => {
       toast.success("Course created successfully");
       setShowNewCourseDialog(false);
@@ -237,7 +250,10 @@ function TrainingPage() {
 
   // Publish course mutation
   const publishCourseMutation = useMutation({
-    mutationFn: (id: string) => orpc.training.courses.publish({ id }),
+    mutationFn: async (id: string) => {
+      const { client } = await import("@/utils/orpc");
+      return client.training.courses.publish({ id });
+    },
     onSuccess: () => {
       toast.success("Course published successfully");
       queryClient.invalidateQueries({ queryKey: ["trainingCourses"] });

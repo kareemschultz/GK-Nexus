@@ -66,7 +66,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/expediting")({
   component: ExpeditingPage,
@@ -156,8 +155,9 @@ function ExpeditingPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
       },
     ],
-    queryFn: () =>
-      orpc.expediting.requests.list({
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.requests.list({
         search: searchTerm || undefined,
         status:
           statusFilter !== "all"
@@ -170,24 +170,31 @@ function ExpeditingPage() {
             : undefined,
         page: 1,
         limit: 50,
-      }),
+      });
+    },
   });
 
   // Fetch agencies
   const agenciesQuery = useQuery({
     queryKey: ["expediteAgencies"],
-    queryFn: () => orpc.expediting.agencies.list({}),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.agencies.list({});
+    },
   });
 
   // Fetch stats
   const statsQuery = useQuery({
     queryKey: ["expediteStats"],
-    queryFn: () => orpc.expediting.requests.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.requests.stats();
+    },
   });
 
   // Create request mutation
   const createRequestMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       clientId: string;
       agencyId: string;
       serviceType: (typeof serviceTypes)[number];
@@ -195,7 +202,10 @@ function ExpeditingPage() {
       priority: (typeof priorities)[number];
       estimatedCompletionDate?: string;
       notes?: string;
-    }) => orpc.expediting.requests.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.requests.create(data);
+    },
     onSuccess: () => {
       toast.success("Expedite request created successfully");
       setShowNewRequestDialog(false);
@@ -209,7 +219,7 @@ function ExpeditingPage() {
 
   // Create agency mutation
   const createAgencyMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       name: string;
       code: string;
       department?: string;
@@ -218,7 +228,10 @@ function ExpeditingPage() {
       contactPhone?: string;
       address?: string;
       notes?: string;
-    }) => orpc.expediting.agencies.create(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.agencies.create(data);
+    },
     onSuccess: () => {
       toast.success("Agency created successfully");
       setShowNewAgencyDialog(false);
@@ -231,14 +244,16 @@ function ExpeditingPage() {
 
   // Update status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       id: string;
       status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "DELAYED" | "CANCELLED";
-    }) =>
-      orpc.expediting.requests.update({
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.expediting.requests.update({
         id: data.id,
         data: { status: data.status },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Status updated successfully");
       queryClient.invalidateQueries({ queryKey: ["expediteRequests"] });
