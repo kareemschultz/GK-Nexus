@@ -116,13 +116,13 @@ export const userProfile = pgTable(
   ]
 );
 
-// Client Status Enum
+// Client Status Enum - using lowercase to match clients.ts
 export const clientStatusEnum = pgEnum("client_status", [
-  "ACTIVE",
-  "INACTIVE",
-  "SUSPENDED",
-  "PENDING",
-  "ARCHIVED",
+  "active",
+  "inactive",
+  "suspended",
+  "pending_approval",
+  "archived",
 ]);
 
 // Clients
@@ -144,7 +144,7 @@ export const client = pgTable(
     isLocalContentQualified: boolean("is_local_content_qualified").default(
       false
     ),
-    status: clientStatusEnum("status").default("ACTIVE").notNull(),
+    status: clientStatusEnum("status").default("active").notNull(),
     complianceStatus:
       businessComplianceStatusEnum("compliance_status").default("GOOD"),
     complianceScore: integer("compliance_score").default(100),
@@ -169,12 +169,12 @@ export const client = pgTable(
   ]
 );
 
-// Document Status Enum
-export const documentStatusEnum = pgEnum("document_status", [
-  "ACTIVE",
-  "ARCHIVED",
-  "DELETED",
-  "PENDING",
+// Business Document Status Enum (separate from documents.ts)
+export const businessDocStatusEnum = pgEnum("business_doc_status", [
+  "active",
+  "archived",
+  "deleted",
+  "pending",
 ]);
 
 // Documents
@@ -195,7 +195,7 @@ export const document = pgTable(
     fileSize: integer("file_size"),
     mimeType: varchar("mime_type", { length: 100 }),
     referenceNumber: varchar("reference_number", { length: 100 }),
-    status: documentStatusEnum("status").default("ACTIVE").notNull(),
+    status: businessDocStatusEnum("status").default("active").notNull(),
     isConfidential: boolean("is_confidential").default(false),
     issueDate: timestamp("issue_date"),
     expiryDate: timestamp("expiry_date"),
