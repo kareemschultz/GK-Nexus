@@ -907,15 +907,65 @@ export default function ClientOnboardingWizard({
       const formData = form.getValues();
       const validatedData = clientSchema.parse(formData);
 
-      // Here you would call your API to create the client
-      console.log("Creating client:", validatedData);
+      // Map wizard entity types to API entity types
+      const entityTypeMap: Record<string, string> = {
+        INDIVIDUAL: "individual",
+        COMPANY: "corporation",
+        PARTNERSHIP: "partnership",
+        SOLE_PROPRIETORSHIP: "sole_proprietorship",
+      };
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Build the name based on entity type
+      const clientName =
+        validatedData.entityType === "INDIVIDUAL"
+          ? `${validatedData.firstName} ${validatedData.lastName}`
+          : validatedData.businessName || "";
 
-      onComplete?.(validatedData);
+      // Call the actual API to create the client
+      const { client: orpcClient } = await import("@/utils/orpc");
+      const { toast } = await import("sonner");
+
+      const result = await orpcClient.clients.create({
+        name: clientName,
+        entityType: entityTypeMap[validatedData.entityType] as
+          | "individual"
+          | "sole_proprietorship"
+          | "partnership"
+          | "limited_liability_company"
+          | "corporation"
+          | "trust"
+          | "estate"
+          | "non_profit"
+          | "government",
+        taxIdNumber: validatedData.tinNumber,
+        email: validatedData.email,
+        phoneNumber: validatedData.phoneNumber,
+        address: validatedData.address,
+        city: validatedData.city,
+        state: validatedData.region,
+        status: "pending_approval",
+        complianceStatus: "pending_review",
+        riskLevel: "medium",
+        notes: validatedData.additionalNotes || undefined,
+        tags: validatedData.selectedServices,
+      });
+
+      if (result.success) {
+        toast.success("Client created successfully!", {
+          description: `${clientName} has been added to GK-Nexus`,
+        });
+        onComplete?.(validatedData);
+      } else {
+        throw new Error("Failed to create client");
+      }
     } catch (error) {
-      console.error("Submission error:", error);
+      const { toast } = await import("sonner");
+      toast.error("Failed to create client", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+      });
     } finally {
       setIsSubmitting(false);
     }
