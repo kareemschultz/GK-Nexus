@@ -57,7 +57,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/$id/documents")({
   component: RouteComponent,
   beforeLoad: async () => {
@@ -128,13 +127,19 @@ function RouteComponent() {
   // Fetch client data from API
   const { data: clientResponse, isLoading: clientLoading } = useQuery({
     queryKey: ["client", id],
-    queryFn: () => orpc.clients.getById({ id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.getById({ id });
+    },
   });
 
   // Fetch documents for this client from API
   const { data: documentsResponse, isLoading: docsLoading } = useQuery({
     queryKey: ["clientDocuments", id],
-    queryFn: () => orpc.documents.list({ clientId: id, page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.documents.list({ clientId: id, page: 1, limit: 100 });
+    },
     enabled: !!id,
   });
 

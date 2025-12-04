@@ -93,9 +93,9 @@ function TaxServicesPage() {
               <CardDescription className="mb-4">
                 {service.description}
               </CardDescription>
-              <Link to={service.href}>
-                <Button className="w-full">Open Calculator</Button>
-              </Link>
+              <Button asChild className="w-full">
+                <Link to={service.href}>Open Calculator</Link>
+              </Button>
             </CardContent>
           </Card>
         ))}
@@ -105,16 +105,17 @@ function TaxServicesPage() {
         <CardHeader>
           <CardTitle>Guyana Tax Information</CardTitle>
           <CardDescription>
-            Current tax rates and thresholds for 2025
+            Current tax rates and thresholds for 2025 (Updated per 2025 Budget)
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border p-4">
-              <h3 className="font-semibold">PAYE Brackets</h3>
+              <h3 className="font-semibold">PAYE Brackets (2025)</h3>
               <ul className="mt-2 space-y-1 text-muted-foreground text-sm">
-                <li>0 - $100,000/month: 28%</li>
-                <li>Over $100,000/month: 40%</li>
+                <li>0 - $130,000/month: Tax-free</li>
+                <li>$130,001 - $260,000/month: 25%</li>
+                <li>Over $260,000/month: 35%</li>
               </ul>
             </div>
             <div className="rounded-lg border p-4">

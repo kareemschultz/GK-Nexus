@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { useReducedMotionClass } from "@/hooks/use-reduced-motion";
 import { ScreenReaderAnnouncements } from "@/hooks/use-screen-reader";
+import { BusinessProvider } from "@/lib/business-context";
 import { link, type orpc } from "@/utils/orpc";
 import "../index.css";
 
@@ -61,19 +62,21 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <SkipLinks />
-        <ScreenReaderAnnouncements />
-        <div className="flex h-svh">
-          <EnterpriseSidebar />
-          <main
-            className="flex-1 overflow-auto"
-            id="main-content"
-            tabIndex={-1}
-          >
-            <Outlet />
-          </main>
-        </div>
-        <Toaster richColors />
+        <BusinessProvider>
+          <SkipLinks />
+          <ScreenReaderAnnouncements />
+          <div className="flex h-svh">
+            <EnterpriseSidebar />
+            <main
+              className="flex-1 overflow-auto"
+              id="main-content"
+              tabIndex={-1}
+            >
+              <Outlet />
+            </main>
+          </div>
+          <Toaster richColors />
+        </BusinessProvider>
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />

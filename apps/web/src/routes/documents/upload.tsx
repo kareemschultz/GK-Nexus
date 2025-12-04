@@ -35,7 +35,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useDocuments } from "@/hooks/useDocuments";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/upload")({
   component: DocumentUploadPage,
@@ -68,7 +67,10 @@ function DocumentUploadPage() {
   // Fetch clients from API
   const { data: clientsResponse, isLoading: isLoadingClients } = useQuery({
     queryKey: ["clients"],
-    queryFn: () => orpc.clients.list({ page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.list({ page: 1, limit: 100 });
+    },
   });
 
   const clients: ClientOption[] = (clientsResponse?.data?.items || []).map(

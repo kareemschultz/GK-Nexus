@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/$id")({
   component: RouteComponent,
   beforeLoad: async () => {
@@ -144,20 +143,29 @@ function RouteComponent() {
     error,
   } = useQuery({
     queryKey: ["client", id],
-    queryFn: () => orpc.clients.getById({ id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.getById({ id });
+    },
   });
 
   // Fetch immigration status from API
   const { data: immigrationResponse } = useQuery({
     queryKey: ["clientImmigration", id],
-    queryFn: () => orpc.clients.getImmigrationStatus({ clientId: id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.getImmigrationStatus({ clientId: id });
+    },
     enabled: !!id,
   });
 
   // Fetch client contacts from API
   const { data: contactsResponse } = useQuery({
     queryKey: ["clientContacts", id],
-    queryFn: () => orpc.clients.contacts.list({ clientId: id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.contacts.list({ clientId: id });
+    },
     enabled: !!id,
   });
 
@@ -455,9 +463,9 @@ function RouteComponent() {
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
+      currency: "GYD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

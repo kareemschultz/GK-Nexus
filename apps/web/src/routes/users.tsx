@@ -60,7 +60,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/users")({
   component: RouteComponent,
@@ -103,23 +102,37 @@ function RouteComponent() {
     data: usersResponse,
     isLoading,
     error,
-  } = useQuery(
-    orpc.users.list.queryOptions({
-      search: searchTerm || undefined,
-      role: roleFilter !== "all" ? roleFilter : undefined,
-      status: statusFilter !== "all" ? statusFilter : undefined,
-      page: 1,
-      limit: 50,
-    })
-  );
+  } = useQuery({
+    queryKey: ["users", "list", searchTerm, roleFilter, statusFilter],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.list({
+        search: searchTerm || undefined,
+        role: roleFilter !== "all" ? roleFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        page: 1,
+        limit: 50,
+      });
+    },
+  });
 
   // Query for user statistics
-  const { data: statsResponse } = useQuery(orpc.users.stats.queryOptions());
+  const { data: statsResponse } = useQuery({
+    queryKey: ["users", "stats"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.stats();
+    },
+  });
 
   // Query for roles and permissions
-  const { data: rolesResponse } = useQuery(
-    orpc.users.rolesAndPermissions.queryOptions()
-  );
+  const { data: rolesResponse } = useQuery({
+    queryKey: ["users", "rolesAndPermissions"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.rolesAndPermissions();
+    },
+  });
 
   const users = usersResponse?.data?.items || [];
   const stats = statsResponse?.data;

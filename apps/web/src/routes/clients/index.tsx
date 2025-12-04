@@ -69,7 +69,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/clients")({
+export const Route = createFileRoute("/clients/")({
   component: RouteComponent,
   beforeLoad: async () => {
     const session = await authClient.getSession();
@@ -465,9 +465,9 @@ function RouteComponent() {
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
+      currency: "GYD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);

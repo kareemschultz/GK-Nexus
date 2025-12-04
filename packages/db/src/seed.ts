@@ -1,10 +1,10 @@
+import { hashPassword } from "better-auth/crypto";
 import { config } from "dotenv";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { resolve } from "path";
 import postgres from "postgres";
-import { userAccounts, users } from "./schema/users";
-import { hashPassword } from "./utils";
+import { account, user } from "./schema/auth";
 
 // Load environment variables from root .env file
 config({ path: resolve(__dirname, "../../../.env") });
@@ -25,11 +25,13 @@ async function seed() {
 
   console.log("Starting database seed...");
 
-  // Check if super admin already exists
+  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@gk-nexus.com";
+
+  // Check if super admin already exists in the user table
   const existingAdmin = await db
     .select()
-    .from(users)
-    .where(eq(users.role, "super_admin"))
+    .from(user)
+    .where(eq(user.email, superAdminEmail))
     .limit(1);
 
   if (existingAdmin.length > 0) {
@@ -40,8 +42,7 @@ async function seed() {
 
   // Create super admin user
   const superAdminId = crypto.randomUUID();
-  const accountId = crypto.randomUUID();
-  const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "admin@gk-nexus.com";
+  const superAdminAccountId = crypto.randomUUID();
   const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || "Admin123!@#";
   const superAdminName = process.env.SUPER_ADMIN_NAME || "Super Admin";
 
@@ -49,56 +50,25 @@ async function seed() {
   const hashedPassword = await hashPassword(superAdminPassword);
 
   try {
-    // Insert super admin user
-    await db.insert(users).values({
+    // Insert super admin user into the auth user table
+    await db.insert(user).values({
       id: superAdminId,
       name: superAdminName,
       email: superAdminEmail,
       emailVerified: true,
-      role: "super_admin",
-      status: "active",
-      permissions: JSON.stringify([
-        "users.create",
-        "users.read",
-        "users.update",
-        "users.delete",
-        "users.manage_permissions",
-        "clients.create",
-        "clients.read",
-        "clients.update",
-        "clients.delete",
-        "clients.assign",
-        "tax_calculations.create",
-        "tax_calculations.read",
-        "tax_calculations.update",
-        "tax_calculations.delete",
-        "tax_calculations.submit",
-        "compliance.create",
-        "compliance.read",
-        "compliance.update",
-        "compliance.delete",
-        "compliance.approve",
-        "documents.create",
-        "documents.read",
-        "documents.update",
-        "documents.delete",
-        "documents.share",
-        "documents.approve",
-        "dashboard.read",
-        "reports.read",
-        "reports.export",
-        "system.admin",
-      ]),
-      department: "Administration",
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
-    // Insert account record for password login
-    await db.insert(userAccounts).values({
-      id: accountId,
+    // Insert account record for password login into the auth account table
+    await db.insert(account).values({
+      id: superAdminAccountId,
       accountId: superAdminId,
       providerId: "credential",
       userId: superAdminId,
       password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     console.log("Super admin user created successfully!");

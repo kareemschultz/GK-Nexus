@@ -225,15 +225,32 @@ export const payrollRouter = {
     .handler(async ({ input }) => {
       const { grossSalary, allowances, deductions } = input;
 
-      // Guyana tax rates
+      // Guyana 2025 tax constants
+      const PAYE_THRESHOLD = 130_000; // Tax-free threshold
+      const PAYE_SECOND_BAND = 260_000; // Second band threshold
+      const PAYE_FIRST_RATE = 0.25; // 25% for first band (reduced from 28%)
+      const PAYE_SECOND_RATE = 0.35; // 35% for second band (reduced from 40%)
+      const NIS_CEILING = 280_000;
+
       const taxableIncome = grossSalary + allowances - deductions;
 
-      // PAYE calculation (simplified - 28% flat rate for this example)
-      const payeTax = Math.max(0, taxableIncome * 0.28);
+      // PAYE calculation using 2025 progressive rates
+      let payeTax = 0;
+      if (taxableIncome > PAYE_THRESHOLD) {
+        if (taxableIncome <= PAYE_SECOND_BAND) {
+          // First band: 25% on amount above threshold
+          payeTax = (taxableIncome - PAYE_THRESHOLD) * PAYE_FIRST_RATE;
+        } else {
+          // First band: 25% on $130,001 - $260,000
+          payeTax = (PAYE_SECOND_BAND - PAYE_THRESHOLD) * PAYE_FIRST_RATE;
+          // Second band: 35% on amount above $260,000
+          payeTax += (taxableIncome - PAYE_SECOND_BAND) * PAYE_SECOND_RATE;
+        }
+      }
 
-      // NIS calculation (5.6% employee, 8.4% employer)
-      const nisEmployee = Math.min(grossSalary * 0.056, 280_000 * 0.056); // Capped
-      const nisEmployer = Math.min(grossSalary * 0.084, 280_000 * 0.084);
+      // NIS calculation (5.6% employee, 8.4% employer) - capped at ceiling
+      const nisEmployee = Math.min(grossSalary, NIS_CEILING) * 0.056;
+      const nisEmployer = Math.min(grossSalary, NIS_CEILING) * 0.084;
 
       const netSalary =
         grossSalary + allowances - deductions - payeTax - nisEmployee;

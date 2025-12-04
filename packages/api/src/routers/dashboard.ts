@@ -100,40 +100,31 @@ export const dashboardRouter = {
     .input(dashboardQuerySchema)
     .handler(async ({ input, context }) => {
       const { db } = context;
-      let { startDate, endDate, clientId, timeRange } = input;
+      const { clientId, timeRange } = input;
 
-      // Calculate date range based on timeRange
+      // Calculate date range based on timeRange - use Date objects for Drizzle
       const now = new Date();
-      if (!endDate) {
-        endDate = now.toISOString();
-      }
+      const endDate: Date = input.endDate ? new Date(input.endDate) : now;
+      let startDate: Date;
 
-      if (!startDate) {
+      if (input.startDate) {
+        startDate = new Date(input.startDate);
+      } else {
         switch (timeRange) {
           case "7d":
-            startDate = new Date(
-              now.getTime() - 7 * 24 * 60 * 60 * 1000
-            ).toISOString();
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             break;
           case "30d":
-            startDate = new Date(
-              now.getTime() - 30 * 24 * 60 * 60 * 1000
-            ).toISOString();
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             break;
           case "90d":
-            startDate = new Date(
-              now.getTime() - 90 * 24 * 60 * 60 * 1000
-            ).toISOString();
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
             break;
           case "1y":
-            startDate = new Date(
-              now.getTime() - 365 * 24 * 60 * 60 * 1000
-            ).toISOString();
+            startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
             break;
           default:
-            startDate = new Date(
-              now.getTime() - 30 * 24 * 60 * 60 * 1000
-            ).toISOString();
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         }
       }
 

@@ -43,6 +43,52 @@ export const Route = createFileRoute("/portal/filings")({
   component: FilingsPage,
 });
 
+// Guyana Government Agencies and their filing types
+const AGENCIES = {
+  GRA: {
+    id: "gra",
+    name: "Guyana Revenue Authority",
+    shortName: "GRA",
+    business: "kaj",
+    color: "blue",
+    filingTypes: ["PAYE", "VAT", "CORPORATE", "PERSONAL", "WHT"],
+  },
+  NIS: {
+    id: "nis",
+    name: "National Insurance Scheme",
+    shortName: "NIS",
+    business: "gcmc",
+    color: "green",
+    filingTypes: ["NIS_CONTRIBUTION", "NIS_EMPLOYER"],
+  },
+  DEEDS: {
+    id: "deeds",
+    name: "Deeds & Commercial Registries",
+    shortName: "Deeds Registry",
+    business: "gcmc",
+    color: "purple",
+    filingTypes: ["ANNUAL_RETURN", "COMPANY_CHANGE"],
+  },
+  LOCAL_CONTENT: {
+    id: "local_content",
+    name: "Local Content Secretariat",
+    shortName: "LCS",
+    business: "gcmc",
+    color: "amber",
+    filingTypes: ["LCDS_REGISTRATION", "LOCAL_CONTENT"],
+  },
+} as const;
+
+// Get agency info for a filing type
+function getAgencyForFilingType(type: string) {
+  for (const agency of Object.values(AGENCIES)) {
+    if (agency.filingTypes.some((ft) => type.toUpperCase().includes(ft))) {
+      return agency;
+    }
+  }
+  return AGENCIES.GRA; // Default to GRA
+}
+
 interface Filing {
   id: string;
   title: string;
@@ -55,6 +101,8 @@ interface Filing {
   filingNumber: string | null;
   description: string;
   priority: string;
+  agency?: string;
+  business?: string;
 }
 
 const complianceMetrics = [
@@ -170,6 +218,7 @@ function FilingsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [filterAgency, setFilterAgency] = useState("all");
 
   // Fetch filings from API
   const { data: filingsResponse, isLoading } = useQuery({
@@ -201,6 +250,9 @@ function FilingsPage() {
       else if (daysUntil <= 14) priority = "medium";
       else priority = "low";
 
+      // Determine the agency for this filing
+      const agency = getAgencyForFilingType(f.type || "");
+
       return {
         id: f.id,
         title: `${f.type?.replace(/_/g, " ")} - ${f.period}`,
@@ -213,6 +265,9 @@ function FilingsPage() {
         filingNumber: f.graReference,
         description: `${f.type?.replace(/_/g, " ")} filing`,
         priority,
+        agency: agency.shortName,
+        business:
+          agency.business === "kaj" ? "KAJ Financial" : "GCMC Consultancy",
       };
     });
   }, [filingsResponse]);
@@ -251,7 +306,9 @@ function FilingsPage() {
     const matchesStatus =
       filterStatus === "all" || filing.status === filterStatus;
     const matchesType = filterType === "all" || filing.type === filterType;
-    return matchesSearch && matchesStatus && matchesType;
+    const matchesAgency =
+      filterAgency === "all" || filing.agency === filterAgency;
+    return matchesSearch && matchesStatus && matchesType && matchesAgency;
   });
 
   const overallComplianceRate = Math.round(
@@ -529,7 +586,7 @@ function FilingsPage() {
             <Select onValueChange={setFilterType} value={filterType}>
               <SelectTrigger
                 aria-label="Filter by type"
-                className="w-full sm:w-48"
+                className="w-full sm:w-40"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -538,6 +595,22 @@ function FilingsPage() {
                 <SelectItem value="VAT">VAT</SelectItem>
                 <SelectItem value="PAYE">PAYE</SelectItem>
                 <SelectItem value="CORPORATE">Corporate Tax</SelectItem>
+                <SelectItem value="NIS">NIS</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select onValueChange={setFilterAgency} value={filterAgency}>
+              <SelectTrigger
+                aria-label="Filter by agency"
+                className="w-full sm:w-40"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Agencies</SelectItem>
+                <SelectItem value="GRA">GRA</SelectItem>
+                <SelectItem value="NIS">NIS</SelectItem>
+                <SelectItem value="Deeds Registry">Deeds Registry</SelectItem>
+                <SelectItem value="LCS">Local Content</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -554,8 +627,8 @@ function FilingsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Filing</TableHead>
+                      <TableHead>Agency</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Period</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Due Date</TableHead>
                       <TableHead>Amount</TableHead>
@@ -578,10 +651,26 @@ function FilingsPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{filing.type}</Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge
+                              className="w-fit"
+                              variant={
+                                filing.agency === "GRA"
+                                  ? "default"
+                                  : filing.agency === "NIS"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                            >
+                              {filing.agency}
+                            </Badge>
+                            <span className="text-muted-foreground text-xs">
+                              {filing.business}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {filing.period}
+                        <TableCell>
+                          <Badge variant="outline">{filing.type}</Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusColor(filing.status)}>

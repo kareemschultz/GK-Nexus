@@ -39,7 +39,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/users/roles")({
   component: RouteComponent,
@@ -74,10 +73,22 @@ function RouteComponent() {
     data: rolesResponse,
     isLoading,
     error,
-  } = useQuery(orpc.users.rolesAndPermissions.queryOptions());
+  } = useQuery({
+    queryKey: ["users", "rolesAndPermissions"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.rolesAndPermissions();
+    },
+  });
 
   // Query for user statistics
-  const { data: statsResponse } = useQuery(orpc.users.stats.queryOptions());
+  const { data: statsResponse } = useQuery({
+    queryKey: ["users", "stats"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.stats();
+    },
+  });
 
   const rolePermissions = rolesResponse?.data?.rolePermissions || {};
   const roles = rolesResponse?.data?.roles || [];

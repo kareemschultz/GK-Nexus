@@ -25,7 +25,7 @@ export const userSchema = z.object({
   emailVerified: z.boolean().default(false),
   image: z.string().url().nullable().optional(),
   role: roleSchema.default("read_only"),
-  status: userStatusSchema.default("pending"),
+  status: userStatusSchema.default("active"),
   permissions: z.string().nullable().optional(), // JSON array of permissions
   department: z.string().max(100).nullable().optional(),
   phoneNumber: z.string().max(20).nullable().optional(),
@@ -42,7 +42,7 @@ export const createUserSchema = z.object({
   name: z.string().min(1).max(255),
   email: z.string().email(),
   role: roleSchema.default("read_only"),
-  status: userStatusSchema.default("pending"),
+  status: userStatusSchema.default("active"),
   permissions: z.array(z.string()).optional(),
   department: z.string().max(100).optional(),
   phoneNumber: z.string().max(20).optional(),

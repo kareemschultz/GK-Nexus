@@ -172,7 +172,7 @@ function ServiceCatalogPage() {
             ? (categoryFilter as (typeof serviceCategories)[number])
             : undefined,
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });
@@ -184,7 +184,7 @@ function ServiceCatalogPage() {
       const { client } = await import("@/utils/orpc");
       return client.serviceCatalog.projectsList({
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });
@@ -196,7 +196,7 @@ function ServiceCatalogPage() {
       const { client } = await import("@/utils/orpc");
       return client.serviceCatalog.packagesList({
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });

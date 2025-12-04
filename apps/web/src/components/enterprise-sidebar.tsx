@@ -8,6 +8,7 @@ import {
   Building2,
   Calculator,
   Calendar,
+  Check,
   ChevronDown,
   ChevronRight,
   ChevronsLeft,
@@ -21,6 +22,7 @@ import {
   Handshake,
   Home,
   LogOut,
+  Plane,
   Receipt,
   Settings,
   Shield,
@@ -34,13 +36,26 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
+import {
+  BUSINESSES,
+  type BusinessUnit,
+  useBusinessContext,
+} from "@/lib/business-context";
 import { cn } from "@/lib/utils";
 
 interface SidebarSection {
   title: string;
   items: SidebarItem[];
+  business?: BusinessUnit; // Which business this section belongs to
 }
 
 interface SidebarItem {
@@ -50,6 +65,7 @@ interface SidebarItem {
   badge?: string;
   external?: boolean;
   children?: SidebarItem[];
+  business?: BusinessUnit; // Which business this item belongs to
 }
 
 const sidebarSections: SidebarSection[] = [
@@ -60,37 +76,96 @@ const sidebarSections: SidebarSection[] = [
         title: "Dashboard",
         to: "/dashboard",
         icon: Home,
+        business: "all",
       },
       {
         title: "Client Management",
         to: "/clients",
         icon: Users,
+        business: "all",
         children: [
-          { title: "All Clients", to: "/clients", icon: Users },
-          { title: "Onboard New Client", to: "/clients/new", icon: UserCheck },
-          { title: "Active Cases", to: "/clients/active", icon: FolderOpen },
+          {
+            title: "All Clients",
+            to: "/clients",
+            icon: Users,
+            business: "all",
+          },
+          {
+            title: "Onboard New Client",
+            to: "/clients/new",
+            icon: UserCheck,
+            business: "all",
+          },
+          {
+            title: "Active Cases",
+            to: "/clients/active",
+            icon: FolderOpen,
+            business: "all",
+          },
         ],
       },
       {
         title: "Tax Services",
         to: "/tax",
         icon: Calculator,
+        business: "kaj",
         children: [
-          { title: "PAYE Calculator", to: "/tax/paye", icon: Calculator },
-          { title: "VAT Calculator", to: "/tax/vat", icon: Calculator },
-          { title: "NIS Calculator", to: "/tax/nis", icon: Calculator },
-          { title: "Tax Filing", to: "/tax/filing", icon: FileText },
+          {
+            title: "PAYE Calculator",
+            to: "/tax/paye",
+            icon: Calculator,
+            business: "kaj",
+          },
+          {
+            title: "VAT Calculator",
+            to: "/tax/vat",
+            icon: Calculator,
+            business: "kaj",
+          },
+          {
+            title: "NIS Calculator",
+            to: "/tax/nis",
+            icon: Calculator,
+            business: "kaj",
+          },
+          {
+            title: "Tax Filing",
+            to: "/tax/filing",
+            icon: FileText,
+            business: "kaj",
+          },
         ],
       },
       {
         title: "Payroll Services",
         to: "/payroll",
         icon: Receipt,
+        business: "kaj",
         children: [
-          { title: "Payroll Dashboard", to: "/payroll", icon: BarChart3 },
-          { title: "Employee Records", to: "/payroll/employees", icon: Users },
-          { title: "Run Payroll", to: "/payroll/run", icon: Clock },
-          { title: "Payroll Reports", to: "/payroll/reports", icon: FileText },
+          {
+            title: "Payroll Dashboard",
+            to: "/payroll",
+            icon: BarChart3,
+            business: "kaj",
+          },
+          {
+            title: "Employee Records",
+            to: "/payroll/employees",
+            icon: Users,
+            business: "kaj",
+          },
+          {
+            title: "Run Payroll",
+            to: "/payroll/run",
+            icon: Clock,
+            business: "kaj",
+          },
+          {
+            title: "Payroll Reports",
+            to: "/payroll/reports",
+            icon: FileText,
+            business: "kaj",
+          },
         ],
       },
     ],
@@ -102,14 +177,26 @@ const sidebarSections: SidebarSection[] = [
         title: "Document Center",
         to: "/documents",
         icon: FileText,
+        business: "all",
         children: [
-          { title: "All Documents", to: "/documents", icon: FileText },
+          {
+            title: "All Documents",
+            to: "/documents",
+            icon: FileText,
+            business: "all",
+          },
           {
             title: "Upload Documents",
             to: "/documents/upload",
             icon: FolderOpen,
+            business: "all",
           },
-          { title: "Templates", to: "/documents/templates", icon: Database },
+          {
+            title: "Templates",
+            to: "/documents/templates",
+            icon: Database,
+            business: "all",
+          },
         ],
       },
       {
@@ -117,19 +204,32 @@ const sidebarSections: SidebarSection[] = [
         to: "/compliance",
         icon: Shield,
         badge: "3",
+        business: "kaj",
         children: [
-          { title: "Compliance Dashboard", to: "/compliance", icon: Shield },
-          { title: "GRA Filing", to: "/compliance/gra-filing", icon: Globe },
+          {
+            title: "Compliance Dashboard",
+            to: "/compliance",
+            icon: Shield,
+            business: "kaj",
+          },
+          {
+            title: "GRA Filing",
+            to: "/compliance/gra-filing",
+            icon: Globe,
+            business: "kaj",
+          },
           {
             title: "Audit Reports",
             to: "/compliance/reports",
             icon: BarChart3,
+            business: "kaj",
           },
           {
             title: "Alerts",
             to: "/compliance/alerts",
             icon: AlertTriangle,
             badge: "3",
+            business: "kaj",
           },
         ],
       },
@@ -137,13 +237,25 @@ const sidebarSections: SidebarSection[] = [
         title: "Invoice Management",
         to: "/invoices",
         icon: Receipt,
+        business: "all",
         children: [
-          { title: "All Invoices", to: "/invoices", icon: Receipt },
-          { title: "Create Invoice", to: "/invoices/new", icon: FileText },
+          {
+            title: "All Invoices",
+            to: "/invoices",
+            icon: Receipt,
+            business: "all",
+          },
+          {
+            title: "Create Invoice",
+            to: "/invoices/new",
+            icon: FileText,
+            business: "all",
+          },
           {
             title: "Payment Tracking",
             to: "/invoices/payments",
             icon: BarChart3,
+            business: "all",
           },
         ],
       },
@@ -156,15 +268,37 @@ const sidebarSections: SidebarSection[] = [
         title: "Time Tracking",
         to: "/time-tracking",
         icon: Timer,
+        business: "all",
         children: [
-          { title: "Dashboard", to: "/time-tracking", icon: BarChart3 },
-          { title: "Active Timer", to: "/time-tracking/timer", icon: Timer },
-          { title: "Time Entries", to: "/time-tracking/entries", icon: Clock },
-          { title: "Reports", to: "/time-tracking/reports", icon: FileText },
+          {
+            title: "Dashboard",
+            to: "/time-tracking",
+            icon: BarChart3,
+            business: "all",
+          },
+          {
+            title: "Active Timer",
+            to: "/time-tracking/timer",
+            icon: Timer,
+            business: "all",
+          },
+          {
+            title: "Time Entries",
+            to: "/time-tracking/entries",
+            icon: Clock,
+            business: "all",
+          },
+          {
+            title: "Reports",
+            to: "/time-tracking/reports",
+            icon: FileText,
+            business: "all",
+          },
           {
             title: "Projects",
             to: "/time-tracking/projects",
             icon: FolderOpen,
+            business: "all",
           },
         ],
       },
@@ -172,18 +306,31 @@ const sidebarSections: SidebarSection[] = [
         title: "Automation",
         to: "/automation",
         icon: Zap,
+        business: "all",
         children: [
-          { title: "Dashboard", to: "/automation", icon: BarChart3 },
+          {
+            title: "Dashboard",
+            to: "/automation",
+            icon: BarChart3,
+            business: "all",
+          },
           {
             title: "Rules & Workflows",
             to: "/automation/rules",
             icon: Workflow,
+            business: "all",
           },
-          { title: "Templates", to: "/automation/templates", icon: Database },
+          {
+            title: "Templates",
+            to: "/automation/templates",
+            icon: Database,
+            business: "all",
+          },
           {
             title: "Execution History",
             to: "/automation/history",
             icon: Clock,
+            business: "all",
           },
         ],
       },
@@ -196,17 +343,25 @@ const sidebarSections: SidebarSection[] = [
         title: "Internal Appointments",
         to: "/appointments",
         icon: Calendar,
+        business: "all",
         children: [
           {
             title: "Calendar View",
             to: "/appointments/calendar",
             icon: Calendar,
+            business: "all",
           },
-          { title: "Booking Management", to: "/appointments", icon: Clock },
+          {
+            title: "Booking Management",
+            to: "/appointments",
+            icon: Clock,
+            business: "all",
+          },
           {
             title: "Client Requests",
             to: "/appointments/requests",
             icon: Bell,
+            business: "all",
           },
         ],
       },
@@ -214,56 +369,102 @@ const sidebarSections: SidebarSection[] = [
         title: "User Management",
         to: "/users",
         icon: Users,
+        business: "all",
         children: [
-          { title: "All Users", to: "/users", icon: Users },
-          { title: "Invite Users", to: "/users/invite", icon: UserCheck },
-          { title: "Roles & Permissions", to: "/users/roles", icon: Shield },
+          { title: "All Users", to: "/users", icon: Users, business: "all" },
+          {
+            title: "Invite Users",
+            to: "/users/invite",
+            icon: UserCheck,
+            business: "all",
+          },
+          {
+            title: "Roles & Permissions",
+            to: "/users/roles",
+            icon: Shield,
+            business: "all",
+          },
         ],
       },
       {
         title: "System Settings",
         to: "/settings",
         icon: Settings,
+        business: "all",
         children: [
-          { title: "General Settings", to: "/settings", icon: Settings },
-          { title: "Security", to: "/settings/security", icon: Shield },
-          { title: "Notifications", to: "/settings/notifications", icon: Bell },
+          {
+            title: "General Settings",
+            to: "/settings",
+            icon: Settings,
+            business: "all",
+          },
+          {
+            title: "Security",
+            to: "/settings/security",
+            icon: Shield,
+            business: "all",
+          },
+          {
+            title: "Notifications",
+            to: "/settings/notifications",
+            icon: Bell,
+            business: "all",
+          },
         ],
       },
     ],
   },
   {
-    title: "Business Modules",
+    title: "KAJ Financial Services",
+    business: "kaj",
     items: [
+      {
+        title: "Service Catalog",
+        to: "/service-catalog",
+        icon: Briefcase,
+        business: "kaj",
+      },
+    ],
+  },
+  {
+    title: "GCMC Consultancy",
+    business: "gcmc",
+    items: [
+      {
+        title: "Immigration Services",
+        to: "/immigration",
+        icon: Plane,
+        business: "gcmc",
+      },
       {
         title: "Property Management",
         to: "/property-management",
         icon: Building2,
+        business: "gcmc",
       },
       {
         title: "Expediting Services",
         to: "/expediting",
         icon: Clock,
+        business: "gcmc",
       },
       {
         title: "Training",
         to: "/training",
         icon: BookOpen,
+        business: "gcmc",
       },
       {
         title: "Local Content",
         to: "/local-content",
         icon: ClipboardCheck,
+        business: "gcmc",
       },
       {
         title: "Partner Network",
         to: "/partner-network",
         icon: Handshake,
-      },
-      {
-        title: "Service Catalog",
-        to: "/service-catalog",
-        icon: Briefcase,
+        business: "gcmc",
       },
     ],
   },
@@ -275,36 +476,42 @@ const externalPortalItems: SidebarItem[] = [
     to: "/portal",
     icon: Globe,
     external: true,
+    business: "all",
     children: [
       {
         title: "My Profile",
         to: "/portal/profile",
         icon: Users,
         external: true,
+        business: "all",
       },
       {
         title: "My Documents",
         to: "/portal/documents",
         icon: FileText,
         external: true,
+        business: "all",
       },
       {
         title: "Book Appointment",
         to: "/portal/appointments",
         icon: Calendar,
         external: true,
+        business: "all",
       },
       {
         title: "Filing Status",
         to: "/portal/filings",
         icon: Shield,
         external: true,
+        business: "all",
       },
       {
         title: "Payment History",
         to: "/portal/payments",
         icon: Receipt,
         external: true,
+        business: "all",
       },
     ],
   },
@@ -322,6 +529,7 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
   const navigate = useNavigate();
   const { data: session, isPending: isSessionLoading } =
     authClient.useSession();
+  const { activeBusiness, setActiveBusiness } = useBusinessContext();
 
   const handleLogout = async () => {
     try {
@@ -355,6 +563,25 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
 
   const isActive = (to: string) =>
     location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+  // Filter items based on active business
+  const isItemVisible = (item: SidebarItem): boolean => {
+    if (activeBusiness === "all") return true;
+    if (!item.business || item.business === "all") return true;
+    return item.business === activeBusiness;
+  };
+
+  const isSectionVisible = (section: SidebarSection): boolean => {
+    if (activeBusiness === "all") return true;
+    if (!section.business || section.business === "all") return true;
+    return section.business === activeBusiness;
+  };
+
+  const filterItems = (items: SidebarItem[]): SidebarItem[] =>
+    items.filter(isItemVisible).map((item) => ({
+      ...item,
+      children: item.children ? filterItems(item.children) : undefined,
+    }));
 
   const renderSidebarItem = (item: SidebarItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;
@@ -419,6 +646,17 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
     );
   };
 
+  const getBusinessLabel = () => {
+    if (activeBusiness === "all") return "All Businesses";
+    return BUSINESSES[activeBusiness].name;
+  };
+
+  const getBusinessColor = () => {
+    if (activeBusiness === "all") return "bg-gray-500";
+    if (activeBusiness === "kaj") return "bg-blue-500";
+    return "bg-green-500";
+  };
+
   return (
     <div
       className={cn(
@@ -452,21 +690,97 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
         </Button>
       </div>
 
+      {/* Business Switcher */}
+      {!isCollapsed && (
+        <div className="border-b p-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="w-full justify-between text-left font-normal"
+                variant="outline"
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={cn("h-2 w-2 rounded-full", getBusinessColor())}
+                  />
+                  <span className="truncate text-sm">{getBusinessLabel()}</span>
+                </div>
+                <ChevronDown className="h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setActiveBusiness("all")}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-gray-500" />
+                  <span>All Businesses</span>
+                </div>
+                {activeBusiness === "all" && (
+                  <Check className="ml-auto h-4 w-4" />
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setActiveBusiness("kaj")}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <div>
+                    <div className="font-medium">KAJ Financial Services</div>
+                    <div className="text-muted-foreground text-xs">
+                      Tax, Payroll, Accounting
+                    </div>
+                  </div>
+                </div>
+                {activeBusiness === "kaj" && (
+                  <Check className="ml-auto h-4 w-4" />
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setActiveBusiness("gcmc")}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <div>
+                    <div className="font-medium">GCMC Consultancy</div>
+                    <div className="text-muted-foreground text-xs">
+                      Immigration, Training, Consulting
+                    </div>
+                  </div>
+                </div>
+                {activeBusiness === "gcmc" && (
+                  <Check className="ml-auto h-4 w-4" />
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="flex-1 overflow-auto p-4">
         <div className="space-y-6">
-          {sidebarSections.map((section) => (
-            <div key={section.title}>
-              {!isCollapsed && (
-                <h3 className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                  {section.title}
-                </h3>
-              )}
-              <div className="space-y-1">
-                {section.items.map((item) => renderSidebarItem(item))}
+          {sidebarSections.filter(isSectionVisible).map((section) => {
+            const filteredItems = filterItems(section.items);
+            if (filteredItems.length === 0) return null;
+
+            return (
+              <div key={section.title}>
+                {!isCollapsed && (
+                  <h3 className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+                    {section.title}
+                  </h3>
+                )}
+                <div className="space-y-1">
+                  {filteredItems.map((item) => renderSidebarItem(item))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* External Portal Section */}
           <div className="border-t pt-4">

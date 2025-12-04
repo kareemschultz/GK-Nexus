@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-states";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/compliance/alerts")({
   component: ComplianceAlertsPage,
@@ -73,12 +72,16 @@ const categoryConfig = {
 
 function ComplianceAlertsPage() {
   // Fetch compliance alerts from API
-  const { data: alertsData, isLoading } = useQuery(
-    orpc.compliance.getAlerts.queryOptions({
-      daysAhead: 30,
-      limit: 50,
-    })
-  );
+  const { data: alertsData, isLoading } = useQuery({
+    queryKey: ["compliance", "alerts"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.compliance.getAlerts({
+        daysAhead: 30,
+        limit: 50,
+      });
+    },
+  });
 
   // Transform API data to display format
   const alerts = [

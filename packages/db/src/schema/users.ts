@@ -34,7 +34,7 @@ export const users = pgTable(
     emailVerified: boolean("email_verified").default(false).notNull(),
     image: text("image"),
     role: roleEnum("role").default("read_only").notNull(),
-    status: userStatusEnum("status").default("pending").notNull(),
+    status: userStatusEnum("status").default("active").notNull(),
     permissions: text("permissions"), // JSON array of specific permissions
     department: text("department"),
     phoneNumber: text("phone_number"),

@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/templates")({
   component: DocumentTemplatesPage,
@@ -78,7 +77,10 @@ function DocumentTemplatesPage() {
   // Fetch templates from API
   const { data: templatesResponse, isLoading } = useQuery({
     queryKey: ["documents", "templates"],
-    queryFn: () => orpc.documents.templates.list({}),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.documents.templates.list({});
+    },
   });
 
   // Map API response to component format

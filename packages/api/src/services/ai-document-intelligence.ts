@@ -702,9 +702,9 @@ export class AIDocumentIntelligenceService {
     return {
       vatRate: 0.14, // 14% VAT for Guyana
       payeThresholds: [
-        { min: 0, max: 65_000, rate: 0 },
-        { min: 65_001, max: 300_000, rate: 0.28 },
-        { min: 300_001, max: Number.POSITIVE_INFINITY, rate: 0.4 },
+        { min: 0, max: 130_000, rate: 0 }, // Tax-free threshold (2025 Budget)
+        { min: 130_001, max: 260_000, rate: 0.25 }, // 25% first band (reduced from 28%)
+        { min: 260_001, max: Number.POSITIVE_INFINITY, rate: 0.35 }, // 35% second band (reduced from 40%)
       ],
       corporateRate: 0.3,
       withholdingRates: {

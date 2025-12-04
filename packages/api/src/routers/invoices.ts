@@ -1,12 +1,15 @@
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
+
+// Guyana VAT rate is 14%
+const GUYANA_VAT_RATE = 14;
 
 const invoiceItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1),
   quantity: z.number().positive(),
   unitPrice: z.number().positive(),
-  vatRate: z.number().min(0).max(100).default(20),
+  vatRate: z.number().min(0).max(100).default(GUYANA_VAT_RATE),
   total: z.number().positive(),
 });
 
@@ -26,7 +29,7 @@ const invoiceSchema = z.object({
   total: z.number().positive(),
   notes: z.string().optional(),
   paymentTerms: z.string().default("Net 30"),
-  currency: z.string().default("USD"),
+  currency: z.string().default("GYD"),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -48,42 +51,42 @@ const updateInvoiceSchema = z.object({
   paymentTerms: z.string().optional(),
 });
 
-// Mock invoice data
+// Mock invoice data - Guyana businesses with GYD amounts and 14% VAT
 const mockInvoices = [
   {
     id: "inv-001",
     invoiceNumber: "INV-2024-001",
     clientId: "1",
-    clientName: "TechCorp Inc.",
-    clientEmail: "john.smith@techcorp.com",
-    clientAddress: "123 Innovation Drive, Silicon Valley, CA",
+    clientName: "Guyana Sugar Corporation",
+    clientEmail: "finance@guysuco.gy",
+    clientAddress: "22 Church Street, Georgetown, Guyana",
     issueDate: "2024-11-01",
     dueDate: "2024-12-01",
     status: "sent" as const,
     items: [
       {
         id: "item-1",
-        description: "Compliance Audit Services",
+        description: "PAYE Filing Services - Q4 2024",
         quantity: 1,
-        unitPrice: 5000,
-        vatRate: 20,
-        total: 6000,
+        unitPrice: 150_000,
+        vatRate: GUYANA_VAT_RATE,
+        total: 171_000,
       },
       {
         id: "item-2",
-        description: "Monthly Monitoring",
+        description: "NIS Compliance Review",
         quantity: 3,
-        unitPrice: 800,
-        vatRate: 20,
-        total: 2880,
+        unitPrice: 50_000,
+        vatRate: GUYANA_VAT_RATE,
+        total: 171_000,
       },
     ],
-    subtotal: 7400,
-    vatAmount: 1480,
-    total: 8880,
+    subtotal: 300_000,
+    vatAmount: 42_000,
+    total: 342_000,
     notes: "Thank you for your business.",
     paymentTerms: "Net 30",
-    currency: "USD",
+    currency: "GYD",
     createdAt: "2024-11-01T09:00:00Z",
     updatedAt: "2024-11-01T09:00:00Z",
   },
@@ -91,28 +94,28 @@ const mockInvoices = [
     id: "inv-002",
     invoiceNumber: "INV-2024-002",
     clientId: "2",
-    clientName: "DataFlow Solutions",
-    clientEmail: "sarah@dataflow.com",
-    clientAddress: "456 Analytics Blvd, Austin, TX",
+    clientName: "Banks DIH Limited",
+    clientEmail: "accounts@banksdih.com.gy",
+    clientAddress: "Thirst Park, Georgetown, Guyana",
     issueDate: "2024-11-15",
     dueDate: "2024-12-15",
     status: "draft" as const,
     items: [
       {
         id: "item-3",
-        description: "Data Privacy Assessment",
+        description: "Corporate Tax Filing - Year End 2024",
         quantity: 1,
-        unitPrice: 3500,
-        vatRate: 20,
-        total: 4200,
+        unitPrice: 250_000,
+        vatRate: GUYANA_VAT_RATE,
+        total: 285_000,
       },
     ],
-    subtotal: 3500,
-    vatAmount: 700,
-    total: 4200,
+    subtotal: 250_000,
+    vatAmount: 35_000,
+    total: 285_000,
     notes: "",
     paymentTerms: "Net 30",
-    currency: "USD",
+    currency: "GYD",
     createdAt: "2024-11-15T14:30:00Z",
     updatedAt: "2024-11-15T14:30:00Z",
   },
@@ -120,36 +123,36 @@ const mockInvoices = [
     id: "inv-003",
     invoiceNumber: "INV-2024-003",
     clientId: "3",
-    clientName: "Green Energy Co.",
-    clientEmail: "m.chen@greenenergy.com",
-    clientAddress: "789 Sustainability St, Portland, OR",
+    clientName: "Demerara Distillers Limited",
+    clientEmail: "finance@demrum.com",
+    clientAddress: "Diamond, East Bank Demerara, Guyana",
     issueDate: "2024-10-15",
     dueDate: "2024-11-15",
     status: "paid" as const,
     items: [
       {
         id: "item-4",
-        description: "Environmental Compliance Review",
+        description: "VAT Return Filing - September 2024",
         quantity: 1,
-        unitPrice: 7500,
-        vatRate: 20,
-        total: 9000,
+        unitPrice: 75_000,
+        vatRate: GUYANA_VAT_RATE,
+        total: 85_500,
       },
       {
         id: "item-5",
-        description: "Regulatory Documentation",
+        description: "GRA Audit Representation",
         quantity: 2,
-        unitPrice: 1200,
-        vatRate: 20,
-        total: 2880,
+        unitPrice: 200_000,
+        vatRate: GUYANA_VAT_RATE,
+        total: 456_000,
       },
     ],
-    subtotal: 9900,
-    vatAmount: 1980,
-    total: 11_880,
+    subtotal: 475_000,
+    vatAmount: 66_500,
+    total: 541_500,
     notes: "Payment received via bank transfer.",
     paymentTerms: "Net 30",
-    currency: "USD",
+    currency: "GYD",
     createdAt: "2024-10-15T11:00:00Z",
     updatedAt: "2024-11-16T16:45:00Z",
   },
@@ -158,6 +161,7 @@ const mockInvoices = [
 export const invoicesRouter = {
   // Get all invoices
   list: protectedProcedure
+    .use(requirePermission("invoices.read"))
     .input(
       z.object({
         status: z
@@ -197,6 +201,7 @@ export const invoicesRouter = {
 
   // Get single invoice by ID
   getById: protectedProcedure
+    .use(requirePermission("invoices.read"))
     .input(z.object({ id: z.string() }))
     .handler(({ input }) => {
       const invoice = mockInvoices.find((inv) => inv.id === input.id);
@@ -207,90 +212,97 @@ export const invoicesRouter = {
     }),
 
   // Create new invoice
-  create: protectedProcedure.input(createInvoiceSchema).handler(({ input }) => {
-    const invoiceNumber = `INV-2024-${String(mockInvoices.length + 1).padStart(3, "0")}`;
-    const now = new Date().toISOString();
+  create: protectedProcedure
+    .use(requirePermission("invoices.create"))
+    .input(createInvoiceSchema)
+    .handler(({ input }) => {
+      const invoiceNumber = `INV-2024-${String(mockInvoices.length + 1).padStart(3, "0")}`;
+      const now = new Date().toISOString();
 
-    // Calculate totals
-    let subtotal = 0;
-    let vatAmount = 0;
-
-    const itemsWithIds = input.items.map((item, index) => {
-      const itemTotal = item.quantity * item.unitPrice;
-      const itemVat = (itemTotal * item.vatRate) / 100;
-      subtotal += itemTotal;
-      vatAmount += itemVat;
-
-      return {
-        ...item,
-        id: `item-${Date.now()}-${index}`,
-        total: itemTotal + itemVat,
-      };
-    });
-
-    const total = subtotal + vatAmount;
-
-    const newInvoice = {
-      id: `inv-${Date.now()}`,
-      invoiceNumber,
-      clientId: input.clientId,
-      clientName: "Mock Client", // In real app, fetch from clients
-      clientEmail: "client@example.com",
-      clientAddress: "123 Client Street, City, State",
-      issueDate: now.split("T")[0],
-      dueDate: input.dueDate,
-      status: "draft" as const,
-      items: itemsWithIds,
-      subtotal,
-      vatAmount,
-      total,
-      notes: input.notes || "",
-      paymentTerms: input.paymentTerms,
-      currency: "USD",
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    mockInvoices.push(newInvoice);
-    return newInvoice;
-  }),
-
-  // Update invoice
-  update: protectedProcedure.input(updateInvoiceSchema).handler(({ input }) => {
-    const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
-    if (invoiceIndex === -1) {
-      throw new Error("Invoice not found");
-    }
-
-    const updatedInvoice = {
-      ...mockInvoices[invoiceIndex],
-      ...input,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Recalculate totals if items were updated
-    if (input.items) {
+      // Calculate totals
       let subtotal = 0;
       let vatAmount = 0;
 
-      input.items.forEach((item) => {
+      const itemsWithIds = input.items.map((item, index) => {
         const itemTotal = item.quantity * item.unitPrice;
         const itemVat = (itemTotal * item.vatRate) / 100;
         subtotal += itemTotal;
         vatAmount += itemVat;
+
+        return {
+          ...item,
+          id: `item-${Date.now()}-${index}`,
+          total: itemTotal + itemVat,
+        };
       });
 
-      updatedInvoice.subtotal = subtotal;
-      updatedInvoice.vatAmount = vatAmount;
-      updatedInvoice.total = subtotal + vatAmount;
-    }
+      const total = subtotal + vatAmount;
 
-    mockInvoices[invoiceIndex] = updatedInvoice;
-    return updatedInvoice;
-  }),
+      const newInvoice = {
+        id: `inv-${Date.now()}`,
+        invoiceNumber,
+        clientId: input.clientId,
+        clientName: "Mock Client", // In real app, fetch from clients
+        clientEmail: "client@example.com",
+        clientAddress: "123 Client Street, City, State",
+        issueDate: now.split("T")[0],
+        dueDate: input.dueDate,
+        status: "draft" as const,
+        items: itemsWithIds,
+        subtotal,
+        vatAmount,
+        total,
+        notes: input.notes || "",
+        paymentTerms: input.paymentTerms,
+        currency: "GYD",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      mockInvoices.push(newInvoice);
+      return newInvoice;
+    }),
+
+  // Update invoice
+  update: protectedProcedure
+    .use(requirePermission("invoices.update"))
+    .input(updateInvoiceSchema)
+    .handler(({ input }) => {
+      const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
+      if (invoiceIndex === -1) {
+        throw new Error("Invoice not found");
+      }
+
+      const updatedInvoice = {
+        ...mockInvoices[invoiceIndex],
+        ...input,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Recalculate totals if items were updated
+      if (input.items) {
+        let subtotal = 0;
+        let vatAmount = 0;
+
+        input.items.forEach((item) => {
+          const itemTotal = item.quantity * item.unitPrice;
+          const itemVat = (itemTotal * item.vatRate) / 100;
+          subtotal += itemTotal;
+          vatAmount += itemVat;
+        });
+
+        updatedInvoice.subtotal = subtotal;
+        updatedInvoice.vatAmount = vatAmount;
+        updatedInvoice.total = subtotal + vatAmount;
+      }
+
+      mockInvoices[invoiceIndex] = updatedInvoice;
+      return updatedInvoice;
+    }),
 
   // Delete invoice
   delete: protectedProcedure
+    .use(requirePermission("invoices.delete"))
     .input(z.object({ id: z.string() }))
     .handler(({ input }) => {
       const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
@@ -303,32 +315,34 @@ export const invoicesRouter = {
     }),
 
   // Get invoice statistics
-  stats: protectedProcedure.handler(() => {
-    const totalInvoices = mockInvoices.length;
-    const paidInvoices = mockInvoices.filter(
-      (inv) => inv.status === "paid"
-    ).length;
-    const pendingInvoices = mockInvoices.filter(
-      (inv) => inv.status === "sent"
-    ).length;
-    const overdueInvoices = mockInvoices.filter(
-      (inv) => inv.status === "overdue"
-    ).length;
-    const totalRevenue = mockInvoices
-      .filter((inv) => inv.status === "paid")
-      .reduce((sum, inv) => sum + inv.total, 0);
-    const pendingRevenue = mockInvoices
-      .filter((inv) => inv.status === "sent")
-      .reduce((sum, inv) => sum + inv.total, 0);
+  stats: protectedProcedure
+    .use(requirePermission("invoices.read"))
+    .handler(() => {
+      const totalInvoices = mockInvoices.length;
+      const paidInvoices = mockInvoices.filter(
+        (inv) => inv.status === "paid"
+      ).length;
+      const pendingInvoices = mockInvoices.filter(
+        (inv) => inv.status === "sent"
+      ).length;
+      const overdueInvoices = mockInvoices.filter(
+        (inv) => inv.status === "overdue"
+      ).length;
+      const totalRevenue = mockInvoices
+        .filter((inv) => inv.status === "paid")
+        .reduce((sum, inv) => sum + inv.total, 0);
+      const pendingRevenue = mockInvoices
+        .filter((inv) => inv.status === "sent")
+        .reduce((sum, inv) => sum + inv.total, 0);
 
-    return {
-      totalInvoices,
-      paidInvoices,
-      pendingInvoices,
-      overdueInvoices,
-      totalRevenue,
-      pendingRevenue,
-      avgInvoiceValue: totalInvoices > 0 ? totalRevenue / paidInvoices : 0,
-    };
-  }),
+      return {
+        totalInvoices,
+        paidInvoices,
+        pendingInvoices,
+        overdueInvoices,
+        totalRevenue,
+        pendingRevenue,
+        avgInvoiceValue: totalInvoices > 0 ? totalRevenue / paidInvoices : 0,
+      };
+    }),
 };

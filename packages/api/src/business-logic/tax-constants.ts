@@ -7,28 +7,31 @@ export const TAX_YEAR = 2025;
 
 /**
  * PAYE (Pay As You Earn) Income Tax Constants
+ * Updated for 2025 Budget: Reduced from 28%/40% to 25%/35%
  */
 export const PAYE_CONSTANTS = {
   STATUTORY_FREE_PAY: 130_000, // GYD per month
-  ANNUAL_STATUTORY_FREE_PAY: 130_000 * 12, // GYD per year
+  ANNUAL_STATUTORY_FREE_PAY: 130_000 * 12, // GYD per year (1,560,000)
+  SECOND_BAND_THRESHOLD: 260_000, // GYD per month
+  ANNUAL_SECOND_BAND_THRESHOLD: 260_000 * 12, // GYD per year (3,120,000)
 
-  // Income tax brackets (monthly)
+  // Income tax brackets (monthly) - 2025 Updated Rates
   BRACKETS: [
-    { min: 0, max: 130_000, rate: 0 }, // Tax-free threshold
-    { min: 130_000, max: 200_000, rate: 0.28 }, // 28%
-    { min: 200_000, max: 300_000, rate: 0.3 }, // 30%
-    { min: 300_000, max: 400_000, rate: 0.32 }, // 32%
-    { min: 400_000, max: Number.POSITIVE_INFINITY, rate: 0.4 }, // 40%
+    { min: 0, max: 130_000, rate: 0 }, // Tax-free threshold (personal allowance)
+    { min: 130_001, max: 260_000, rate: 0.25 }, // 25% (first band - reduced from 28%)
+    { min: 260_001, max: Number.POSITIVE_INFINITY, rate: 0.35 }, // 35% (second band - reduced from 40%)
   ],
 
-  // Annual brackets
+  // Annual brackets - 2025 Updated Rates
   ANNUAL_BRACKETS: [
-    { min: 0, max: 1_560_000, rate: 0 },
-    { min: 1_560_000, max: 2_400_000, rate: 0.28 },
-    { min: 2_400_000, max: 3_600_000, rate: 0.3 },
-    { min: 3_600_000, max: 4_800_000, rate: 0.32 },
-    { min: 4_800_000, max: Number.POSITIVE_INFINITY, rate: 0.4 },
+    { min: 0, max: 1_560_000, rate: 0 }, // Tax-free threshold
+    { min: 1_560_001, max: 3_120_000, rate: 0.25 }, // 25% (first band)
+    { min: 3_120_001, max: Number.POSITIVE_INFINITY, rate: 0.35 }, // 35% (second band)
   ],
+
+  // Legacy rates for historical calculations
+  LEGACY_FIRST_BAND_RATE: 0.28, // Pre-2025
+  LEGACY_SECOND_BAND_RATE: 0.4, // Pre-2025
 } as const;
 
 /**

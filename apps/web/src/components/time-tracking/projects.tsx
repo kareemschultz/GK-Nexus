@@ -83,9 +83,11 @@ export function TimeTrackingProjects() {
     Math.round((spent / budget) * 100);
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
+      currency: "GYD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
 
   const formatDate = (dateString: string) =>

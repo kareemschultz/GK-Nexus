@@ -34,7 +34,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/users/invite")({
   component: RouteComponent,
@@ -79,13 +78,27 @@ function RouteComponent() {
   const [customMessage, setCustomMessage] = useState("");
 
   // Query for roles and permissions
-  const { data: rolesResponse } = useQuery(
-    orpc.users.rolesAndPermissions.queryOptions()
-  );
+  const { data: rolesResponse } = useQuery({
+    queryKey: ["users", "rolesAndPermissions"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.rolesAndPermissions();
+    },
+  });
 
   // Mutation for creating users
   const createUserMutation = useMutation({
-    mutationFn: orpc.users.create.mutationKey,
+    mutationFn: async (data: {
+      name: string;
+      email: string;
+      role: string;
+      department?: string;
+      phoneNumber?: string;
+      status: string;
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.users.create(data);
+    },
   });
 
   const availableRoles = rolesResponse?.data?.roles || [];

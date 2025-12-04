@@ -199,10 +199,11 @@ function RouteComponent() {
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
+      currency: "GYD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
 
   const getTomorrowDate = () => {

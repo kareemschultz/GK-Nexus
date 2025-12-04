@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -37,7 +36,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/payroll")({
   component: RouteComponent,
@@ -78,9 +76,7 @@ type PayrollRun = {
 };
 
 function RouteComponent() {
-  const { session } = Route.useRouteContext();
   const navigate = useNavigate();
-  const _privateData = useQuery(orpc.privateData.queryOptions());
 
   // Mock payroll data
   const payrollSummary: PayrollSummary = {

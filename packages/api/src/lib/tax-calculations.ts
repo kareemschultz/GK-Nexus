@@ -2,23 +2,27 @@
  * Guyana Tax Calculation Engines
  * Implements PAYE, NIS, and VAT calculations based on Guyana Revenue Authority (GRA) guidelines
  * and National Insurance Scheme (NIS) requirements
+ *
+ * Updated for 2025 Budget:
+ * - PAYE rates reduced from 28%/40% to 25%/35%
+ * - Tax-free threshold increased to GYD 130,000/month
+ * - Second band threshold at GYD 260,000/month
  */
 
-// PAYE Tax Brackets for 2024 (GYD)
+// PAYE Tax Brackets for 2025 (GYD) - Monthly
 export const PAYE_TAX_BRACKETS = [
-  { min: 0, max: 65_000, rate: 0 }, // Tax-free threshold
-  { min: 65_001, max: 300_000, rate: 0.28 }, // 28%
-  { min: 300_001, max: 600_000, rate: 0.3 }, // 30%
-  { min: 600_001, max: 1_500_000, rate: 0.33 }, // 33%
-  { min: 1_500_001, max: Number.POSITIVE_INFINITY, rate: 0.4 }, // 40%
+  { min: 0, max: 130_000, rate: 0 }, // Tax-free threshold (personal allowance)
+  { min: 130_001, max: 260_000, rate: 0.25 }, // 25% first band (reduced from 28%)
+  { min: 260_001, max: Number.POSITIVE_INFINITY, rate: 0.35 }, // 35% second band (reduced from 40%)
 ] as const;
 
-// NIS Contribution Rates (2024)
+// NIS Contribution Rates (2025)
 export const NIS_RATES = {
   EMPLOYEE_RATE: 0.056, // 5.6%
   EMPLOYER_RATE: 0.084, // 8.4%
-  WEEKLY_CEILING: 3846, // GYD weekly ceiling
-  MONTHLY_CEILING: 16_666, // GYD monthly ceiling (3846 * 52 / 12)
+  TOTAL_RATE: 0.14, // 14% combined
+  WEEKLY_CEILING: 64_615, // GYD weekly ceiling
+  MONTHLY_CEILING: 280_000, // GYD monthly ceiling (increased for 2025)
 } as const;
 
 // VAT Configuration

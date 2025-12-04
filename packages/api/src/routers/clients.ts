@@ -1,4 +1,4 @@
-import { clientsSchema } from "@GK-Nexus/db";
+import { clientsSchema, organizationsSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -18,6 +18,96 @@ import {
   updateClientSchema,
   updateClientServiceSchema,
 } from "../schemas";
+
+// Map API entity types (lowercase) to DB entity types (uppercase)
+const entityTypeToDb: Record<string, string> = {
+  individual: "INDIVIDUAL",
+  sole_proprietorship: "SOLE_PROPRIETORSHIP",
+  partnership: "PARTNERSHIP",
+  limited_liability_company: "LIMITED_LIABILITY_COMPANY",
+  corporation: "CORPORATION",
+  trust: "TRUST",
+  estate: "ESTATE",
+  non_profit: "NON_PROFIT",
+  government: "GOVERNMENT",
+};
+
+// Map API compliance status to DB compliance status
+const complianceStatusToDb: Record<string, string> = {
+  compliant: "GOOD",
+  non_compliant: "WARNING",
+  pending_review: "PENDING_REVIEW",
+  overdue: "OVERDUE",
+  exempt: "EXEMPT",
+};
+
+// Helper to get or create default organization for user
+async function getOrCreateDefaultOrganization(
+  db: any,
+  userId: string
+): Promise<string> {
+  // First, check if user belongs to any organization
+  const [existingOrgUser] = await db
+    .select({
+      organizationId: organizationsSchema.organizationUsers.organizationId,
+    })
+    .from(organizationsSchema.organizationUsers)
+    .where(eq(organizationsSchema.organizationUsers.userId, userId))
+    .limit(1);
+
+  if (existingOrgUser) {
+    return existingOrgUser.organizationId;
+  }
+
+  // Check if there's a default organization
+  const [defaultOrg] = await db
+    .select({ id: organizationsSchema.organizations.id })
+    .from(organizationsSchema.organizations)
+    .where(eq(organizationsSchema.organizations.slug, "gk-nexus-default"))
+    .limit(1);
+
+  if (defaultOrg) {
+    // Add user to this organization
+    await db.insert(organizationsSchema.organizationUsers).values({
+      id: nanoid(),
+      organizationId: defaultOrg.id,
+      userId,
+      role: "admin",
+      status: "active",
+      isActive: true,
+      joinedAt: new Date(),
+    });
+    return defaultOrg.id;
+  }
+
+  // Create a default organization
+  const orgId = nanoid();
+  await db.insert(organizationsSchema.organizations).values({
+    id: orgId,
+    name: "GK-Nexus",
+    slug: "gk-nexus-default",
+    ownerId: userId,
+    status: "active",
+    subscriptionTier: "professional",
+    maxUsers: 100,
+    maxClients: 10_000,
+    maxStorageGb: 100,
+    isActive: true,
+  });
+
+  // Add user to this organization
+  await db.insert(organizationsSchema.organizationUsers).values({
+    id: nanoid(),
+    organizationId: orgId,
+    userId,
+    role: "admin",
+    status: "active",
+    isActive: true,
+    joinedAt: new Date(),
+  });
+
+  return orgId;
+}
 
 // Helper function to generate client number
 function generateClientNumber(): string {
@@ -562,17 +652,67 @@ export const clientsRouter = {
     .handler(async ({ input, context }) => {
       const { db, user } = context;
 
+      if (!user) {
+        throw new ORPCError("UNAUTHORIZED", "User not authenticated");
+      }
+
+      // Get or create organization for this user
+      const organizationId = await getOrCreateDefaultOrganization(db, user.id);
+
+      // Map entity type to DB format (uppercase)
+      const dbEntityType = entityTypeToDb[input.entityType] || "INDIVIDUAL";
+
+      // Map compliance status to DB format
+      const dbComplianceStatus = input.complianceStatus
+        ? complianceStatusToDb[input.complianceStatus] || "PENDING_REVIEW"
+        : "PENDING_REVIEW";
+
       const clientData = {
-        ...input,
         id: nanoid(),
+        organizationId,
         clientNumber: generateClientNumber(),
+        name: input.name,
+        entityType: dbEntityType,
+        // Guyana-specific fields
+        businessName: input.businessName || null,
+        firstName: input.firstName || null,
+        lastName: input.lastName || null,
+        tinNumber: input.tinNumber || input.taxIdNumber || null,
+        nisNumber: input.nisNumber || null,
+        registrationNumber: input.registrationNumber || null,
+        passportNumber: input.passportNumber || null,
+        isLocalContentQualified: input.isLocalContentQualified,
+        // Contact info
+        email: input.email || null,
+        phoneNumber: input.phoneNumber || null,
+        address: input.address || null,
+        city: input.city || null,
+        state: input.state || null,
+        postalCode: input.postalCode || null,
+        country: input.country || "Guyana",
+        // Status
+        status: input.status || "pending_approval",
+        complianceStatus: dbComplianceStatus,
+        riskLevel: input.riskLevel || "medium",
+        // Financial
+        estimatedAnnualRevenue: input.estimatedAnnualRevenue || null,
+        employeeCount: input.employeeCount || null,
+        incorporationDate: input.incorporationDate || null,
+        fiscalYearEnd: input.fiscalYearEnd || null,
+        // Personnel
+        assignedAccountant: input.assignedAccountant || null,
+        assignedManager: input.assignedManager || null,
+        primaryContact: input.primaryContact || null,
+        // Additional
+        notes: input.notes || null,
         clientSince: new Date(),
-        createdBy: user?.id,
-        updatedBy: user?.id,
+        createdBy: user.id,
+        updatedBy: user.id,
         tags: input.tags ? JSON.stringify(input.tags) : null,
         customFields: input.customFields
           ? JSON.stringify(input.customFields)
           : null,
+        isActive: true,
       };
 
       const [newClient] = await db

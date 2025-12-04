@@ -38,7 +38,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/calendar")({
   component: CalendarPage,
@@ -130,31 +129,35 @@ function CalendarPage() {
   const calendarDays = generateCalendarDays(year, month);
 
   // Fetch appointments from API
-  const { data: appointmentsData, isLoading } = useQuery(
-    orpc.appointments.list.queryOptions({
-      page: 1,
-      limit: 100,
-      status:
-        filterStatus !== "all"
-          ? (filterStatus as
-              | "SCHEDULED"
-              | "CONFIRMED"
-              | "IN_PROGRESS"
-              | "COMPLETED"
-              | "CANCELLED"
-              | "NO_SHOW")
-          : undefined,
-      type:
-        filterType !== "all"
-          ? (filterType as
-              | "CONSULTATION"
-              | "DOCUMENT_REVIEW"
-              | "TAX_PREPARATION"
-              | "COMPLIANCE_MEETING"
-              | "OTHER")
-          : undefined,
-    })
-  );
+  const { data: appointmentsData, isLoading } = useQuery({
+    queryKey: ["appointments", "calendar", filterStatus, filterType],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.list({
+        page: 1,
+        limit: 100,
+        status:
+          filterStatus !== "all"
+            ? (filterStatus as
+                | "SCHEDULED"
+                | "CONFIRMED"
+                | "IN_PROGRESS"
+                | "COMPLETED"
+                | "CANCELLED"
+                | "NO_SHOW")
+            : undefined,
+        type:
+          filterType !== "all"
+            ? (filterType as
+                | "CONSULTATION"
+                | "DOCUMENT_REVIEW"
+                | "TAX_PREPARATION"
+                | "COMPLIANCE_MEETING"
+                | "OTHER")
+            : undefined,
+      });
+    },
+  });
 
   const appointments = appointmentsData?.data?.items || [];
 

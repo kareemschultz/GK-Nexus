@@ -6,13 +6,18 @@ import {
   Building2,
   CheckCircle2,
   FileText,
-  Upload,
+  Info,
   Users,
+  X,
 } from "lucide-react";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  getDocumentStats,
+  getRequiredDocuments,
+} from "@/lib/document-requirements";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -43,46 +48,20 @@ export const ENTITY_TYPES = [
   { value: "SOLE_PROPRIETORSHIP", label: "Sole Proprietorship", icon: Users },
 ] as const;
 
-// Service types based on Guyana compliance requirements
-export const SERVICE_TYPES = [
-  {
-    value: "PAYE_FILING",
-    label: "PAYE Filing",
-    description: "Monthly/Annual PAYE tax returns",
-  },
-  {
-    value: "VAT_RETURN",
-    label: "VAT Returns",
-    description: "Monthly VAT Form C-104 submissions",
-  },
-  {
-    value: "INCOME_TAX_RETURN",
-    label: "Income Tax Returns",
-    description: "Annual income tax filing",
-  },
-  {
-    value: "NIS_SUBMISSION",
-    label: "NIS Contributions",
-    description: "National Insurance Scheme submissions",
-  },
-  {
-    value: "BUSINESS_REGISTRATION",
-    label: "Business Registration",
-    description: "Company incorporation and setup",
-  },
-  {
-    value: "TAX_CONSULTATION",
-    label: "Tax Advisory",
-    description: "General tax consultation services",
-  },
-  {
-    value: "COMPLIANCE_REVIEW",
-    label: "Compliance Review",
-    description: "Regulatory compliance audits",
-  },
-] as const;
+// Import comprehensive service catalog
+import {
+  BUSINESS_UNITS,
+  getServiceTypesByBusiness,
+  SERVICE_TYPES,
+} from "@/lib/service-catalog";
 
-// Validation schemas for each step
+// Re-export for backwards compatibility
+export { BUSINESS_UNITS, SERVICE_TYPES };
+
+// Helper to get services by business
+export const getServicesByBusiness = getServiceTypesByBusiness;
+
+// Validation schemas for each step - Updated with proper Guyana formats
 const step1Schema = z
   .object({
     entityType: z.enum([
@@ -93,11 +72,29 @@ const step1Schema = z
     ]),
     businessName: z.string().optional(),
     firstName: z.string().optional(),
+    middleName: z.string().optional(), // Added middle name support
     lastName: z.string().optional(),
     tinNumber: z
       .string()
-      .min(9, "TIN must be 9 digits")
-      .max(9, "TIN must be 9 digits"),
+      .min(1, "TIN is required")
+      .refine(
+        (val) => {
+          const cleaned = val.replace(/[-\s]/g, "");
+          return /^\d{9}$/.test(cleaned);
+        },
+        { message: "TIN must be 9 digits (format: XXX-XXX-XXX)" }
+      ),
+    nisNumber: z // Added NIS number field
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val) return true; // Optional
+          const cleaned = val.replace(/[-\s]/g, "").toUpperCase();
+          return /^[A-Z]\d{6}$/.test(cleaned);
+        },
+        { message: "NIS format: A-123456 (1 letter + 6 digits)" }
+      ),
     passportNumber: z.string().optional(),
     isLocalContentQualified: z.boolean().default(false),
   })
@@ -117,8 +114,14 @@ const step1Schema = z
 
 const step2Schema = z.object({
   email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  address: z.string().min(1, "Address is required"),
+  phoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(
+      /^(\+592[-\s]?)?\d{3}[-\s]?\d{4}$|^\d{7}$|^\d{10,11}$/,
+      "Enter a valid Guyana phone number (e.g., +592-XXX-XXXX or 592XXXXXXX)"
+    ),
+  address: z.string().min(1, "Address is required").min(5, "Address too short"),
   city: z.string().min(1, "City is required"),
   region: z.string().min(1, "Region is required"),
 });
@@ -204,38 +207,48 @@ function EntityStructureStep({
 
         {/* Conditional fields based on entity type */}
         {entityType === "INDIVIDUAL" ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName">
-                First Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="firstName"
-                {...form.register("firstName")}
-                placeholder="Enter first name"
-              />
-              {form.formState.errors.firstName && (
-                <p className="mt-1 text-red-500 text-sm">
-                  {form.formState.errors.firstName.message}
-                </p>
-              )}
+          <>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="firstName">
+                  First Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="firstName"
+                  {...form.register("firstName")}
+                  placeholder="Enter first name"
+                />
+                {form.formState.errors.firstName && (
+                  <p className="mt-1 text-red-500 text-sm">
+                    {form.formState.errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="middleName">Middle Name</Label>
+                <Input
+                  id="middleName"
+                  {...form.register("middleName")}
+                  placeholder="Enter middle name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">
+                  Last Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="lastName"
+                  {...form.register("lastName")}
+                  placeholder="Enter last name"
+                />
+                {form.formState.errors.lastName && (
+                  <p className="mt-1 text-red-500 text-sm">
+                    {form.formState.errors.lastName.message}
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <Label htmlFor="lastName">
-                Last Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="lastName"
-                {...form.register("lastName")}
-                placeholder="Enter last name"
-              />
-              {form.formState.errors.lastName && (
-                <p className="mt-1 text-red-500 text-sm">
-                  {form.formState.errors.lastName.message}
-                </p>
-              )}
-            </div>
-          </div>
+          </>
         ) : (
           <div>
             <Label htmlFor="businessName">
@@ -254,31 +267,75 @@ function EntityStructureStep({
           </div>
         )}
 
-        <div>
-          <Label htmlFor="tinNumber">
-            Tax Identification Number (TIN){" "}
-            <span className="text-red-500">*</span>
-          </Label>
-          <p className="mb-2 text-muted-foreground text-sm">
-            9-digit TIN number issued by Guyana Revenue Authority
-          </p>
-          <Input
-            id="tinNumber"
-            {...form.register("tinNumber")}
-            maxLength={9}
-            pattern="[0-9]{9}"
-            placeholder="123456789"
-          />
-          {form.formState.errors.tinNumber && (
-            <p className="mt-1 text-red-500 text-sm">
-              {form.formState.errors.tinNumber.message}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <Label htmlFor="tinNumber">
+              Tax Identification Number (TIN){" "}
+              <span className="text-red-500">*</span>
+            </Label>
+            <p className="mb-2 text-muted-foreground text-sm">
+              9-digit TIN (format: XXX-XXX-XXX)
             </p>
-          )}
+            <Input
+              id="tinNumber"
+              {...form.register("tinNumber")}
+              maxLength={11}
+              onChange={(e) => {
+                // Auto-format TIN as user types
+                const value = e.target.value.replace(/\D/g, "");
+                let formatted = value;
+                if (value.length > 6) {
+                  formatted = `${value.slice(0, 3)}-${value.slice(3, 6)}-${value.slice(6, 9)}`;
+                } else if (value.length > 3) {
+                  formatted = `${value.slice(0, 3)}-${value.slice(3)}`;
+                }
+                form.setValue("tinNumber", formatted);
+              }}
+              placeholder="123-456-789"
+            />
+            {form.formState.errors.tinNumber && (
+              <p className="mt-1 text-red-500 text-sm">
+                {form.formState.errors.tinNumber.message}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="nisNumber">NIS Number</Label>
+            <p className="mb-2 text-muted-foreground text-sm">
+              National Insurance Scheme (format: A-XXXXXX)
+            </p>
+            <Input
+              id="nisNumber"
+              {...form.register("nisNumber")}
+              maxLength={8}
+              onChange={(e) => {
+                // Auto-format NIS as user types
+                const value = e.target.value
+                  .replace(/[^A-Za-z0-9]/g, "")
+                  .toUpperCase();
+                let formatted = value;
+                if (value.length > 1) {
+                  formatted = `${value.charAt(0)}-${value.slice(1, 7)}`;
+                }
+                form.setValue("nisNumber", formatted);
+              }}
+              placeholder="A-123456"
+            />
+            {form.formState.errors.nisNumber && (
+              <p className="mt-1 text-red-500 text-sm">
+                {form.formState.errors.nisNumber.message}
+              </p>
+            )}
+          </div>
         </div>
 
         {entityType === "INDIVIDUAL" && (
           <div>
             <Label htmlFor="passportNumber">Passport/National ID Number</Label>
+            <p className="mb-2 text-muted-foreground text-sm">
+              For individuals: passport or national ID
+            </p>
             <Input
               id="passportNumber"
               {...form.register("passportNumber")}
@@ -415,23 +472,33 @@ function ContactInformationStep({
               <SelectValue placeholder="Select region" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="demerara-mahaica">Demerara-Mahaica</SelectItem>
-              <SelectItem value="berbice">East Berbice-Corentyne</SelectItem>
-              <SelectItem value="essequibo">
-                Essequibo Islands-West Demerara
+              <SelectItem value="region-1">Region 1 - Barima-Waini</SelectItem>
+              <SelectItem value="region-2">
+                Region 2 - Pomeroon-Supenaam
               </SelectItem>
-              <SelectItem value="mahaica-berbice">Mahaica-Berbice</SelectItem>
-              <SelectItem value="potaro-siparuni">Potaro-Siparuni</SelectItem>
-              <SelectItem value="barima-waini">Barima-Waini</SelectItem>
-              <SelectItem value="cuyuni-mazaruni">Cuyuni-Mazaruni</SelectItem>
-              <SelectItem value="pomeroon-supenaam">
-                Pomeroon-Supenaam
+              <SelectItem value="region-3">
+                Region 3 - Essequibo Islands-West Demerara
               </SelectItem>
-              <SelectItem value="upper-demerara-berbice">
-                Upper Demerara-Berbice
+              <SelectItem value="region-4">
+                Region 4 - Demerara-Mahaica
               </SelectItem>
-              <SelectItem value="upper-takutu-essequibo">
-                Upper Takutu-Upper Essequibo
+              <SelectItem value="region-5">
+                Region 5 - Mahaica-Berbice
+              </SelectItem>
+              <SelectItem value="region-6">
+                Region 6 - East Berbice-Corentyne
+              </SelectItem>
+              <SelectItem value="region-7">
+                Region 7 - Cuyuni-Mazaruni
+              </SelectItem>
+              <SelectItem value="region-8">
+                Region 8 - Potaro-Siparuni
+              </SelectItem>
+              <SelectItem value="region-9">
+                Region 9 - Upper Takutu-Upper Essequibo
+              </SelectItem>
+              <SelectItem value="region-10">
+                Region 10 - Upper Demerara-Berbice
               </SelectItem>
             </SelectContent>
           </Select>
@@ -458,14 +525,14 @@ function ContactInformationStep({
           onClick={onNext}
           type="button"
         >
-          Continue to Document Upload
+          Continue to Service Selection
         </Button>
       </div>
     </div>
   );
 }
 
-// Step 3: Document Upload
+// Step 3: Document Upload - Dynamic based on entity type and selected services
 function DocumentUploadStep({
   form,
   onNext,
@@ -477,92 +544,211 @@ function DocumentUploadStep({
   onBack: () => void;
   isSubmitting: boolean;
 }) {
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
   const entityType = form.watch("entityType");
+  const selectedServices = form.watch("selectedServices") || [];
+
+  // Get dynamic document requirements based on entity type and selected services
+  const documentCategories = getRequiredDocuments(entityType, selectedServices);
+  const stats = getDocumentStats(documentCategories);
+
+  // Count uploaded required documents
+  const uploadedRequiredCount = documentCategories.reduce(
+    (count, category) =>
+      count +
+      category.documents.filter((doc) => doc.required && uploadedFiles[doc.id])
+        .length,
+    0
+  );
 
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
-    fileType: string
+    docId: string
   ) => {
     const file = event.target.files?.[0];
     if (file) {
-      setUploadedFiles((prev) => [...prev, fileType]);
+      setUploadedFiles((prev) => ({ ...prev, [docId]: file }));
       form.setValue("hasUploadedDocs", true);
-      // In a real implementation, you would upload the file to your server here
+      // Store uploaded document IDs for tracking
+      const currentUploads = form.getValues("uploadedDocumentIds") || [];
+      if (!currentUploads.includes(docId)) {
+        form.setValue("uploadedDocumentIds", [...currentUploads, docId]);
+      }
     }
+  };
+
+  const removeFile = (docId: string) => {
+    setUploadedFiles((prev) => {
+      const updated = { ...prev };
+      delete updated[docId];
+      return updated;
+    });
+    // Remove from form tracking
+    const currentUploads = form.getValues("uploadedDocumentIds") || [];
+    form.setValue(
+      "uploadedDocumentIds",
+      currentUploads.filter((id: string) => id !== docId)
+    );
   };
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border-2 border-muted border-dashed p-6 text-center">
-        <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-        <h3 className="mb-2 font-medium text-lg">Upload Required Documents</h3>
-        <p className="mb-6 text-muted-foreground text-sm">
-          Please upload the required identification and registration documents
-        </p>
+      {/* Progress Summary */}
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-medium">Document Upload Progress</h4>
+            <p className="text-muted-foreground text-sm">
+              {uploadedRequiredCount} of {stats.requiredCount} required
+              documents uploaded
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="font-bold text-2xl text-primary">
+              {Math.round((uploadedRequiredCount / stats.requiredCount) * 100)}%
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {stats.optionalCount} optional
+            </p>
+          </div>
+        </div>
+        <Progress
+          className="mt-3 h-2"
+          value={(uploadedRequiredCount / stats.requiredCount) * 100}
+        />
+      </div>
 
-        <div className="space-y-4">
-          {entityType === "INDIVIDUAL" ? (
-            <div className="rounded-lg border p-4 text-left">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-medium">National ID or Passport</span>
+      {/* Document Categories */}
+      {documentCategories.map((category) => (
+        <div className="space-y-3" key={category.id}>
+          <div className="flex items-center gap-2">
+            <div
+              className={cn(
+                "h-1 w-4 rounded",
+                category.id === "base" ? "bg-blue-500" : "bg-green-500"
+              )}
+            />
+            <h3 className="font-semibold">{category.name}</h3>
+          </div>
+          <p className="text-muted-foreground text-sm">
+            {category.description}
+          </p>
+
+          <div className="grid gap-3">
+            {category.documents.map((doc) => (
+              <div
+                className={cn(
+                  "rounded-lg border p-4 transition-all",
+                  uploadedFiles[doc.id]
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                    : doc.required
+                      ? "border-orange-300 bg-orange-50/50 dark:bg-orange-950/10"
+                      : "border-muted"
+                )}
+                key={doc.id}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{doc.name}</span>
+                      {doc.required ? (
+                        <Badge className="text-xs" variant="destructive">
+                          Required
+                        </Badge>
+                      ) : (
+                        <Badge className="text-xs" variant="secondary">
+                          Optional
+                        </Badge>
+                      )}
+                      {doc.agency && (
+                        <Badge className="text-xs" variant="outline">
+                          {doc.agency}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mb-2 text-muted-foreground text-sm">
+                      {doc.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+                      <span>Formats: {doc.acceptedFormats.join(", ")}</span>
+                      <span>Max: {doc.maxSizeMB}MB</span>
+                      {doc.validityPeriod && (
+                        <span>Valid: {doc.validityPeriod}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {uploadedFiles[doc.id] ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <Button
+                          onClick={() => removeFile(doc.id)}
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <AlertCircle
+                        className={cn(
+                          "h-5 w-5",
+                          doc.required
+                            ? "text-orange-500"
+                            : "text-muted-foreground"
+                        )}
+                      />
+                    )}
+                  </div>
                 </div>
-                {uploadedFiles.includes("identification") ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+
+                {uploadedFiles[doc.id] ? (
+                  <div className="mt-3 flex items-center gap-2 rounded bg-green-100 p-2 text-green-700 text-sm dark:bg-green-900/30 dark:text-green-300">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="truncate">
+                      {uploadedFiles[doc.id].name}
+                    </span>
+                    <span className="text-xs">
+                      ({(uploadedFiles[doc.id].size / 1024 / 1024).toFixed(2)}
+                      MB)
+                    </span>
+                  </div>
                 ) : (
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
+                  <div className="mt-3">
+                    <Input
+                      accept={doc.acceptedFormats.join(",")}
+                      onChange={(e) => handleFileUpload(e, doc.id)}
+                      type="file"
+                    />
+                  </div>
                 )}
               </div>
-              <p className="mb-3 text-muted-foreground text-sm">
-                Upload a clear copy of your National ID card or passport
-              </p>
-              <Input
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileUpload(e, "identification")}
-                type="file"
-              />
-            </div>
-          ) : (
-            <div className="rounded-lg border p-4 text-left">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-medium">
-                    Certificate of Incorporation
-                  </span>
-                </div>
-                {uploadedFiles.includes("incorporation") ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-orange-500" />
-                )}
-              </div>
-              <p className="mb-3 text-muted-foreground text-sm">
-                Upload your Certificate of Incorporation or business
-                registration document
-              </p>
-              <Input
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileUpload(e, "incorporation")}
-                type="file"
-              />
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      ))}
 
-          <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
-            <h4 className="mb-2 font-medium text-blue-900 dark:text-blue-100">
+      {/* OCR Notice */}
+      <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
+        <div className="flex items-start gap-3">
+          <Info className="mt-0.5 h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div>
+            <h4 className="font-medium text-blue-900 dark:text-blue-100">
               OCR Processing Available
             </h4>
             <p className="text-blue-700 text-sm dark:text-blue-200">
-              Our system will automatically extract TIN and registration numbers
-              from your uploaded documents to speed up the onboarding process.
+              Our system will automatically extract TIN, NIS, and registration
+              numbers from your uploaded documents to speed up the onboarding
+              process.
             </p>
           </div>
         </div>
       </div>
 
+      {/* Navigation */}
       <div className="flex gap-3">
         <Button
           className="flex-1"
@@ -578,7 +764,7 @@ function DocumentUploadStep({
           onClick={onNext}
           type="button"
         >
-          Continue to Services
+          Continue to Review
         </Button>
       </div>
     </div>
@@ -608,50 +794,121 @@ function ServiceSelectionStep({
     form.setValue("selectedServices", newSelection);
   };
 
+  const kajServices = SERVICE_TYPES.filter((s) => s.business === "kaj");
+  const gcmcServices = SERVICE_TYPES.filter((s) => s.business === "gcmc");
+
   return (
     <div className="space-y-6">
       <div>
         <h3 className="mb-2 font-medium text-lg">Select Required Services</h3>
         <p className="mb-6 text-muted-foreground text-sm">
-          Choose the accounting and compliance services you need. You can modify
-          these later.
+          Choose the accounting and compliance services you need. Services are
+          organized by business unit.
         </p>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {SERVICE_TYPES.map((service) => (
-            <div
-              className={cn(
-                "cursor-pointer rounded-lg border p-4 transition-all",
-                selectedServices.includes(service.value)
-                  ? "border-primary bg-primary/5"
-                  : "border-muted hover:border-muted-foreground/50"
-              )}
-              key={service.value}
-              onClick={() => toggleService(service.value)}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="mb-2 flex items-center gap-2">
-                    <h4 className="font-medium">{service.label}</h4>
-                    {selectedServices.includes(service.value) && (
-                      <Badge className="text-xs" variant="secondary">
-                        Selected
-                      </Badge>
-                    )}
+        {/* KAJ Financial Services */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-4 w-1 rounded bg-blue-500" />
+            <h4 className="font-semibold text-blue-600 dark:text-blue-400">
+              {BUSINESS_UNITS.KAJ.name}
+            </h4>
+          </div>
+          <p className="mb-4 text-muted-foreground text-sm">
+            {BUSINESS_UNITS.KAJ.description}
+          </p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {kajServices.map((service) => (
+              <div
+                className={cn(
+                  "cursor-pointer rounded-lg border p-3 transition-all",
+                  selectedServices.includes(service.value)
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
+                    : "border-muted hover:border-blue-300"
+                )}
+                key={service.value}
+                onClick={() => toggleService(service.value)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <h5 className="font-medium text-sm">{service.label}</h5>
+                      {service.agency && (
+                        <Badge className="text-xs" variant="outline">
+                          {service.agency}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {service.description}
+                    </p>
                   </div>
-                  <p className="text-muted-foreground text-sm">
-                    {service.description}
-                  </p>
+                  <Checkbox
+                    checked={selectedServices.includes(service.value)}
+                    onChange={() => toggleService(service.value)}
+                  />
                 </div>
-                <Checkbox
-                  checked={selectedServices.includes(service.value)}
-                  className="mt-1"
-                  onChange={() => toggleService(service.value)}
-                />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {/* GCMC Consultancy */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-4 w-1 rounded bg-green-500" />
+            <h4 className="font-semibold text-green-600 dark:text-green-400">
+              {BUSINESS_UNITS.GCMC.name}
+            </h4>
+          </div>
+          <p className="mb-4 text-muted-foreground text-sm">
+            {BUSINESS_UNITS.GCMC.description}
+          </p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {gcmcServices.map((service) => (
+              <div
+                className={cn(
+                  "cursor-pointer rounded-lg border p-3 transition-all",
+                  selectedServices.includes(service.value)
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                    : "border-muted hover:border-green-300"
+                )}
+                key={service.value}
+                onClick={() => toggleService(service.value)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <h5 className="font-medium text-sm">{service.label}</h5>
+                      {service.agency && (
+                        <Badge className="text-xs" variant="outline">
+                          {service.agency}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {service.description}
+                    </p>
+                  </div>
+                  <Checkbox
+                    checked={selectedServices.includes(service.value)}
+                    onChange={() => toggleService(service.value)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected count */}
+        {selectedServices.length > 0 && (
+          <div className="rounded-lg bg-primary/10 p-3">
+            <p className="font-medium text-sm">
+              {selectedServices.length} service
+              {selectedServices.length > 1 ? "s" : ""} selected
+            </p>
+          </div>
+        )}
 
         {form.formState.errors.selectedServices && (
           <p className="mt-2 text-red-500 text-sm">
@@ -685,7 +942,7 @@ function ServiceSelectionStep({
           onClick={onNext}
           type="button"
         >
-          Review & Submit
+          Continue to Document Upload
         </Button>
       </div>
     </div>
@@ -728,14 +985,35 @@ function ReviewStep({
                 <span className="text-muted-foreground">Name:</span>
                 <span className="font-medium">
                   {formData.entityType === "INDIVIDUAL"
-                    ? `${formData.firstName} ${formData.lastName}`
+                    ? formData.middleName
+                      ? `${formData.firstName} ${formData.middleName} ${formData.lastName}`
+                      : `${formData.firstName} ${formData.lastName}`
                     : formData.businessName}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">TIN:</span>
-                <span className="font-medium">{formData.tinNumber}</span>
+                <span className="font-medium font-mono">
+                  {formData.tinNumber}
+                </span>
               </div>
+              {formData.nisNumber && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">NIS Number:</span>
+                  <span className="font-medium font-mono">
+                    {formData.nisNumber}
+                  </span>
+                </div>
+              )}
+              {formData.passportNumber &&
+                formData.entityType === "INDIVIDUAL" && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Passport/ID:</span>
+                    <span className="font-medium">
+                      {formData.passportNumber}
+                    </span>
+                  </div>
+                )}
               {formData.isLocalContentQualified && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Local Content:</span>
@@ -829,6 +1107,8 @@ export default function ClientOnboardingWizard({
       isLocalContentQualified: false,
       hasUploadedDocs: false,
       selectedServices: [],
+      middleName: "",
+      nisNumber: "",
     },
   });
 
@@ -844,14 +1124,14 @@ export default function ClientOnboardingWizard({
       component: ContactInformationStep,
     },
     {
-      title: "Document Upload",
-      description: "Required identification and business documents",
-      component: DocumentUploadStep,
-    },
-    {
       title: "Service Selection",
       description: "Choose required accounting and compliance services",
       component: ServiceSelectionStep,
+    },
+    {
+      title: "Document Upload",
+      description: "Dynamic requirements based on entity & services",
+      component: DocumentUploadStep,
     },
     {
       title: "Review & Submit",
@@ -865,28 +1145,32 @@ export default function ClientOnboardingWizard({
   const handleNext = async () => {
     // Validate current step
     let isValid = false;
+    const { toast } = await import("sonner");
 
     try {
-      switch (currentStep) {
-        case 0:
-          await step1Schema.parseAsync(form.getValues());
-          isValid = true;
-          break;
-        case 1:
-          await step2Schema.parseAsync(form.getValues());
-          isValid = true;
-          break;
-        case 2:
-          await step3Schema.parseAsync(form.getValues());
-          isValid = true;
-          break;
-        case 3:
-          await step4Schema.parseAsync(form.getValues());
-          isValid = true;
-          break;
+      // Order: Entity, Contact, Services, Documents (services before docs for dynamic requirements)
+      const stepSchemas = [step1Schema, step2Schema, step4Schema, step3Schema];
+      const schema = stepSchemas[currentStep];
+
+      if (schema) {
+        await schema.parseAsync(form.getValues());
+        isValid = true;
       }
     } catch (error) {
-      console.error("Validation error:", error);
+      if (error instanceof z.ZodError) {
+        // Set errors in the form
+        for (const issue of error.issues) {
+          const field = issue.path[0] as string;
+          form.setError(field, { type: "manual", message: issue.message });
+        }
+
+        // Show toast with first error
+        const firstError = error.issues[0];
+        toast.error("Validation Error", {
+          description:
+            firstError?.message || "Please check the required fields",
+        });
+      }
       return;
     }
 
@@ -907,7 +1191,7 @@ export default function ClientOnboardingWizard({
       const formData = form.getValues();
       const validatedData = clientSchema.parse(formData);
 
-      // Map wizard entity types to API entity types
+      // Map wizard entity types to API entity types (lowercase)
       const entityTypeMap: Record<string, string> = {
         INDIVIDUAL: "individual",
         COMPANY: "corporation",
@@ -915,10 +1199,12 @@ export default function ClientOnboardingWizard({
         SOLE_PROPRIETORSHIP: "sole_proprietorship",
       };
 
-      // Build the name based on entity type
+      // Build the display name based on entity type (include middle name if present)
       const clientName =
         validatedData.entityType === "INDIVIDUAL"
-          ? `${validatedData.firstName} ${validatedData.lastName}`
+          ? validatedData.middleName
+            ? `${validatedData.firstName} ${validatedData.middleName} ${validatedData.lastName}`
+            : `${validatedData.firstName} ${validatedData.lastName}`
           : validatedData.businessName || "";
 
       // Call the actual API to create the client
@@ -926,6 +1212,7 @@ export default function ClientOnboardingWizard({
       const { toast } = await import("sonner");
 
       const result = await orpcClient.clients.create({
+        // Computed display name
         name: clientName,
         entityType: entityTypeMap[validatedData.entityType] as
           | "individual"
@@ -937,15 +1224,39 @@ export default function ClientOnboardingWizard({
           | "estate"
           | "non_profit"
           | "government",
-        taxIdNumber: validatedData.tinNumber,
+        // Guyana-specific fields
+        businessName:
+          validatedData.entityType !== "INDIVIDUAL"
+            ? validatedData.businessName
+            : undefined,
+        firstName:
+          validatedData.entityType === "INDIVIDUAL"
+            ? validatedData.firstName
+            : undefined,
+        middleName:
+          validatedData.entityType === "INDIVIDUAL"
+            ? validatedData.middleName
+            : undefined,
+        lastName:
+          validatedData.entityType === "INDIVIDUAL"
+            ? validatedData.lastName
+            : undefined,
+        tinNumber: validatedData.tinNumber,
+        nisNumber: validatedData.nisNumber || undefined,
+        passportNumber: validatedData.passportNumber || undefined,
+        isLocalContentQualified: validatedData.isLocalContentQualified,
+        // Contact info
         email: validatedData.email,
         phoneNumber: validatedData.phoneNumber,
         address: validatedData.address,
         city: validatedData.city,
-        state: validatedData.region,
+        state: validatedData.region, // Region maps to state field
+        country: "Guyana",
+        // Status
         status: "pending_approval",
         complianceStatus: "pending_review",
         riskLevel: "medium",
+        // Additional
         notes: validatedData.additionalNotes || undefined,
         tags: validatedData.selectedServices,
       });

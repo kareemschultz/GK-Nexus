@@ -2,155 +2,390 @@ import { ORPCError } from "@orpc/server";
 import type { Role } from "../schemas";
 
 export type Permission =
+  // User management
   | "users.create"
   | "users.read"
   | "users.update"
   | "users.delete"
   | "users.manage_permissions"
+  // Client management
   | "clients.create"
   | "clients.read"
   | "clients.update"
   | "clients.delete"
   | "clients.assign"
+  // Tax calculations
   | "tax_calculations.create"
   | "tax_calculations.read"
   | "tax_calculations.update"
   | "tax_calculations.delete"
   | "tax_calculations.submit"
+  // Compliance
   | "compliance.create"
   | "compliance.read"
   | "compliance.update"
   | "compliance.delete"
   | "compliance.approve"
+  // Documents
   | "documents.create"
   | "documents.read"
   | "documents.update"
   | "documents.delete"
   | "documents.share"
   | "documents.approve"
+  // Service Catalog - Services
+  | "services.create"
+  | "services.read"
+  | "services.update"
+  | "services.delete"
+  // Service Catalog - Projects
+  | "projects.create"
+  | "projects.read"
+  | "projects.update"
+  | "projects.delete"
+  // Service Catalog - Milestones
+  | "milestones.create"
+  | "milestones.read"
+  | "milestones.update"
+  | "milestones.delete"
+  // Service Catalog - Time Entries
+  | "timeEntries.create"
+  | "timeEntries.read"
+  | "timeEntries.update"
+  | "timeEntries.delete"
+  // Service Catalog - Packages
+  | "packages.create"
+  | "packages.read"
+  | "packages.update"
+  | "packages.delete"
+  // Service Catalog - Templates
+  | "templates.create"
+  | "templates.read"
+  | "templates.update"
+  | "templates.delete"
+  // Service Catalog - Communications
+  | "communications.create"
+  | "communications.read"
+  | "communications.update"
+  | "communications.delete"
+  // Invoices
+  | "invoices.create"
+  | "invoices.read"
+  | "invoices.update"
+  | "invoices.delete"
+  // Billing
+  | "billing.create"
+  | "billing.read"
+  | "billing.update"
+  | "billing.delete"
+  // Dashboard & Reports
   | "dashboard.read"
   | "reports.read"
   | "reports.export"
+  // System
   | "system.admin";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   super_admin: [
+    // User management
     "users.create",
     "users.read",
     "users.update",
     "users.delete",
     "users.manage_permissions",
+    // Client management
     "clients.create",
     "clients.read",
     "clients.update",
     "clients.delete",
     "clients.assign",
+    // Tax calculations
     "tax_calculations.create",
     "tax_calculations.read",
     "tax_calculations.update",
     "tax_calculations.delete",
     "tax_calculations.submit",
+    // Compliance
     "compliance.create",
     "compliance.read",
     "compliance.update",
     "compliance.delete",
     "compliance.approve",
+    // Documents
     "documents.create",
     "documents.read",
     "documents.update",
     "documents.delete",
     "documents.share",
     "documents.approve",
+    // Service Catalog - Full access
+    "services.create",
+    "services.read",
+    "services.update",
+    "services.delete",
+    "projects.create",
+    "projects.read",
+    "projects.update",
+    "projects.delete",
+    "milestones.create",
+    "milestones.read",
+    "milestones.update",
+    "milestones.delete",
+    "timeEntries.create",
+    "timeEntries.read",
+    "timeEntries.update",
+    "timeEntries.delete",
+    "packages.create",
+    "packages.read",
+    "packages.update",
+    "packages.delete",
+    "templates.create",
+    "templates.read",
+    "templates.update",
+    "templates.delete",
+    "communications.create",
+    "communications.read",
+    "communications.update",
+    "communications.delete",
+    // Invoices & Billing
+    "invoices.create",
+    "invoices.read",
+    "invoices.update",
+    "invoices.delete",
+    "billing.create",
+    "billing.read",
+    "billing.update",
+    "billing.delete",
+    // Dashboard & Reports
     "dashboard.read",
     "reports.read",
     "reports.export",
+    // System
     "system.admin",
   ],
   admin: [
+    // User management
     "users.create",
     "users.read",
     "users.update",
     "users.delete",
+    // Client management
     "clients.create",
     "clients.read",
     "clients.update",
     "clients.delete",
     "clients.assign",
+    // Tax calculations
     "tax_calculations.create",
     "tax_calculations.read",
     "tax_calculations.update",
     "tax_calculations.delete",
     "tax_calculations.submit",
+    // Compliance
     "compliance.create",
     "compliance.read",
     "compliance.update",
     "compliance.delete",
     "compliance.approve",
+    // Documents
     "documents.create",
     "documents.read",
     "documents.update",
     "documents.delete",
     "documents.share",
     "documents.approve",
+    // Service Catalog - Full access
+    "services.create",
+    "services.read",
+    "services.update",
+    "services.delete",
+    "projects.create",
+    "projects.read",
+    "projects.update",
+    "projects.delete",
+    "milestones.create",
+    "milestones.read",
+    "milestones.update",
+    "milestones.delete",
+    "timeEntries.create",
+    "timeEntries.read",
+    "timeEntries.update",
+    "timeEntries.delete",
+    "packages.create",
+    "packages.read",
+    "packages.update",
+    "packages.delete",
+    "templates.create",
+    "templates.read",
+    "templates.update",
+    "templates.delete",
+    "communications.create",
+    "communications.read",
+    "communications.update",
+    "communications.delete",
+    // Invoices & Billing
+    "invoices.create",
+    "invoices.read",
+    "invoices.update",
+    "invoices.delete",
+    "billing.create",
+    "billing.read",
+    "billing.update",
+    "billing.delete",
+    // Dashboard & Reports
     "dashboard.read",
     "reports.read",
     "reports.export",
   ],
   manager: [
+    // User management
     "users.read",
+    // Client management
     "clients.create",
     "clients.read",
     "clients.update",
     "clients.assign",
+    // Tax calculations
     "tax_calculations.create",
     "tax_calculations.read",
     "tax_calculations.update",
     "tax_calculations.submit",
+    // Compliance
     "compliance.create",
     "compliance.read",
     "compliance.update",
     "compliance.approve",
+    // Documents
     "documents.create",
     "documents.read",
     "documents.update",
     "documents.share",
     "documents.approve",
+    // Service Catalog - Full access (managers need full service access)
+    "services.create",
+    "services.read",
+    "services.update",
+    "services.delete",
+    "projects.create",
+    "projects.read",
+    "projects.update",
+    "projects.delete",
+    "milestones.create",
+    "milestones.read",
+    "milestones.update",
+    "milestones.delete",
+    "timeEntries.create",
+    "timeEntries.read",
+    "timeEntries.update",
+    "timeEntries.delete",
+    "packages.create",
+    "packages.read",
+    "packages.update",
+    "packages.delete",
+    "templates.create",
+    "templates.read",
+    "templates.update",
+    "templates.delete",
+    "communications.create",
+    "communications.read",
+    "communications.update",
+    "communications.delete",
+    // Invoices & Billing
+    "invoices.create",
+    "invoices.read",
+    "invoices.update",
+    "billing.read",
+    "billing.create",
+    // Dashboard & Reports
     "dashboard.read",
     "reports.read",
     "reports.export",
   ],
   accountant: [
+    // Client management
     "clients.read",
     "clients.update",
+    // Tax calculations
     "tax_calculations.create",
     "tax_calculations.read",
     "tax_calculations.update",
     "tax_calculations.submit",
+    // Compliance
     "compliance.create",
     "compliance.read",
     "compliance.update",
+    // Documents
     "documents.create",
     "documents.read",
     "documents.update",
     "documents.share",
+    // Service Catalog - Read + create for work tracking
+    "services.read",
+    "projects.read",
+    "projects.update",
+    "milestones.read",
+    "milestones.update",
+    "timeEntries.create",
+    "timeEntries.read",
+    "timeEntries.update",
+    "packages.read",
+    "templates.read",
+    "communications.create",
+    "communications.read",
+    // Invoices & Billing
+    "invoices.create",
+    "invoices.read",
+    "invoices.update",
+    "billing.read",
+    // Dashboard & Reports
     "dashboard.read",
     "reports.read",
   ],
   client_service: [
+    // Client management
     "clients.create",
     "clients.read",
     "clients.update",
+    // Documents
     "documents.create",
     "documents.read",
     "documents.update",
     "documents.share",
+    // Service Catalog - Read access + communications
+    "services.read",
+    "projects.read",
+    "milestones.read",
+    "packages.read",
+    "templates.read",
+    "communications.create",
+    "communications.read",
+    // Invoices - Read only
+    "invoices.read",
+    "billing.read",
+    // Dashboard
     "dashboard.read",
   ],
   read_only: [
+    // Client management
     "clients.read",
+    // Tax calculations
     "tax_calculations.read",
+    // Compliance
     "compliance.read",
+    // Documents
     "documents.read",
+    // Service Catalog - Read only
+    "services.read",
+    "projects.read",
+    "milestones.read",
+    "timeEntries.read",
+    "packages.read",
+    "templates.read",
+    "communications.read",
+    // Invoices - Read only
+    "invoices.read",
+    "billing.read",
+    // Dashboard & Reports
     "dashboard.read",
     "reports.read",
   ],

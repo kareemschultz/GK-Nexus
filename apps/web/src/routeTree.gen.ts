@@ -20,6 +20,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as PayrollRouteImport } from './routes/payroll'
 import { Route as PartnerNetworkRouteImport } from './routes/partner-network'
+import { Route as ParalegalRouteImport } from './routes/paralegal'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocalContentRouteImport } from './routes/local-content'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -28,11 +29,11 @@ import { Route as ExpeditingRouteImport } from './routes/expediting'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ComplianceRouteImport } from './routes/compliance'
-import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AutomationRouteImport } from './routes/automation'
 import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as ClientsIndexRouteImport } from './routes/clients/index'
 import { Route as UsersRolesRouteImport } from './routes/users/roles'
 import { Route as UsersInviteRouteImport } from './routes/users/invite'
 import { Route as TimeTrackingTimerRouteImport } from './routes/time-tracking.timer'
@@ -138,6 +139,11 @@ const PartnerNetworkRoute = PartnerNetworkRouteImport.update({
   path: '/partner-network',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ParalegalRoute = ParalegalRouteImport.update({
+  id: '/paralegal',
+  path: '/paralegal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -178,11 +184,6 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClientsRoute = ClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AutomationRoute = AutomationRouteImport.update({
   id: '/automation',
   path: '/automation',
@@ -202,6 +203,11 @@ const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PortalRoute,
+} as any)
+const ClientsIndexRoute = ClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const UsersRolesRoute = UsersRolesRouteImport.update({
   id: '/roles',
@@ -389,19 +395,19 @@ const ComplianceAlertsRoute = ComplianceAlertsRouteImport.update({
   getParentRoute: () => ComplianceRoute,
 } as any)
 const ClientsNewRoute = ClientsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => ClientsRoute,
+  id: '/clients/new',
+  path: '/clients/new',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsActiveRoute = ClientsActiveRouteImport.update({
-  id: '/active',
-  path: '/active',
-  getParentRoute: () => ClientsRoute,
+  id: '/clients/active',
+  path: '/clients/active',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsIdRoute = ClientsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ClientsRoute,
+  id: '/clients/$id',
+  path: '/clients/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AutomationTemplatesRoute = AutomationTemplatesRouteImport.update({
   id: '/templates',
@@ -453,7 +459,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
-  '/clients': typeof ClientsRouteWithChildren
   '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
@@ -462,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof InvoicesRouteWithChildren
   '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/paralegal': typeof ParalegalRoute
   '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
@@ -520,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/time-tracking/timer': typeof TimeTrackingTimerRoute
   '/users/invite': typeof UsersInviteRoute
   '/users/roles': typeof UsersRolesRoute
+  '/clients': typeof ClientsIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
@@ -528,7 +535,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
-  '/clients': typeof ClientsRouteWithChildren
   '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
@@ -537,6 +543,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof InvoicesRouteWithChildren
   '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/paralegal': typeof ParalegalRoute
   '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/profile': typeof ProfileRoute
@@ -594,6 +601,7 @@ export interface FileRoutesByTo {
   '/time-tracking/timer': typeof TimeTrackingTimerRoute
   '/users/invite': typeof UsersInviteRoute
   '/users/roles': typeof UsersRolesRoute
+  '/clients': typeof ClientsIndexRoute
   '/portal': typeof PortalIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
@@ -603,7 +611,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/appointments': typeof AppointmentsRouteWithChildren
   '/automation': typeof AutomationRouteWithChildren
-  '/clients': typeof ClientsRouteWithChildren
   '/compliance': typeof ComplianceRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
@@ -612,6 +619,7 @@ export interface FileRoutesById {
   '/invoices': typeof InvoicesRouteWithChildren
   '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
+  '/paralegal': typeof ParalegalRoute
   '/partner-network': typeof PartnerNetworkRoute
   '/payroll': typeof PayrollRouteWithChildren
   '/portal': typeof PortalRouteWithChildren
@@ -670,6 +678,7 @@ export interface FileRoutesById {
   '/time-tracking/timer': typeof TimeTrackingTimerRoute
   '/users/invite': typeof UsersInviteRoute
   '/users/roles': typeof UsersRolesRoute
+  '/clients/': typeof ClientsIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
@@ -680,7 +689,6 @@ export interface FileRouteTypes {
     | '/'
     | '/appointments'
     | '/automation'
-    | '/clients'
     | '/compliance'
     | '/dashboard'
     | '/documents'
@@ -689,6 +697,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/local-content'
     | '/login'
+    | '/paralegal'
     | '/partner-network'
     | '/payroll'
     | '/portal'
@@ -747,6 +756,7 @@ export interface FileRouteTypes {
     | '/time-tracking/timer'
     | '/users/invite'
     | '/users/roles'
+    | '/clients'
     | '/portal/'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
@@ -755,7 +765,6 @@ export interface FileRouteTypes {
     | '/'
     | '/appointments'
     | '/automation'
-    | '/clients'
     | '/compliance'
     | '/dashboard'
     | '/documents'
@@ -764,6 +773,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/local-content'
     | '/login'
+    | '/paralegal'
     | '/partner-network'
     | '/payroll'
     | '/profile'
@@ -821,6 +831,7 @@ export interface FileRouteTypes {
     | '/time-tracking/timer'
     | '/users/invite'
     | '/users/roles'
+    | '/clients'
     | '/portal'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
@@ -829,7 +840,6 @@ export interface FileRouteTypes {
     | '/'
     | '/appointments'
     | '/automation'
-    | '/clients'
     | '/compliance'
     | '/dashboard'
     | '/documents'
@@ -838,6 +848,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/local-content'
     | '/login'
+    | '/paralegal'
     | '/partner-network'
     | '/payroll'
     | '/portal'
@@ -896,6 +907,7 @@ export interface FileRouteTypes {
     | '/time-tracking/timer'
     | '/users/invite'
     | '/users/roles'
+    | '/clients/'
     | '/portal/'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
@@ -905,7 +917,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppointmentsRoute: typeof AppointmentsRouteWithChildren
   AutomationRoute: typeof AutomationRouteWithChildren
-  ClientsRoute: typeof ClientsRouteWithChildren
   ComplianceRoute: typeof ComplianceRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
@@ -914,6 +925,7 @@ export interface RootRouteChildren {
   InvoicesRoute: typeof InvoicesRouteWithChildren
   LocalContentRoute: typeof LocalContentRoute
   LoginRoute: typeof LoginRoute
+  ParalegalRoute: typeof ParalegalRoute
   PartnerNetworkRoute: typeof PartnerNetworkRoute
   PayrollRoute: typeof PayrollRouteWithChildren
   PortalRoute: typeof PortalRouteWithChildren
@@ -925,6 +937,10 @@ export interface RootRouteChildren {
   TimeTrackingRoute: typeof TimeTrackingRouteWithChildren
   TrainingRoute: typeof TrainingRoute
   UsersRoute: typeof UsersRouteWithChildren
+  ClientsIdRoute: typeof ClientsIdRouteWithChildren
+  ClientsActiveRoute: typeof ClientsActiveRoute
+  ClientsNewRoute: typeof ClientsNewRoute
+  ClientsIndexRoute: typeof ClientsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1006,6 +1022,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnerNetworkRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/paralegal': {
+      id: '/paralegal'
+      path: '/paralegal'
+      fullPath: '/paralegal'
+      preLoaderRoute: typeof ParalegalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -1062,13 +1085,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clients': {
-      id: '/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/automation': {
       id: '/automation'
       path: '/automation'
@@ -1096,6 +1112,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/portal/'
       preLoaderRoute: typeof PortalIndexRouteImport
       parentRoute: typeof PortalRoute
+    }
+    '/clients/': {
+      id: '/clients/'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ClientsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/users/roles': {
       id: '/users/roles'
@@ -1358,24 +1381,24 @@ declare module '@tanstack/react-router' {
     }
     '/clients/new': {
       id: '/clients/new'
-      path: '/new'
+      path: '/clients/new'
       fullPath: '/clients/new'
       preLoaderRoute: typeof ClientsNewRouteImport
-      parentRoute: typeof ClientsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/clients/active': {
       id: '/clients/active'
-      path: '/active'
+      path: '/clients/active'
       fullPath: '/clients/active'
       preLoaderRoute: typeof ClientsActiveRouteImport
-      parentRoute: typeof ClientsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/clients/$id': {
       id: '/clients/$id'
-      path: '/$id'
+      path: '/clients/$id'
       fullPath: '/clients/$id'
       preLoaderRoute: typeof ClientsIdRouteImport
-      parentRoute: typeof ClientsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/automation/templates': {
       id: '/automation/templates'
@@ -1476,35 +1499,6 @@ const AutomationRouteChildren: AutomationRouteChildren = {
 const AutomationRouteWithChildren = AutomationRoute._addFileChildren(
   AutomationRouteChildren,
 )
-
-interface ClientsIdRouteChildren {
-  ClientsIdDocumentsRoute: typeof ClientsIdDocumentsRoute
-  ClientsIdEditRoute: typeof ClientsIdEditRoute
-}
-
-const ClientsIdRouteChildren: ClientsIdRouteChildren = {
-  ClientsIdDocumentsRoute: ClientsIdDocumentsRoute,
-  ClientsIdEditRoute: ClientsIdEditRoute,
-}
-
-const ClientsIdRouteWithChildren = ClientsIdRoute._addFileChildren(
-  ClientsIdRouteChildren,
-)
-
-interface ClientsRouteChildren {
-  ClientsIdRoute: typeof ClientsIdRouteWithChildren
-  ClientsActiveRoute: typeof ClientsActiveRoute
-  ClientsNewRoute: typeof ClientsNewRoute
-}
-
-const ClientsRouteChildren: ClientsRouteChildren = {
-  ClientsIdRoute: ClientsIdRouteWithChildren,
-  ClientsActiveRoute: ClientsActiveRoute,
-  ClientsNewRoute: ClientsNewRoute,
-}
-
-const ClientsRouteWithChildren =
-  ClientsRoute._addFileChildren(ClientsRouteChildren)
 
 interface ComplianceRouteChildren {
   ComplianceAlertsRoute: typeof ComplianceAlertsRoute
@@ -1666,11 +1660,24 @@ const UsersRouteChildren: UsersRouteChildren = {
 
 const UsersRouteWithChildren = UsersRoute._addFileChildren(UsersRouteChildren)
 
+interface ClientsIdRouteChildren {
+  ClientsIdDocumentsRoute: typeof ClientsIdDocumentsRoute
+  ClientsIdEditRoute: typeof ClientsIdEditRoute
+}
+
+const ClientsIdRouteChildren: ClientsIdRouteChildren = {
+  ClientsIdDocumentsRoute: ClientsIdDocumentsRoute,
+  ClientsIdEditRoute: ClientsIdEditRoute,
+}
+
+const ClientsIdRouteWithChildren = ClientsIdRoute._addFileChildren(
+  ClientsIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppointmentsRoute: AppointmentsRouteWithChildren,
   AutomationRoute: AutomationRouteWithChildren,
-  ClientsRoute: ClientsRouteWithChildren,
   ComplianceRoute: ComplianceRouteWithChildren,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
@@ -1679,6 +1686,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoicesRoute: InvoicesRouteWithChildren,
   LocalContentRoute: LocalContentRoute,
   LoginRoute: LoginRoute,
+  ParalegalRoute: ParalegalRoute,
   PartnerNetworkRoute: PartnerNetworkRoute,
   PayrollRoute: PayrollRouteWithChildren,
   PortalRoute: PortalRouteWithChildren,
@@ -1690,6 +1698,10 @@ const rootRouteChildren: RootRouteChildren = {
   TimeTrackingRoute: TimeTrackingRouteWithChildren,
   TrainingRoute: TrainingRoute,
   UsersRoute: UsersRouteWithChildren,
+  ClientsIdRoute: ClientsIdRouteWithChildren,
+  ClientsActiveRoute: ClientsActiveRoute,
+  ClientsNewRoute: ClientsNewRoute,
+  ClientsIndexRoute: ClientsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

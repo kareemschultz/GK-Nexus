@@ -45,7 +45,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/invoices/id")({
   component: RouteComponent,
@@ -107,19 +106,25 @@ function RouteComponent() {
   // Fetch invoice data
   const invoiceQuery = useQuery({
     queryKey: ["invoice", id],
-    queryFn: () => orpc.invoices.getById({ id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.getById({ id });
+    },
   });
 
   // Update mutation
   const updateInvoiceMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       id: string;
       status?: InvoiceStatus;
       items?: InvoiceItem[];
       dueDate?: string;
       notes?: string;
       paymentTerms?: string;
-    }) => orpc.invoices.update(data),
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.update(data);
+    },
     onSuccess: () => {
       invoiceQuery.refetch();
       setIsEditing(false);
@@ -131,7 +136,10 @@ function RouteComponent() {
 
   // Delete mutation
   const deleteInvoiceMutation = useMutation({
-    mutationFn: () => orpc.invoices.delete({ id }),
+    mutationFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.delete({ id });
+    },
     onSuccess: () => {
       navigate({ to: "/invoices" });
     },
@@ -202,10 +210,11 @@ function RouteComponent() {
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
+      currency: "GYD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
 
   const formatDate = (dateString: string) =>

@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/appointments/$id")({
   component: AppointmentDetailPage,
@@ -124,7 +123,10 @@ function AppointmentDetailPage() {
     error,
   } = useQuery({
     queryKey: ["appointment", id],
-    queryFn: () => orpc.appointments.getById({ id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.getById({ id });
+    },
   });
 
   const [appointment, setAppointment] = useState<AppointmentView | null>(null);
@@ -195,15 +197,17 @@ function AppointmentDetailPage() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       status?: string;
       priority?: string;
       notes?: string;
-    }) =>
-      orpc.appointments.update({
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.update({
         id,
         ...data,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment", id] });
     },
@@ -211,11 +215,13 @@ function AppointmentDetailPage() {
 
   // Cancel mutation
   const cancelMutation = useMutation({
-    mutationFn: (reason: string) =>
-      orpc.appointments.cancel({
+    mutationFn: async (reason: string) => {
+      const { client } = await import("@/utils/orpc");
+      return client.appointments.cancel({
         id,
         reason,
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment", id] });
       setShowCancelDialog(false);

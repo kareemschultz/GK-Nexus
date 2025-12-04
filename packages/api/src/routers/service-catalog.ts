@@ -2076,4 +2076,80 @@ export const serviceCatalogRouter = {
         message: "Communication deleted successfully",
       };
     }),
+
+  // ========================================
+  // STATISTICS ENDPOINTS
+  // ========================================
+  servicesStats: protectedProcedure
+    .use(requirePermission("services.read"))
+    .handler(async ({ context }) => {
+      const { db, user } = context;
+      const orgId = user?.organizationId || "default";
+
+      // Get all services for the organization
+      const allServices = await db
+        .select()
+        .from(serviceCatalogSchema.serviceCatalog)
+        .where(eq(serviceCatalogSchema.serviceCatalog.organizationId, orgId));
+
+      // Calculate stats by status
+      const byStatus = [
+        {
+          status: "ACTIVE",
+          count: allServices.filter((s) => s.status === "ACTIVE").length,
+        },
+        {
+          status: "INACTIVE",
+          count: allServices.filter((s) => s.status === "INACTIVE").length,
+        },
+        {
+          status: "COMING_SOON",
+          count: allServices.filter((s) => s.status === "COMING_SOON").length,
+        },
+        {
+          status: "DEPRECATED",
+          count: allServices.filter((s) => s.status === "DEPRECATED").length,
+        },
+      ];
+
+      // Calculate stats by category
+      const categoryMap = new Map<string, number>();
+      for (const service of allServices) {
+        const current = categoryMap.get(service.category) || 0;
+        categoryMap.set(service.category, current + 1);
+      }
+      const byCategory = Array.from(categoryMap.entries()).map(
+        ([category, count]) => ({
+          category,
+          count,
+        })
+      );
+
+      // Calculate stats by business entity
+      const entityMap = new Map<string, number>();
+      for (const service of allServices) {
+        const current = entityMap.get(service.businessEntity) || 0;
+        entityMap.set(service.businessEntity, current + 1);
+      }
+      const byEntity = Array.from(entityMap.entries()).map(
+        ([entity, count]) => ({
+          entity,
+          count,
+        })
+      );
+
+      return {
+        success: true,
+        data: {
+          total: allServices.length,
+          byStatus,
+          byCategory,
+          byEntity,
+          featured: allServices.filter((s) => s.isFeatured).length,
+          popular: allServices.filter((s) => s.isPopular).length,
+          graIntegration: allServices.filter((s) => s.graIntegration).length,
+          nisIntegration: allServices.filter((s) => s.nisIntegration).length,
+        },
+      };
+    }),
 };

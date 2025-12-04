@@ -377,10 +377,14 @@ export const userUtils = {
 
 /**
  * Tax calculation utilities
+ * Updated for 2025 Guyana Budget
  */
 export const taxUtils = {
   /**
    * Calculate PAYE tax for Guyana (2025 rates)
+   * - Tax-free threshold: GYD 130,000/month (GYD 1,560,000/year)
+   * - First band: 25% on income from GYD 130,001 - 260,000/month
+   * - Second band: 35% on income above GYD 260,000/month
    */
   calculatePAYE(
     grossIncome: number,
@@ -390,37 +394,29 @@ export const taxUtils = {
     tax: number;
     netIncome: number;
   } {
-    // 2025 Guyana PAYE rates and thresholds
-    const personalAllowance = period === "monthly" ? 65_000 : 780_000; // GYD 780,000 annually
-    const taxableIncome = Math.max(0, grossIncome - personalAllowance);
+    // 2025 Guyana PAYE rates and thresholds (updated from 28%/40% to 25%/35%)
+    const personalAllowance = period === "monthly" ? 130_000 : 1_560_000; // GYD 1,560,000 annually
+    const secondBandThreshold = period === "monthly" ? 260_000 : 3_120_000;
+
+    const FIRST_BAND_RATE = 0.25; // 25% (reduced from 28%)
+    const SECOND_BAND_RATE = 0.35; // 35% (reduced from 40%)
 
     let tax = 0;
-    const monthlyThreshold1 = 10_000; // First GYD 10,000 at 28%
-    const monthlyThreshold2 = 15_000; // Next GYD 15,000 at 30%
-    // Above GYD 25,000 at 40%
 
-    const threshold1 =
-      period === "monthly" ? monthlyThreshold1 : monthlyThreshold1 * 12;
-    const threshold2 =
-      period === "monthly" ? monthlyThreshold2 : monthlyThreshold2 * 12;
-
-    if (taxableIncome > 0) {
-      // First bracket: 28%
-      const bracket1 = Math.min(taxableIncome, threshold1);
-      tax += bracket1 * 0.28;
-
-      if (taxableIncome > threshold1) {
-        // Second bracket: 30%
-        const bracket2 = Math.min(taxableIncome - threshold1, threshold2);
-        tax += bracket2 * 0.3;
-
-        if (taxableIncome > threshold1 + threshold2) {
-          // Third bracket: 40%
-          const bracket3 = taxableIncome - threshold1 - threshold2;
-          tax += bracket3 * 0.4;
-        }
+    if (grossIncome > personalAllowance) {
+      if (grossIncome <= secondBandThreshold) {
+        // Only first band applies: 25% on amount above personal allowance
+        tax = (grossIncome - personalAllowance) * FIRST_BAND_RATE;
+      } else {
+        // Both bands apply
+        // First band: 25% on income from personal allowance to second band threshold
+        tax = (secondBandThreshold - personalAllowance) * FIRST_BAND_RATE;
+        // Second band: 35% on income above second band threshold
+        tax += (grossIncome - secondBandThreshold) * SECOND_BAND_RATE;
       }
     }
+
+    const taxableIncome = Math.max(0, grossIncome - personalAllowance);
 
     return {
       taxableIncome,

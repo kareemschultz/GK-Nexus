@@ -57,7 +57,6 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/advanced")({
   component: AdvancedDocumentManagementPage,
@@ -228,7 +227,10 @@ function AdvancedDocumentManagementPage() {
   // Fetch documents from API
   const { data: documentsResponse, isLoading } = useQuery({
     queryKey: ["documents", "list"],
-    queryFn: () => orpc.documents.list({}),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.documents.list({});
+    },
   });
 
   // Map API response to component format

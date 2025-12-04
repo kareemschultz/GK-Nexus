@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/clients/active")({
   component: ActiveCasesPage,
   beforeLoad: async () => {
@@ -66,7 +65,10 @@ function ActiveCasesPage() {
   // Fetch active clients from API
   const { data: clientsResponse, isLoading } = useQuery({
     queryKey: ["activeClients"],
-    queryFn: () => orpc.clients.list({ status: "active", page: 1, limit: 100 }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.list({ status: "active", page: 1, limit: 100 });
+    },
   });
 
   // Map clients to ActiveCase type

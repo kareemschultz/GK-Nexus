@@ -37,15 +37,28 @@ export const clientSchema = z.object({
   clientNumber: z.string().min(1),
   name: z.string().min(1).max(255),
   entityType: entityTypeSchema,
-  registrationNumber: z.string().nullable().optional(),
-  taxIdNumber: z.string().nullable().optional(),
+
+  // Guyana-specific fields
+  businessName: z.string().nullable().optional(), // For companies
+  firstName: z.string().nullable().optional(), // For individuals
+  middleName: z.string().nullable().optional(), // For individuals
+  lastName: z.string().nullable().optional(), // For individuals
+  tinNumber: z.string().nullable().optional(), // GRA TIN (9 digits)
+  nisNumber: z.string().nullable().optional(), // NIS number
+  registrationNumber: z.string().nullable().optional(), // Company registration
+  passportNumber: z.string().nullable().optional(), // For individuals
+  isLocalContentQualified: z.boolean().default(false), // Oil & Gas sector
+
+  // Legacy compatibility
+  taxIdNumber: z.string().nullable().optional(), // Alias for tinNumber
+
   email: z.string().email().nullable().optional(),
   phoneNumber: z.string().max(20).nullable().optional(),
   address: z.string().nullable().optional(),
   city: z.string().max(100).nullable().optional(),
-  state: z.string().max(100).nullable().optional(),
+  state: z.string().max(100).nullable().optional(), // Region in Guyana
   postalCode: z.string().max(20).nullable().optional(),
-  country: z.string().max(100).default("Barbados"),
+  country: z.string().max(100).default("Guyana"),
 
   // Status and compliance
   status: clientStatusSchema.default("pending_approval"),
@@ -85,12 +98,21 @@ export const clientSchema = z.object({
   updatedBy: z.string().nullable().optional(),
 });
 
-// Client creation wizard schemas
+// Client creation wizard schemas - Updated for Guyana
 export const clientWizardStep1Schema = z.object({
-  name: z.string().min(1).max(255),
   entityType: entityTypeSchema,
-  registrationNumber: z.string().optional(),
-  taxIdNumber: z.string().optional(),
+  // For individuals
+  firstName: z.string().optional(),
+  middleName: z.string().optional(),
+  lastName: z.string().optional(),
+  // For companies
+  businessName: z.string().optional(),
+  // Guyana government numbers
+  tinNumber: z.string().optional(), // GRA TIN
+  nisNumber: z.string().optional(), // NIS number
+  registrationNumber: z.string().optional(), // Company registration
+  passportNumber: z.string().optional(), // For individuals
+  isLocalContentQualified: z.boolean().default(false), // Oil & Gas sector
 });
 
 export const clientWizardStep2Schema = z.object({
@@ -98,42 +120,50 @@ export const clientWizardStep2Schema = z.object({
   phoneNumber: z.string().max(20).optional(),
   address: z.string().optional(),
   city: z.string().max(100).optional(),
-  state: z.string().max(100).optional(),
+  state: z.string().max(100).optional(), // Region in Guyana
   postalCode: z.string().max(20).optional(),
-  country: z.string().max(100).default("Barbados"),
+  country: z.string().max(100).default("Guyana"),
 });
 
 export const clientWizardStep3Schema = z.object({
-  estimatedAnnualRevenue: z.number().positive().optional(),
-  employeeCount: z.number().int().min(0).optional(),
-  incorporationDate: z.date().optional(),
-  fiscalYearEnd: z
-    .string()
-    .regex(/^\d{2}-\d{2}$/)
-    .optional(),
+  // Documents (handled separately)
+  hasUploadedDocs: z.boolean().default(false),
 });
 
 export const clientWizardStep4Schema = z.object({
+  selectedServices: z.array(z.string()).optional(),
+  additionalNotes: z.string().optional(),
   assignedAccountant: z.string().optional(),
   assignedManager: z.string().optional(),
-  primaryContact: z.string().optional(),
   riskLevel: riskLevelSchema.default("medium"),
-  notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
 });
 
 export const createClientSchema = z.object({
+  // Computed name field (firstName + lastName OR businessName)
   name: z.string().min(1).max(255),
   entityType: entityTypeSchema,
+  // Guyana-specific fields
+  businessName: z.string().optional(),
+  firstName: z.string().optional(),
+  middleName: z.string().optional(),
+  lastName: z.string().optional(),
+  tinNumber: z.string().optional(),
+  nisNumber: z.string().optional(),
   registrationNumber: z.string().optional(),
+  passportNumber: z.string().optional(),
+  isLocalContentQualified: z.boolean().default(false),
+  // Legacy compatibility
   taxIdNumber: z.string().optional(),
+  // Contact info
   email: z.string().email().optional(),
   phoneNumber: z.string().max(20).optional(),
   address: z.string().optional(),
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   postalCode: z.string().max(20).optional(),
-  country: z.string().max(100).default("Barbados"),
+  country: z.string().max(100).default("Guyana"),
+  // Financial info
   estimatedAnnualRevenue: z.number().positive().optional(),
   employeeCount: z.number().int().min(0).optional(),
   incorporationDate: z.date().optional(),
@@ -141,13 +171,18 @@ export const createClientSchema = z.object({
     .string()
     .regex(/^\d{2}-\d{2}$/)
     .optional(),
+  // Personnel
   assignedAccountant: z.string().optional(),
   assignedManager: z.string().optional(),
   primaryContact: z.string().optional(),
   riskLevel: riskLevelSchema.default("medium"),
+  // Additional
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
   customFields: z.record(z.any()).optional(),
+  // Status (for direct creation)
+  status: clientStatusSchema.optional(),
+  complianceStatus: complianceStatusSchema.optional(),
 });
 
 export const updateClientSchema = createClientSchema.partial().extend({

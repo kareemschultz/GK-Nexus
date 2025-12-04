@@ -98,7 +98,7 @@ const defaultUserData: UserProfile = {
   address: {
     street: "123 Main Street",
     city: "Georgetown",
-    region: "Demerara-Mahaica",
+    region: "region-4",
     postalCode: "00001",
     country: "Guyana",
   },
@@ -520,11 +520,36 @@ function ProfilePage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Demerara-Mahaica">
-                          Demerara-Mahaica
+                        <SelectItem value="region-1">
+                          Region 1 - Barima-Waini
                         </SelectItem>
-                        <SelectItem value="Berbice">Berbice</SelectItem>
-                        <SelectItem value="Essequibo">Essequibo</SelectItem>
+                        <SelectItem value="region-2">
+                          Region 2 - Pomeroon-Supenaam
+                        </SelectItem>
+                        <SelectItem value="region-3">
+                          Region 3 - Essequibo Islands-West Demerara
+                        </SelectItem>
+                        <SelectItem value="region-4">
+                          Region 4 - Demerara-Mahaica
+                        </SelectItem>
+                        <SelectItem value="region-5">
+                          Region 5 - Mahaica-Berbice
+                        </SelectItem>
+                        <SelectItem value="region-6">
+                          Region 6 - East Berbice-Corentyne
+                        </SelectItem>
+                        <SelectItem value="region-7">
+                          Region 7 - Cuyuni-Mazaruni
+                        </SelectItem>
+                        <SelectItem value="region-8">
+                          Region 8 - Potaro-Siparuni
+                        </SelectItem>
+                        <SelectItem value="region-9">
+                          Region 9 - Upper Takutu-Upper Essequibo
+                        </SelectItem>
+                        <SelectItem value="region-10">
+                          Region 10 - Upper Demerara-Berbice
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (

@@ -33,7 +33,6 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/clients/$id/edit")({
   component: RouteComponent,
@@ -108,13 +107,17 @@ function RouteComponent() {
   // Fetch client data from API
   const { data: clientResponse, isLoading } = useQuery({
     queryKey: ["client", id],
-    queryFn: () => orpc.clients.getById({ id }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.getById({ id });
+    },
   });
 
   // Update client mutation
   const updateMutation = useMutation({
-    mutationFn: (data: ClientFormData) =>
-      orpc.clients.update({
+    mutationFn: async (data: ClientFormData) => {
+      const { client } = await import("@/utils/orpc");
+      return client.clients.update({
         id,
         data: {
           name: data.name,
@@ -127,7 +130,8 @@ function RouteComponent() {
           riskLevel: data.riskLevel,
           assignedManager: data.accountManager,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client", id] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });

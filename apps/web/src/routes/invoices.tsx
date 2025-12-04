@@ -58,7 +58,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/invoices")({
   component: RouteComponent,
@@ -117,12 +116,18 @@ function RouteComponent() {
   // Fetch invoice data and stats
   const invoicesQuery = useQuery({
     queryKey: ["invoices", { status: statusFilter, search: searchTerm }],
-    queryFn: () => orpc.invoices.list({ status: statusFilter }),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.list({ status: statusFilter });
+    },
   });
 
   const statsQuery = useQuery({
     queryKey: ["invoiceStats"],
-    queryFn: () => orpc.invoices.stats(),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.invoices.stats();
+    },
   });
 
   const invoices = invoicesQuery.data?.invoices || [];
@@ -185,10 +190,11 @@ function RouteComponent() {
   };
 
   const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-US", {
+    new Intl.NumberFormat("en-GY", {
       style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
+      currency: "GYD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
 
   const formatDate = (dateString: string) =>
@@ -209,7 +215,8 @@ function RouteComponent() {
     newStatus: InvoiceStatus
   ) => {
     try {
-      await orpc.invoices.update({ id: invoiceId, status: newStatus });
+      const { client } = await import("@/utils/orpc");
+      await client.invoices.update({ id: invoiceId, status: newStatus });
       // Refetch data
       await invoicesQuery.refetch();
       await statsQuery.refetch();
@@ -220,7 +227,8 @@ function RouteComponent() {
 
   const handleDeleteInvoice = async (invoiceId: string) => {
     try {
-      await orpc.invoices.delete({ id: invoiceId });
+      const { client } = await import("@/utils/orpc");
+      await client.invoices.delete({ id: invoiceId });
       // Refetch data
       await invoicesQuery.refetch();
       await statsQuery.refetch();

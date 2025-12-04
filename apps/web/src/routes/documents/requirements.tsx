@@ -43,7 +43,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/documents/requirements")({
   component: DocumentRequirementsPage,
@@ -159,14 +158,20 @@ function DocumentRequirementsPage() {
   const { data: requirementsResponse, isLoading: isLoadingRequirements } =
     useQuery({
       queryKey: ["documents", "requirements"],
-      queryFn: () => orpc.documents.requirements.list({}),
+      queryFn: async () => {
+        const { client } = await import("@/utils/orpc");
+        return client.documents.requirements.list({});
+      },
     });
 
   // Fetch checklists from API
   const { data: checklistsResponse, isLoading: isLoadingChecklists } = useQuery(
     {
       queryKey: ["documents", "checklists"],
-      queryFn: () => orpc.documents.requirements.checklists({}),
+      queryFn: async () => {
+        const { client } = await import("@/utils/orpc");
+        return client.documents.requirements.checklists({});
+      },
     }
   );
 

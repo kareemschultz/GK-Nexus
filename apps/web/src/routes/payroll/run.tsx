@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -55,7 +54,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/payroll/run")({
   component: RouteComponent,
@@ -125,9 +123,7 @@ type GRAForm7B = {
 };
 
 function RouteComponent() {
-  const { session } = Route.useRouteContext();
   const navigate = useNavigate();
-  const _privateData = useQuery(orpc.privateData.queryOptions());
 
   const [currentStep, setCurrentStep] = useState<PayrollRunStep>("setup");
   const [payPeriod, setPayPeriod] = useState("2024-12");

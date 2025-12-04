@@ -62,7 +62,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/payroll/employees")({
   component: RouteComponent,
@@ -136,7 +135,10 @@ function RouteComponent() {
   // Fetch employees from API
   const { data: employeesResponse, isLoading } = useQuery({
     queryKey: ["payroll", "employees"],
-    queryFn: () => orpc.payroll.employees.list({}),
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.payroll.employees.list({});
+    },
   });
 
   // Map API response to component format
