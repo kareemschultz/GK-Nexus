@@ -83,7 +83,47 @@ export type Permission =
   | "reports.read"
   | "reports.export"
   // System
-  | "system.admin";
+  | "system.admin"
+  // Immigration
+  | "immigration.create"
+  | "immigration.read"
+  | "immigration.update"
+  | "immigration.delete"
+  // Expediting
+  | "expediting.create"
+  | "expediting.read"
+  | "expediting.update"
+  | "expediting.delete"
+  // Property Management
+  | "propertyManagement.create"
+  | "propertyManagement.read"
+  | "propertyManagement.update"
+  | "propertyManagement.delete"
+  // Training
+  | "training.create"
+  | "training.read"
+  | "training.update"
+  | "training.delete"
+  // Local Content
+  | "localContent.create"
+  | "localContent.read"
+  | "localContent.update"
+  | "localContent.delete"
+  // Partner Network
+  | "partnerNetwork.create"
+  | "partnerNetwork.read"
+  | "partnerNetwork.update"
+  | "partnerNetwork.delete"
+  // Payroll
+  | "payroll.create"
+  | "payroll.read"
+  | "payroll.update"
+  | "payroll.delete"
+  // Appointments
+  | "appointments.create"
+  | "appointments.read"
+  | "appointments.update"
+  | "appointments.delete";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   super_admin: [
@@ -162,6 +202,46 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "reports.export",
     // System
     "system.admin",
+    // Immigration
+    "immigration.create",
+    "immigration.read",
+    "immigration.update",
+    "immigration.delete",
+    // Expediting
+    "expediting.create",
+    "expediting.read",
+    "expediting.update",
+    "expediting.delete",
+    // Property Management
+    "propertyManagement.create",
+    "propertyManagement.read",
+    "propertyManagement.update",
+    "propertyManagement.delete",
+    // Training
+    "training.create",
+    "training.read",
+    "training.update",
+    "training.delete",
+    // Local Content
+    "localContent.create",
+    "localContent.read",
+    "localContent.update",
+    "localContent.delete",
+    // Partner Network
+    "partnerNetwork.create",
+    "partnerNetwork.read",
+    "partnerNetwork.update",
+    "partnerNetwork.delete",
+    // Payroll
+    "payroll.create",
+    "payroll.read",
+    "payroll.update",
+    "payroll.delete",
+    // Appointments
+    "appointments.create",
+    "appointments.read",
+    "appointments.update",
+    "appointments.delete",
   ],
   admin: [
     // User management
@@ -236,6 +316,46 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "dashboard.read",
     "reports.read",
     "reports.export",
+    // Immigration
+    "immigration.create",
+    "immigration.read",
+    "immigration.update",
+    "immigration.delete",
+    // Expediting
+    "expediting.create",
+    "expediting.read",
+    "expediting.update",
+    "expediting.delete",
+    // Property Management
+    "propertyManagement.create",
+    "propertyManagement.read",
+    "propertyManagement.update",
+    "propertyManagement.delete",
+    // Training
+    "training.create",
+    "training.read",
+    "training.update",
+    "training.delete",
+    // Local Content
+    "localContent.create",
+    "localContent.read",
+    "localContent.update",
+    "localContent.delete",
+    // Partner Network
+    "partnerNetwork.create",
+    "partnerNetwork.read",
+    "partnerNetwork.update",
+    "partnerNetwork.delete",
+    // Payroll
+    "payroll.create",
+    "payroll.read",
+    "payroll.update",
+    "payroll.delete",
+    // Appointments
+    "appointments.create",
+    "appointments.read",
+    "appointments.update",
+    "appointments.delete",
   ],
   manager: [
     // User management
@@ -300,6 +420,46 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "dashboard.read",
     "reports.read",
     "reports.export",
+    // Immigration
+    "immigration.create",
+    "immigration.read",
+    "immigration.update",
+    "immigration.delete",
+    // Expediting
+    "expediting.create",
+    "expediting.read",
+    "expediting.update",
+    "expediting.delete",
+    // Property Management
+    "propertyManagement.create",
+    "propertyManagement.read",
+    "propertyManagement.update",
+    "propertyManagement.delete",
+    // Training
+    "training.create",
+    "training.read",
+    "training.update",
+    "training.delete",
+    // Local Content
+    "localContent.create",
+    "localContent.read",
+    "localContent.update",
+    "localContent.delete",
+    // Partner Network
+    "partnerNetwork.create",
+    "partnerNetwork.read",
+    "partnerNetwork.update",
+    "partnerNetwork.delete",
+    // Payroll
+    "payroll.create",
+    "payroll.read",
+    "payroll.update",
+    "payroll.delete",
+    // Appointments
+    "appointments.create",
+    "appointments.read",
+    "appointments.update",
+    "appointments.delete",
   ],
   accountant: [
     // Client management
@@ -340,6 +500,26 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // Dashboard & Reports
     "dashboard.read",
     "reports.read",
+    // Immigration
+    "immigration.read",
+    // Expediting
+    "expediting.read",
+    // Property Management
+    "propertyManagement.read",
+    // Training
+    "training.read",
+    // Local Content
+    "localContent.read",
+    // Partner Network
+    "partnerNetwork.read",
+    // Payroll
+    "payroll.read",
+    "payroll.create",
+    "payroll.update",
+    // Appointments
+    "appointments.read",
+    "appointments.create",
+    "appointments.update",
   ],
   client_service: [
     // Client management
@@ -364,6 +544,23 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "billing.read",
     // Dashboard
     "dashboard.read",
+    // Immigration
+    "immigration.read",
+    // Expediting
+    "expediting.read",
+    // Property Management
+    "propertyManagement.read",
+    // Training
+    "training.read",
+    // Local Content
+    "localContent.read",
+    // Partner Network
+    "partnerNetwork.read",
+    // Payroll
+    "payroll.read",
+    // Appointments
+    "appointments.read",
+    "appointments.create",
   ],
   read_only: [
     // Client management
@@ -388,6 +585,22 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     // Dashboard & Reports
     "dashboard.read",
     "reports.read",
+    // Immigration
+    "immigration.read",
+    // Expediting
+    "expediting.read",
+    // Property Management
+    "propertyManagement.read",
+    // Training
+    "training.read",
+    // Local Content
+    "localContent.read",
+    // Partner Network
+    "partnerNetwork.read",
+    // Payroll
+    "payroll.read",
+    // Appointments
+    "appointments.read",
   ],
 };
 

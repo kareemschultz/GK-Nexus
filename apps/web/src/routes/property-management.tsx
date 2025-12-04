@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -64,7 +64,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/property-management")({
   component: PropertyManagementPage,
@@ -78,6 +77,7 @@ export const Route = createFileRoute("/property-management")({
 });
 
 function PropertyManagementPage() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("properties");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
