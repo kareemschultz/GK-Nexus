@@ -438,7 +438,7 @@ function RouteComponent() {
                   name="revenue"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Annual Revenue (USD)</FormLabel>
+                      <FormLabel>Annual Revenue (GYD)</FormLabel>
                       <FormControl>
                         <Input
                           min="0"
@@ -451,7 +451,7 @@ function RouteComponent() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Enter the annual revenue in USD
+                        Enter the annual revenue in GYD
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

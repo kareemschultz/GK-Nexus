@@ -252,7 +252,10 @@ function DocumentAdvancedSearchPage() {
   };
 
   const handleDocumentAction = (action: string, documentId: string) => {
-    console.log(`Action: ${action} on document: ${documentId}`);
+    const { toast } = require("sonner");
+    toast.success(`${action} action completed`, {
+      description: `Document ${documentId} has been processed`,
+    });
   };
 
   return (

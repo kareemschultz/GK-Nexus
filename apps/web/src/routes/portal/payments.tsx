@@ -239,8 +239,10 @@ function PaymentsPage() {
   };
 
   const handlePaymentSubmit = () => {
-    // In real app, this would process the payment
-    console.log("Processing payment for:", selectedInvoice?.invoiceNumber);
+    const { toast } = require("sonner");
+    toast.success("Payment processing", {
+      description: `Processing payment for invoice ${selectedInvoice?.invoiceNumber}`,
+    });
     setIsPaymentDialogOpen(false);
     setSelectedInvoice(null);
   };

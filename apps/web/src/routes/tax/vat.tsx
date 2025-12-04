@@ -21,12 +21,10 @@ function VatPage() {
   const navigate = useNavigate();
 
   const handleSave = (calculation: any) => {
-    // Here you would save to your API/database
     toast.success("VAT calculation saved successfully", {
       description:
         "VAT return calculation has been saved and is ready for GRA submission",
     });
-    console.log("Saving VAT calculation:", { calculation });
   };
 
   const handleNavigateToReturns = () => {

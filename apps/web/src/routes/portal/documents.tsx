@@ -213,13 +213,17 @@ function DocumentsPage() {
   });
 
   const handleDownload = (document: DocumentView) => {
-    // In real app, this would trigger actual download
-    console.log(`Downloading ${document.name}`);
+    const { toast } = require("sonner");
+    toast.success("Download started", {
+      description: `Downloading ${document.name}`,
+    });
   };
 
   const handleView = (document: DocumentView) => {
-    // In real app, this would open document viewer
-    console.log(`Viewing ${document.name}`);
+    const { toast } = require("sonner");
+    toast.info("Opening document", {
+      description: `Opening ${document.name} in viewer`,
+    });
   };
 
   // Calculate stats

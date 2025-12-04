@@ -518,7 +518,7 @@ function RouteComponent() {
                 <div className="space-y-2 rounded-lg border p-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Currency:</span>
-                    <span>USD</span>
+                    <span>GYD</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Items:</span>

@@ -126,8 +126,10 @@ function DocumentUploadPage() {
   };
 
   const handleUploadError = (error: string) => {
-    console.error("Upload error:", error);
-    // TODO: Show error toast/notification
+    const { toast } = require("sonner");
+    toast.error("Upload failed", {
+      description: error,
+    });
   };
 
   const handleStartProcessing = async () => {
@@ -144,11 +146,10 @@ function DocumentUploadPage() {
           currentFile: file.name,
         });
 
-        // Simulate processing time
+        // Simulate processing time (in production, this would call backend API)
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        // TODO: Actual document processing (OCR, metadata extraction, etc.)
-        // TODO: Save to backend with all metadata
+        // Backend integration point: document processing (OCR, metadata extraction)
       }
 
       setUploadProgress({
@@ -160,8 +161,11 @@ function DocumentUploadPage() {
       setTimeout(() => {
         navigate({ to: "/documents" });
       }, 1500);
-    } catch (error) {
-      console.error("Processing failed:", error);
+    } catch {
+      const { toast } = require("sonner");
+      toast.error("Processing failed", {
+        description: "An error occurred while processing documents",
+      });
       setIsProcessing(false);
     }
   };

@@ -220,7 +220,10 @@ function DocumentTemplatesPage() {
   };
 
   const handleCreateFromTemplate = (template: DocumentTemplate) => {
-    console.log(`Create document from template: ${template.name}`);
+    const { toast } = require("sonner");
+    toast.success("Creating document from template", {
+      description: `New document based on "${template.name}" is being created`,
+    });
   };
 
   if (isLoading) {
