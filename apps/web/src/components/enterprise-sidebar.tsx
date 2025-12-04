@@ -588,53 +588,72 @@ export function EnterpriseSidebar({ className }: EnterpriseSidebarProps) {
     const isExpanded = expandedItems.includes(item.title);
     const active = isActive(item.to);
 
+    // For items with children at level 0, clicking expands instead of navigating
+    // For child items (level > 0) or items without children, clicking navigates
+    const shouldExpandOnClick = hasChildren && level === 0 && !isCollapsed;
+
     return (
       <div className={cn("relative", level > 0 && "ml-4")} key={item.title}>
         <div className="flex items-center">
-          <Link
-            className={cn(
-              "flex flex-1 items-center gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-              active && "bg-accent text-accent-foreground",
-              isCollapsed && "justify-center px-2",
-              level > 0 && "ml-1 text-xs"
-            )}
-            to={item.to}
-          >
-            <item.icon
-              className={cn("h-4 w-4 flex-shrink-0", level > 0 && "h-3 w-3")}
-            />
-            {!isCollapsed && (
-              <>
-                <span className="flex-1">{item.title}</span>
-                {item.badge && (
-                  <Badge
-                    className="ml-auto h-5 w-5 p-0 text-xs"
-                    variant="destructive"
-                  >
-                    {item.badge}
-                  </Badge>
-                )}
-                {item.external && (
-                  <Badge className="ml-auto text-xs" variant="outline">
-                    External
-                  </Badge>
-                )}
-              </>
-            )}
-          </Link>
-          {hasChildren && !isCollapsed && (
-            <Button
-              className="h-8 w-8 p-0"
-              onClick={() => toggleExpanded(item.title)}
-              size="sm"
-              variant="ghost"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-3 w-3" />
-              ) : (
-                <ChevronRight className="h-3 w-3" />
+          {shouldExpandOnClick ? (
+            // Parent items with children - clicking expands/collapses
+            <button
+              className={cn(
+                "flex flex-1 items-center gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
+                active && "bg-accent text-accent-foreground"
               )}
-            </Button>
+              onClick={() => toggleExpanded(item.title)}
+              type="button"
+            >
+              <item.icon className="h-4 w-4 flex-shrink-0" />
+              <span className="flex-1 text-left">{item.title}</span>
+              {item.badge && (
+                <Badge
+                  className="ml-auto h-5 w-5 p-0 text-xs"
+                  variant="destructive"
+                >
+                  {item.badge}
+                </Badge>
+              )}
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
+          ) : (
+            // Child items or items without children - clicking navigates
+            <Link
+              className={cn(
+                "flex flex-1 items-center gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50",
+                active && "bg-accent text-accent-foreground",
+                isCollapsed && "justify-center px-2",
+                level > 0 && "ml-1 text-xs"
+              )}
+              to={item.to}
+            >
+              <item.icon
+                className={cn("h-4 w-4 flex-shrink-0", level > 0 && "h-3 w-3")}
+              />
+              {!isCollapsed && (
+                <>
+                  <span className="flex-1">{item.title}</span>
+                  {item.badge && (
+                    <Badge
+                      className="ml-auto h-5 w-5 p-0 text-xs"
+                      variant="destructive"
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                  {item.external && (
+                    <Badge className="ml-auto text-xs" variant="outline">
+                      External
+                    </Badge>
+                  )}
+                </>
+              )}
+            </Link>
           )}
         </div>
         {hasChildren && isExpanded && !isCollapsed && (

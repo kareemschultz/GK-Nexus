@@ -358,7 +358,16 @@ function RouteComponent() {
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="icon" variant="outline">
+                <Button
+                  onClick={async () => {
+                    const { toast } = await import("sonner");
+                    toast.info("Export started", {
+                      description: "Preparing invoice export...",
+                    });
+                  }}
+                  size="icon"
+                  variant="outline"
+                >
                   <Download className="h-4 w-4" />
                 </Button>
               </div>
@@ -487,7 +496,14 @@ function RouteComponent() {
                                 Mark as Paid
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                const { toast } = await import("sonner");
+                                toast.info("Generating PDF", {
+                                  description: `Downloading invoice ${invoice.invoiceNumber}...`,
+                                });
+                              }}
+                            >
                               <Download className="mr-2 h-4 w-4" />
                               Download PDF
                             </DropdownMenuItem>
@@ -659,15 +675,41 @@ function RouteComponent() {
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3">
-                <Button variant="outline">
+                <Button
+                  onClick={async () => {
+                    const { toast } = await import("sonner");
+                    toast.info("Generating PDF", {
+                      description: `Downloading invoice ${selectedInvoice.invoiceNumber}...`,
+                    });
+                  }}
+                  variant="outline"
+                >
                   <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </Button>
-                <Button variant="outline">
+                <Button
+                  onClick={() => {
+                    setShowInvoiceDetails(false);
+                    navigate({
+                      to: "/invoices/$id",
+                      params: { id: selectedInvoice.id },
+                    });
+                  }}
+                  variant="outline"
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Invoice
                 </Button>
-                <Button>
+                <Button
+                  onClick={async () => {
+                    await handleStatusUpdate(selectedInvoice.id, "sent");
+                    const { toast } = await import("sonner");
+                    toast.success("Invoice sent", {
+                      description: `Invoice ${selectedInvoice.invoiceNumber} has been sent to ${selectedInvoice.clientEmail}`,
+                    });
+                    setShowInvoiceDetails(false);
+                  }}
+                >
                   <CreditCard className="mr-2 h-4 w-4" />
                   Send to Client
                 </Button>

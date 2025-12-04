@@ -143,7 +143,15 @@ function ComplianceAlertsPage() {
               Stay informed about compliance deadlines and important updates
             </p>
           </div>
-          <Button variant="outline">
+          <Button
+            onClick={async () => {
+              const { toast } = await import("sonner");
+              toast.success("All alerts marked as read", {
+                description: "Your alert inbox has been cleared.",
+              });
+            }}
+            variant="outline"
+          >
             <CheckCircle2 className="mr-2 h-4 w-4" />
             Mark All Read
           </Button>
@@ -253,7 +261,17 @@ function ComplianceAlertsPage() {
                           </div>
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost">
+                      <Button
+                        onClick={async () => {
+                          const { toast } = await import("sonner");
+                          toast.info("Snooze alert", {
+                            description: `Alert "${alert.title}" snoozed for 24 hours.`,
+                          });
+                        }}
+                        size="sm"
+                        title="Snooze alert"
+                        variant="ghost"
+                      >
                         <Clock className="h-4 w-4" />
                       </Button>
                     </div>

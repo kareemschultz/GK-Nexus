@@ -430,6 +430,55 @@ export const ENTITY_TYPE_DOCUMENTS: Record<string, DocumentRequirement[]> = {
 };
 
 /**
+ * Map service IDs to their document category keys
+ * This maps the service values (e.g., WORK_PERMIT) to the SERVICE_SPECIFIC_DOCUMENTS keys (e.g., IMMIGRATION)
+ */
+const SERVICE_TO_DOCUMENT_CATEGORY: Record<string, string> = {
+  // Tax Compliance services - map to their specific document requirements
+  PAYE_FILING: "PAYE_FILING",
+  VAT_RETURN: "VAT_RETURN",
+  INCOME_TAX_RETURN: "INCOME_TAX_RETURN",
+  CORPORATION_TAX_RETURN: "INCOME_TAX_RETURN",
+  PROPERTY_TAX_RETURN: "INCOME_TAX_RETURN",
+  CAPITAL_GAINS_TAX: "INCOME_TAX_RETURN",
+  EXCISE_TAX_RETURN: "INCOME_TAX_RETURN",
+  TENDER_COMPLIANCE: "INCOME_TAX_RETURN",
+  WORK_PERMIT_COMPLIANCE: "INCOME_TAX_RETURN",
+  LAND_TRANSFER_COMPLIANCE: "INCOME_TAX_RETURN",
+  LIABILITY_COMPLIANCE: "INCOME_TAX_RETURN",
+  PENSION_COMPLIANCE: "INCOME_TAX_RETURN",
+  CERTIFICATE_OF_ASSESSMENT: "INCOME_TAX_RETURN",
+
+  // NIS Services - map to NIS_SUBMISSION documents
+  NIS_REGISTRATION: "NIS_SUBMISSION",
+  NIS_CONTRIBUTIONS: "NIS_SUBMISSION",
+  NIS_COMPLIANCE: "NIS_SUBMISSION",
+  NIS_PENSION_QUERY: "NIS_SUBMISSION",
+
+  // Business Development - map to BUSINESS_REGISTRATION documents
+  COMPANY_INCORPORATION: "BUSINESS_REGISTRATION",
+  BUSINESS_NAME_REGISTRATION: "BUSINESS_REGISTRATION",
+
+  // Immigration Services - map to IMMIGRATION documents
+  WORK_PERMIT: "IMMIGRATION",
+  WORK_PERMIT_RENEWAL: "IMMIGRATION",
+  CITIZENSHIP_APPLICATION: "IMMIGRATION",
+  BUSINESS_VISA: "IMMIGRATION",
+  RESIDENCE_PERMIT: "IMMIGRATION",
+
+  // Local Content Services - map to LOCAL_CONTENT documents
+  LOCAL_CONTENT_REGISTRATION: "LOCAL_CONTENT",
+  LOCAL_CONTENT_CERTIFICATION: "LOCAL_CONTENT",
+  LOCAL_CONTENT_COMPLIANCE: "LOCAL_CONTENT",
+
+  // Expediting Services - map to EXPEDITING documents
+  GRA_EXPEDITING: "EXPEDITING",
+  DEEDS_EXPEDITING: "EXPEDITING",
+  IMMIGRATION_EXPEDITING: "EXPEDITING",
+  GENERAL_EXPEDITING: "EXPEDITING",
+};
+
+/**
  * Get all required documents based on entity type and selected services
  */
 export function getRequiredDocuments(
@@ -453,7 +502,10 @@ export function getRequiredDocuments(
   const serviceDocuments: Map<string, DocumentRequirement> = new Map();
 
   for (const service of selectedServices) {
-    const docs = SERVICE_SPECIFIC_DOCUMENTS[service] || [];
+    // Map service ID to its document category key
+    const documentCategoryKey =
+      SERVICE_TO_DOCUMENT_CATEGORY[service] || service;
+    const docs = SERVICE_SPECIFIC_DOCUMENTS[documentCategoryKey] || [];
     for (const doc of docs) {
       // Only add if not already present (deduplicate)
       if (!serviceDocuments.has(doc.id)) {

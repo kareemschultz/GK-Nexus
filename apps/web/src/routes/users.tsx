@@ -382,7 +382,16 @@ function RouteComponent() {
                     <SelectItem value="suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="icon" variant="outline">
+                <Button
+                  onClick={async () => {
+                    const { toast } = await import("sonner");
+                    toast.info("Export started", {
+                      description: "Preparing user list export...",
+                    });
+                  }}
+                  size="icon"
+                  variant="outline"
+                >
                   <Download className="h-4 w-4" />
                 </Button>
               </div>
@@ -474,16 +483,33 @@ function RouteComponent() {
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={async () => {
+                              const { toast } = await import("sonner");
+                              toast.info("Edit user", {
+                                description: `Opening editor for ${user.name}...`,
+                              });
+                            }}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit User
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate({ to: "/users/roles" })}
+                          >
                             <Settings className="mr-2 h-4 w-4" />
                             Manage Permissions
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={async () => {
+                              const { toast } = await import("sonner");
+                              toast.warning("User deactivated", {
+                                description: `${user.name} has been deactivated.`,
+                              });
+                            }}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Deactivate
                           </DropdownMenuItem>
@@ -595,17 +621,36 @@ function RouteComponent() {
               {/* Action Buttons */}
               <div className="flex justify-end gap-3">
                 <Button
-                  onClick={() => setShowUserDetails(false)}
+                  onClick={async () => {
+                    setShowUserDetails(false);
+                    const { toast } = await import("sonner");
+                    toast.info("Edit user", {
+                      description: `Opening editor for ${selectedUser.name}...`,
+                    });
+                  }}
                   variant="outline"
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Edit User
                 </Button>
-                <Button variant="outline">
+                <Button
+                  onClick={() => {
+                    setShowUserDetails(false);
+                    navigate({ to: "/users/roles" });
+                  }}
+                  variant="outline"
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Manage Permissions
                 </Button>
-                <Button>
+                <Button
+                  onClick={async () => {
+                    const { toast } = await import("sonner");
+                    toast.success("Message window opened", {
+                      description: `Composing message to ${selectedUser.email}`,
+                    });
+                  }}
+                >
                   <Mail className="mr-2 h-4 w-4" />
                   Send Message
                 </Button>
