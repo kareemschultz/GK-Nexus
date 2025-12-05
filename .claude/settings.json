@@ -1,15 +1,39 @@
 {
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schema/settings.json",
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "npx ultracite fix"
+            "command": "npx ultracite fix ${file}"
           }
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "bun run*",
+      "bun install*",
+      "npx ultracite*",
+      "npx biome*",
+      "npx playwright*",
+      "npx drizzle*",
+      "curl*",
+      "grep*",
+      "find*",
+      "cat*",
+      "head*",
+      "tail*",
+      "ls*",
+      "cd*",
+      "pwd",
+      "docker compose*",
+      "docker ps*",
+      "echo*"
+    ],
+    "deny": ["rm -rf /", "rm -rf /*", "rm -rf ~", "sudo rm*"]
   }
 }

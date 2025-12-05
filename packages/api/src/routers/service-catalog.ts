@@ -475,7 +475,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.serviceCatalog.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -604,7 +604,7 @@ export const serviceCatalogRouter = {
         ...input,
         id: nanoid(),
         code: generateServiceCode(input.businessEntity, input.category),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         status: "ACTIVE" as const,
         createdBy: user?.id,
       };
@@ -688,10 +688,7 @@ export const serviceCatalogRouter = {
         .from(serviceCatalogSchema.serviceCatalog)
         .where(
           and(
-            eq(
-              serviceCatalogSchema.serviceCatalog.organizationId,
-              user?.organizationId || "default"
-            ),
+            eq(serviceCatalogSchema.serviceCatalog.organizationId, "default"),
             eq(
               serviceCatalogSchema.serviceCatalog.businessEntity,
               input.businessEntity
@@ -714,10 +711,7 @@ export const serviceCatalogRouter = {
         .from(serviceCatalogSchema.serviceCatalog)
         .where(
           and(
-            eq(
-              serviceCatalogSchema.serviceCatalog.organizationId,
-              user?.organizationId || "default"
-            ),
+            eq(serviceCatalogSchema.serviceCatalog.organizationId, "default"),
             eq(serviceCatalogSchema.serviceCatalog.isFeatured, true),
             eq(serviceCatalogSchema.serviceCatalog.status, "ACTIVE")
           )
@@ -740,7 +734,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.clientProjects.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -884,7 +878,7 @@ export const serviceCatalogRouter = {
         ...input,
         id: nanoid(),
         projectNumber: generateProjectNumber(),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         status: "DRAFT" as const,
         startDate: input.startDate ? new Date(input.startDate) : undefined,
         targetEndDate: input.targetEndDate
@@ -1019,10 +1013,7 @@ export const serviceCatalogRouter = {
         .from(serviceCatalogSchema.clientProjects)
         .where(
           and(
-            eq(
-              serviceCatalogSchema.clientProjects.organizationId,
-              user?.organizationId || "default"
-            ),
+            eq(serviceCatalogSchema.clientProjects.organizationId, "default"),
             eq(serviceCatalogSchema.clientProjects.clientId, input.clientId)
           )
         )
@@ -1242,7 +1233,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.timeEntries.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -1347,7 +1338,7 @@ export const serviceCatalogRouter = {
       const entryData = {
         ...input,
         id: nanoid(),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         userId: user?.id || "",
         date: new Date(input.date),
         totalAmount,
@@ -1461,7 +1452,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.servicePackages.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -1549,7 +1540,7 @@ export const serviceCatalogRouter = {
         ...input,
         id: nanoid(),
         code: generatePackageCode(input.businessEntity),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         status: "ACTIVE" as const,
         validFrom: input.validFrom ? new Date(input.validFrom) : undefined,
         validUntil: input.validUntil ? new Date(input.validUntil) : undefined,
@@ -1647,7 +1638,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.serviceDocumentTemplates.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -1756,7 +1747,7 @@ export const serviceCatalogRouter = {
         ...input,
         id: nanoid(),
         code: generateTemplateCode(input.businessEntity, input.category),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         status: "ACTIVE" as const,
         version: 1,
         isLatest: true,
@@ -1844,7 +1835,7 @@ export const serviceCatalogRouter = {
       const conditions = [
         eq(
           serviceCatalogSchema.clientCommunicationLog.organizationId,
-          filters.organizationId || user?.organizationId || "default"
+          filters.organizationId || "default"
         ),
       ];
 
@@ -1968,7 +1959,7 @@ export const serviceCatalogRouter = {
       const communicationData = {
         ...input,
         id: nanoid(),
-        organizationId: user?.organizationId || "default",
+        organizationId: "default",
         staffUserId: user?.id,
         scheduledAt: input.scheduledAt
           ? new Date(input.scheduledAt)
@@ -2019,8 +2010,8 @@ export const serviceCatalogRouter = {
     .use(requirePermission("communications.read"))
     .input(z.object({ organizationId: z.string().optional() }))
     .handler(async ({ input, context }) => {
-      const { db, user } = context;
-      const orgId = input.organizationId || user?.organizationId || "default";
+      const { db } = context;
+      const orgId = input.organizationId || "default";
 
       const pendingFollowUps = await db
         .select()
@@ -2083,8 +2074,8 @@ export const serviceCatalogRouter = {
   servicesStats: protectedProcedure
     .use(requirePermission("services.read"))
     .handler(async ({ context }) => {
-      const { db, user } = context;
-      const orgId = user?.organizationId || "default";
+      const { db } = context;
+      const orgId = "default";
 
       // Get all services for the organization
       const allServices = await db

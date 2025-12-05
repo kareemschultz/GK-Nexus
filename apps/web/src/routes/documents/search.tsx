@@ -62,7 +62,7 @@ function DocumentAdvancedSearchPage() {
     queryKey: ["clients"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clients.list({ page: 1, limit: 100 });
+      return client.clientList({ page: 1, limit: 100 });
     },
   });
 

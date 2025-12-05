@@ -80,15 +80,12 @@ const createRegistrationSchema = z.object({
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().optional(),
   address: z.string().optional(),
-  // Local ownership details
   guyaneseOwnershipPercent: z.string().optional(),
   guyaneseEmploymentPercent: z.string().optional(),
   guyaneseManagementPercent: z.string().optional(),
-  // Certifications
   hasTaxClearance: z.boolean().default(false),
   hasNisClearance: z.boolean().default(false),
   hasBusinessRegistration: z.boolean().default(false),
-  // Documents
   requiredDocuments: z.array(z.string()).optional(),
   submittedDocuments: z.array(z.string()).optional(),
   notes: z.string().optional(),
@@ -99,7 +96,6 @@ const createPlanSchema = z.object({
   planYear: z.number().min(2020).max(2100),
   planTitle: z.string().min(1),
   planDescription: z.string().optional(),
-  // Targets
   employmentTargets: z
     .object({
       totalJobs: z.number().optional(),
@@ -139,7 +135,6 @@ const createReportSchema = z.object({
   periodStartDate: z.string().datetime(),
   periodEndDate: z.string().datetime(),
   reportTitle: z.string().min(1),
-  // Employment data
   employmentData: z
     .object({
       totalEmployees: z.number().optional(),
@@ -150,7 +145,6 @@ const createReportSchema = z.object({
       guyaneseManagement: z.number().optional(),
     })
     .optional(),
-  // Procurement data
   procurementData: z
     .object({
       totalProcurement: z.string().optional(),
@@ -160,7 +154,6 @@ const createReportSchema = z.object({
       localVendorCount: z.number().optional(),
     })
     .optional(),
-  // Training data
   trainingData: z
     .object({
       trainingHours: z.number().optional(),
@@ -169,7 +162,6 @@ const createReportSchema = z.object({
       trainingExpenditure: z.string().optional(),
     })
     .optional(),
-  // Summary
   executiveSummary: z.string().optional(),
   challenges: z.string().optional(),
   achievements: z.string().optional(),
@@ -177,987 +169,1093 @@ const createReportSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const localContentRouter = {
-  // ===== REGISTRATIONS =====
-  registrations: {
-    list: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(registrationQuerySchema)
-      .handler(async ({ input, context }) => {
-        const {
+// ========================================
+// LOCAL CONTENT REGISTRATIONS (FLAT PROCEDURES)
+// ========================================
+
+export const localContentRegistrationsList = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(registrationQuerySchema)
+  .handler(async ({ input, context }) => {
+    const {
+      page,
+      limit,
+      search,
+      category,
+      complianceStatus,
+      clientId,
+      sortBy,
+      sortOrder,
+    } = input;
+    const { db } = context;
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+
+    if (search) {
+      conditions.push(
+        sql`(
+          ${ilike(localContentSchema.localContentRegistrations.companyName, `%${search}%`)} OR
+          ${ilike(localContentSchema.localContentRegistrations.registrationNumber, `%${search}%`)} OR
+          ${ilike(localContentSchema.localContentRegistrations.tinNumber, `%${search}%`)}
+        )`
+      );
+    }
+
+    if (category) {
+      conditions.push(
+        eq(
+          localContentSchema.localContentRegistrations.registrationType,
+          category
+        )
+      );
+    }
+
+    if (complianceStatus) {
+      conditions.push(
+        eq(
+          localContentSchema.localContentRegistrations.status,
+          complianceStatus
+        )
+      );
+    }
+
+    if (clientId) {
+      conditions.push(
+        eq(localContentSchema.localContentRegistrations.clientId, clientId)
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const totalResults = await db
+      .select({ count: count() })
+      .from(localContentSchema.localContentRegistrations)
+      .where(whereClause);
+
+    const totalResult = totalResults[0];
+    if (!totalResult) {
+      return {
+        success: true,
+        data: {
+          items: [],
+          pagination: { page, limit, total: 0, pages: 0 },
+        },
+      };
+    }
+
+    const sortColumn =
+      localContentSchema.localContentRegistrations[
+        sortBy as keyof typeof localContentSchema.localContentRegistrations
+      ] || localContentSchema.localContentRegistrations.createdAt;
+    const orderClause =
+      sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+    const registrations = await db
+      .select()
+      .from(localContentSchema.localContentRegistrations)
+      .where(whereClause)
+      .orderBy(orderClause)
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      success: true,
+      data: {
+        items: registrations,
+        pagination: {
           page,
           limit,
-          search,
-          category,
-          complianceStatus,
-          clientId,
-          sortBy,
-          sortOrder,
-        } = input;
-        const { db } = context;
-        const offset = (page - 1) * limit;
+          total: totalResult.count,
+          pages: Math.ceil(totalResult.count / limit),
+        },
+      },
+    };
+  });
 
-        const conditions = [];
+export const localContentRegistrationsGetById = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id } = input;
 
-        if (search) {
-          conditions.push(
-            sql`(
-              ${ilike(localContentSchema.localContentRegistrations.companyName, `%${search}%`)} OR
-              ${ilike(localContentSchema.localContentRegistrations.registrationNumber, `%${search}%`)} OR
-              ${ilike(localContentSchema.localContentRegistrations.tinNumber, `%${search}%`)}
-            )`
-          );
-        }
+    const [registration] = await db
+      .select()
+      .from(localContentSchema.localContentRegistrations)
+      .where(eq(localContentSchema.localContentRegistrations.id, id))
+      .limit(1);
 
-        if (category) {
-          conditions.push(
-            eq(localContentSchema.localContentRegistrations.category, category)
-          );
-        }
+    if (!registration) {
+      throw new ORPCError("NOT_FOUND", { message: "Registration not found" });
+    }
 
-        if (complianceStatus) {
-          conditions.push(
-            eq(
-              localContentSchema.localContentRegistrations.complianceStatus,
-              complianceStatus
-            )
-          );
-        }
+    const plans = await db
+      .select()
+      .from(localContentSchema.localContentPlans)
+      .where(eq(localContentSchema.localContentPlans.registrationId, id))
+      .orderBy(desc(localContentSchema.localContentPlans.periodStart));
 
-        if (clientId) {
-          conditions.push(
-            eq(localContentSchema.localContentRegistrations.clientId, clientId)
-          );
-        }
+    const reports = await db
+      .select()
+      .from(localContentSchema.localContentReports)
+      .where(eq(localContentSchema.localContentReports.registrationId, id))
+      .orderBy(desc(localContentSchema.localContentReports.periodEnd))
+      .limit(10);
 
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
+    return {
+      success: true,
+      data: {
+        ...registration,
+        plans,
+        recentReports: reports,
+      },
+    };
+  });
 
-        const [totalResult] = await db
-          .select({ count: count() })
-          .from(localContentSchema.localContentRegistrations)
-          .where(whereClause);
+export const localContentRegistrationsCreate = protectedProcedure
+  .use(requirePermission("localcontent.create"))
+  .input(createRegistrationSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
 
-        const sortColumn =
-          localContentSchema.localContentRegistrations[
-            sortBy as keyof typeof localContentSchema.localContentRegistrations
-          ] || localContentSchema.localContentRegistrations.createdAt;
-        const orderClause =
-          sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+    const registrationData = {
+      ...input,
+      id: nanoid(),
+      registrationNumber: generateRegistrationNumber(),
+      organizationId: "default", // TODO: Get from user context when organization support is added
+      registrationDate: new Date(),
+      status: "IN_PROGRESS" as const,
+      requiredDocuments: input.requiredDocuments
+        ? JSON.stringify(input.requiredDocuments)
+        : null,
+      submittedDocuments: input.submittedDocuments
+        ? JSON.stringify(input.submittedDocuments)
+        : null,
+      createdBy: user?.id,
+    };
 
-        const registrations = await db
-          .select()
-          .from(localContentSchema.localContentRegistrations)
-          .where(whereClause)
-          .orderBy(orderClause)
-          .limit(limit)
-          .offset(offset);
+    const [newRegistration] = await db
+      .insert(localContentSchema.localContentRegistrations)
+      .values(registrationData)
+      .returning();
 
-        return {
-          success: true,
-          data: {
-            items: registrations,
-            pagination: {
-              page,
-              limit,
-              total: totalResult.count,
-              pages: Math.ceil(totalResult.count / limit),
-            },
-          },
-        };
+    return {
+      success: true,
+      data: newRegistration,
+      message: "Local content registration created successfully",
+    };
+  });
+
+export const localContentRegistrationsUpdate = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: createRegistrationSchema.partial().extend({
+        complianceStatus: z.enum(complianceStatuses).optional(),
+        registrationDate: z.string().datetime().optional(),
+        expiryDate: z.string().datetime().optional(),
       }),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, data } = input;
 
-    getById: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id } = input;
+    const updateData = {
+      ...data,
+      requiredDocuments: data.requiredDocuments
+        ? JSON.stringify(data.requiredDocuments)
+        : undefined,
+      submittedDocuments: data.submittedDocuments
+        ? JSON.stringify(data.submittedDocuments)
+        : undefined,
+      registrationDate: data.registrationDate
+        ? new Date(data.registrationDate)
+        : undefined,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+    };
 
-        const [registration] = await db
-          .select()
-          .from(localContentSchema.localContentRegistrations)
-          .where(eq(localContentSchema.localContentRegistrations.id, id))
-          .limit(1);
+    const [updatedRegistration] = await db
+      .update(localContentSchema.localContentRegistrations)
+      .set(updateData)
+      .where(eq(localContentSchema.localContentRegistrations.id, id))
+      .returning();
 
-        if (!registration) {
-          throw new ORPCError("NOT_FOUND", "Registration not found");
-        }
+    if (!updatedRegistration) {
+      throw new ORPCError("NOT_FOUND", { message: "Registration not found" });
+    }
 
-        // Get plans and reports
-        const plans = await db
-          .select()
-          .from(localContentSchema.localContentPlans)
-          .where(eq(localContentSchema.localContentPlans.registrationId, id))
-          .orderBy(desc(localContentSchema.localContentPlans.planYear));
+    return {
+      success: true,
+      data: updatedRegistration,
+      message: "Registration updated successfully",
+    };
+  });
 
-        const reports = await db
-          .select()
-          .from(localContentSchema.localContentReports)
-          .where(eq(localContentSchema.localContentReports.registrationId, id))
-          .orderBy(desc(localContentSchema.localContentReports.periodEndDate))
-          .limit(10);
+export const localContentRegistrationsApprove = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      expiryDate: z.string().datetime().optional(),
+      notes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { id, expiryDate, notes } = input;
 
-        return {
-          success: true,
-          data: {
-            ...registration,
-            plans,
-            recentReports: reports,
-          },
-        };
-      }),
+    const [updatedRegistration] = await db
+      .update(localContentSchema.localContentRegistrations)
+      .set({
+        status: "COMPLIANT",
+        registrationDate: new Date(),
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
+        notes,
+      })
+      .where(eq(localContentSchema.localContentRegistrations.id, id))
+      .returning();
 
-    create: protectedProcedure
-      .use(requirePermission("localcontent.create"))
-      .input(createRegistrationSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
+    if (!updatedRegistration) {
+      throw new ORPCError("NOT_FOUND", { message: "Registration not found" });
+    }
 
-        const registrationData = {
-          ...input,
-          id: nanoid(),
-          registrationNumber: generateRegistrationNumber(),
-          organizationId: user?.organizationId || "default",
-          complianceStatus: "PENDING_REGISTRATION" as const,
-          requiredDocuments: input.requiredDocuments
-            ? JSON.stringify(input.requiredDocuments)
-            : null,
-          submittedDocuments: input.submittedDocuments
-            ? JSON.stringify(input.submittedDocuments)
-            : null,
-          createdBy: user?.id,
-        };
+    return {
+      success: true,
+      data: updatedRegistration,
+      message: "Registration approved successfully",
+    };
+  });
 
-        const [newRegistration] = await db
-          .insert(localContentSchema.localContentRegistrations)
-          .values(registrationData)
-          .returning();
+export const localContentRegistrationsStats = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .handler(async ({ context }) => {
+    const { db } = context;
 
-        return {
-          success: true,
-          data: newRegistration,
-          message: "Local content registration created successfully",
-        };
-      }),
+    const statusStats = await db
+      .select({
+        complianceStatus: localContentSchema.localContentRegistrations.status,
+        count: count(),
+      })
+      .from(localContentSchema.localContentRegistrations)
+      .groupBy(localContentSchema.localContentRegistrations.status);
 
-    update: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: createRegistrationSchema.partial().extend({
-            complianceStatus: z.enum(complianceStatuses).optional(),
-            registrationDate: z.string().datetime().optional(),
-            expiryDate: z.string().datetime().optional(),
-          }),
-        })
+    const categoryStats = await db
+      .select({
+        category: localContentSchema.localContentRegistrations.registrationType,
+        count: count(),
+      })
+      .from(localContentSchema.localContentRegistrations)
+      .groupBy(localContentSchema.localContentRegistrations.registrationType);
+
+    const totalResults = await db
+      .select({ total: count() })
+      .from(localContentSchema.localContentRegistrations);
+
+    const totalResult = totalResults[0];
+
+    return {
+      success: true,
+      data: {
+        total: totalResult?.total || 0,
+        byStatus: statusStats,
+        byCategory: categoryStats,
+      },
+    };
+  });
+
+// ========================================
+// LOCAL CONTENT PLANS (FLAT PROCEDURES)
+// ========================================
+
+export const localContentPlansList = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(
+    z.object({
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(100).default(20),
+      registrationId: z.string().optional(),
+      planYear: z.number().optional(),
+      status: z
+        .enum(["DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"])
+        .optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { page, limit, registrationId, status } = input;
+    const { db } = context;
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+
+    if (registrationId) {
+      conditions.push(
+        eq(localContentSchema.localContentPlans.registrationId, registrationId)
+      );
+    }
+
+    // Note: planYear removed - use periodStart/periodEnd instead
+    // if (planYear) {
+    //   conditions.push(
+    //     eq(localContentSchema.localContentPlans.fiscalYear, planYear)
+    //   );
+    // }
+
+    if (status) {
+      conditions.push(eq(localContentSchema.localContentPlans.status, status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const totalResults = await db
+      .select({ count: count() })
+      .from(localContentSchema.localContentPlans)
+      .where(whereClause);
+
+    const totalResult = totalResults[0];
+    if (!totalResult) {
+      return {
+        success: true,
+        data: {
+          items: [],
+          pagination: { page, limit, total: 0, pages: 0 },
+        },
+      };
+    }
+
+    const plans = await db
+      .select()
+      .from(localContentSchema.localContentPlans)
+      .where(whereClause)
+      .orderBy(desc(localContentSchema.localContentPlans.periodStart))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      success: true,
+      data: {
+        items: plans,
+        pagination: {
+          page,
+          limit,
+          total: totalResult.count,
+          pages: Math.ceil(totalResult.count / limit),
+        },
+      },
+    };
+  });
+
+export const localContentPlansCreate = protectedProcedure
+  .use(requirePermission("localcontent.create"))
+  .input(createPlanSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    // Get clientId from registration
+    const [registration] = await db
+      .select()
+      .from(localContentSchema.localContentRegistrations)
+      .where(
+        eq(
+          localContentSchema.localContentRegistrations.id,
+          input.registrationId
+        )
       )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, data } = input;
+      .limit(1);
 
-        const updateData = {
-          ...data,
-          requiredDocuments: data.requiredDocuments
-            ? JSON.stringify(data.requiredDocuments)
-            : undefined,
-          submittedDocuments: data.submittedDocuments
-            ? JSON.stringify(data.submittedDocuments)
-            : undefined,
-          registrationDate: data.registrationDate
-            ? new Date(data.registrationDate)
-            : undefined,
-          expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
-        };
+    if (!registration) {
+      throw new ORPCError("NOT_FOUND", { message: "Registration not found" });
+    }
 
-        const [updatedRegistration] = await db
-          .update(localContentSchema.localContentRegistrations)
-          .set(updateData)
-          .where(eq(localContentSchema.localContentRegistrations.id, id))
-          .returning();
+    const planData = {
+      id: nanoid(),
+      registrationId: input.registrationId,
+      clientId: registration.clientId,
+      planNumber: generatePlanNumber(),
+      planTitle: input.planTitle,
+      organizationId: "default", // TODO: Get from user context when organization support is added
+      status: "IN_PROGRESS" as const,
+      periodStart: input.submissionDate
+        ? new Date(input.submissionDate)
+        : new Date(),
+      periodEnd: input.approvalDate ? new Date(input.approvalDate) : new Date(),
+      employmentPlan: input.employmentTargets
+        ? JSON.stringify(input.employmentTargets)
+        : null,
+      procurementPlan: input.procurementTargets
+        ? JSON.stringify(input.procurementTargets)
+        : null,
+      trainingPlan: input.trainingTargets
+        ? JSON.stringify(input.trainingTargets)
+        : null,
+      technologyTransferPlan: input.technologyTransferTargets
+        ? JSON.stringify(input.technologyTransferTargets)
+        : null,
+      submittedDate: input.submissionDate
+        ? new Date(input.submissionDate)
+        : null,
+      approvedDate: input.approvalDate ? new Date(input.approvalDate) : null,
+      notes: input.notes || null,
+      currency: "GYD",
+      createdBy: user?.id,
+    };
 
-        if (!updatedRegistration) {
-          throw new ORPCError("NOT_FOUND", "Registration not found");
-        }
+    const [newPlan] = await db
+      .insert(localContentSchema.localContentPlans)
+      .values(planData)
+      .returning();
 
-        return {
-          success: true,
-          data: updatedRegistration,
-          message: "Registration updated successfully",
-        };
+    return {
+      success: true,
+      data: newPlan,
+      message: "Local content plan created successfully",
+    };
+  });
+
+export const localContentPlansUpdate = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: createPlanSchema.partial().extend({
+        status: z
+          .enum(["DRAFT", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"])
+          .optional(),
       }),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, data } = input;
 
-    approve: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          expiryDate: z.string().datetime().optional(),
-          notes: z.string().optional(),
-        })
+    const updateData: Record<string, unknown> = {};
+
+    if (data.planTitle) updateData.planTitle = data.planTitle;
+    if (data.planDescription) updateData.notes = data.planDescription;
+    if (data.status) updateData.status = data.status;
+    if (data.employmentTargets)
+      updateData.employmentPlan = JSON.stringify(data.employmentTargets);
+    if (data.procurementTargets)
+      updateData.procurementPlan = JSON.stringify(data.procurementTargets);
+    if (data.trainingTargets)
+      updateData.trainingPlan = JSON.stringify(data.trainingTargets);
+    if (data.technologyTransferTargets)
+      updateData.technologyTransferPlan = JSON.stringify(
+        data.technologyTransferTargets
+      );
+    if (data.submissionDate)
+      updateData.submittedDate = new Date(data.submissionDate);
+    if (data.approvalDate)
+      updateData.approvedDate = new Date(data.approvalDate);
+    if (data.notes) updateData.notes = data.notes;
+
+    const [updatedPlan] = await db
+      .update(localContentSchema.localContentPlans)
+      .set(updateData)
+      .where(eq(localContentSchema.localContentPlans.id, id))
+      .returning();
+
+    if (!updatedPlan) {
+      throw new ORPCError("NOT_FOUND", { message: "Plan not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedPlan,
+      message: "Plan updated successfully",
+    };
+  });
+
+export const localContentPlansSubmit = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id } = input;
+
+    const [updatedPlan] = await db
+      .update(localContentSchema.localContentPlans)
+      .set({
+        status: "UNDER_REVIEW",
+        submittedDate: new Date(),
+      })
+      .where(eq(localContentSchema.localContentPlans.id, id))
+      .returning();
+
+    if (!updatedPlan) {
+      throw new ORPCError("NOT_FOUND", { message: "Plan not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedPlan,
+      message: "Plan submitted for review",
+    };
+  });
+
+// ========================================
+// LOCAL CONTENT REPORTS (FLAT PROCEDURES)
+// ========================================
+
+export const localContentReportsList = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(
+    z.object({
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(100).default(20),
+      registrationId: z.string().optional(),
+      reportPeriodType: z.enum(reportPeriodTypes).optional(),
+      status: z
+        .enum(["DRAFT", "SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"])
+        .optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { page, limit, registrationId, reportPeriodType, status } = input;
+    const { db } = context;
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+
+    if (registrationId) {
+      conditions.push(
+        eq(
+          localContentSchema.localContentReports.registrationId,
+          registrationId
+        )
+      );
+    }
+
+    if (reportPeriodType) {
+      conditions.push(
+        eq(
+          localContentSchema.localContentReports.reportPeriodType,
+          reportPeriodType
+        )
+      );
+    }
+
+    if (status) {
+      conditions.push(
+        eq(localContentSchema.localContentReports.status, status)
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const totalResults = await db
+      .select({ count: count() })
+      .from(localContentSchema.localContentReports)
+      .where(whereClause);
+
+    const totalResult = totalResults[0];
+    if (!totalResult) {
+      return {
+        success: true,
+        data: {
+          items: [],
+          pagination: { page, limit, total: 0, pages: 0 },
+        },
+      };
+    }
+
+    const reports = await db
+      .select()
+      .from(localContentSchema.localContentReports)
+      .where(whereClause)
+      .orderBy(desc(localContentSchema.localContentReports.periodEnd))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      success: true,
+      data: {
+        items: reports,
+        pagination: {
+          page,
+          limit,
+          total: totalResult.count,
+          pages: Math.ceil(totalResult.count / limit),
+        },
+      },
+    };
+  });
+
+export const localContentReportsCreate = protectedProcedure
+  .use(requirePermission("localcontent.create"))
+  .input(createReportSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    // Get clientId from registration
+    const [registration] = await db
+      .select()
+      .from(localContentSchema.localContentRegistrations)
+      .where(
+        eq(
+          localContentSchema.localContentRegistrations.id,
+          input.registrationId
+        )
       )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { id, expiryDate, notes } = input;
+      .limit(1);
 
-        const [updatedRegistration] = await db
-          .update(localContentSchema.localContentRegistrations)
-          .set({
-            complianceStatus: "REGISTERED",
-            registrationDate: new Date(),
-            expiryDate: expiryDate ? new Date(expiryDate) : null,
-            notes,
-            approvedBy: user?.id,
-          })
-          .where(eq(localContentSchema.localContentRegistrations.id, id))
-          .returning();
+    if (!registration) {
+      throw new ORPCError("NOT_FOUND", { message: "Registration not found" });
+    }
 
-        if (!updatedRegistration) {
-          throw new ORPCError("NOT_FOUND", "Registration not found");
-        }
+    const reportData = {
+      id: nanoid(),
+      registrationId: input.registrationId,
+      planId: input.planId || null,
+      clientId: registration.clientId,
+      reportNumber: generateReportNumber(),
+      reportTitle: input.reportTitle,
+      reportPeriodType: input.reportPeriodType,
+      organizationId: "default", // TODO: Get from user context when organization support is added
+      status: "IN_PROGRESS" as const,
+      periodStart: new Date(input.periodStartDate),
+      periodEnd: new Date(input.periodEndDate),
+      employmentReport: input.employmentData
+        ? JSON.stringify(input.employmentData)
+        : null,
+      procurementReport: input.procurementData
+        ? JSON.stringify(input.procurementData)
+        : null,
+      trainingReport: input.trainingData
+        ? JSON.stringify(input.trainingData)
+        : null,
+      notes: input.notes || null,
+      currency: "GYD",
+      createdBy: user?.id,
+    };
 
-        return {
-          success: true,
-          data: updatedRegistration,
-          message: "Registration approved successfully",
-        };
+    const [newReport] = await db
+      .insert(localContentSchema.localContentReports)
+      .values(reportData)
+      .returning();
+
+    return {
+      success: true,
+      data: newReport,
+      message: "Report created successfully",
+    };
+  });
+
+export const localContentReportsUpdate = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: createReportSchema.partial().extend({
+        status: z
+          .enum(["DRAFT", "SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED"])
+          .optional(),
       }),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, data } = input;
 
-    stats: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .handler(async ({ context }) => {
-        const { db } = context;
+    const updateData: Record<string, unknown> = {};
 
-        const statusStats = await db
-          .select({
-            complianceStatus:
-              localContentSchema.localContentRegistrations.complianceStatus,
-            count: count(),
-          })
-          .from(localContentSchema.localContentRegistrations)
-          .groupBy(
-            localContentSchema.localContentRegistrations.complianceStatus
-          );
+    if (data.reportTitle) updateData.reportTitle = data.reportTitle;
+    if (data.reportPeriodType)
+      updateData.reportPeriodType = data.reportPeriodType;
+    if (data.status) updateData.status = data.status;
+    if (data.periodStartDate)
+      updateData.periodStart = new Date(data.periodStartDate);
+    if (data.periodEndDate) updateData.periodEnd = new Date(data.periodEndDate);
+    if (data.employmentData)
+      updateData.employmentReport = JSON.stringify(data.employmentData);
+    if (data.procurementData)
+      updateData.procurementReport = JSON.stringify(data.procurementData);
+    if (data.trainingData)
+      updateData.trainingReport = JSON.stringify(data.trainingData);
+    if (data.executiveSummary) updateData.notes = data.executiveSummary;
+    if (data.notes) updateData.notes = data.notes;
 
-        const categoryStats = await db
-          .select({
-            category: localContentSchema.localContentRegistrations.category,
-            count: count(),
-          })
-          .from(localContentSchema.localContentRegistrations)
-          .groupBy(localContentSchema.localContentRegistrations.category);
+    const [updatedReport] = await db
+      .update(localContentSchema.localContentReports)
+      .set(updateData)
+      .where(eq(localContentSchema.localContentReports.id, id))
+      .returning();
 
-        const [totalResult] = await db
-          .select({ total: count() })
-          .from(localContentSchema.localContentRegistrations);
+    if (!updatedReport) {
+      throw new ORPCError("NOT_FOUND", { message: "Report not found" });
+    }
 
-        return {
-          success: true,
-          data: {
-            total: totalResult.total,
-            byStatus: statusStats,
-            byCategory: categoryStats,
-          },
-        };
+    return {
+      success: true,
+      data: updatedReport,
+      message: "Report updated successfully",
+    };
+  });
+
+export const localContentReportsSubmit = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id } = input;
+
+    const [updatedReport] = await db
+      .update(localContentSchema.localContentReports)
+      .set({
+        status: "UNDER_REVIEW",
+        submittedDate: new Date(),
+      })
+      .where(eq(localContentSchema.localContentReports.id, id))
+      .returning();
+
+    if (!updatedReport) {
+      throw new ORPCError("NOT_FOUND", { message: "Report not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedReport,
+      message: "Report submitted for review",
+    };
+  });
+
+// ========================================
+// LOCAL CONTENT VENDORS (FLAT PROCEDURES)
+// ========================================
+
+export const localContentVendorsList = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(
+    z.object({
+      search: z.string().optional(),
+      vendorType: z.string().optional(),
+      isGuyanese: z.boolean().optional(),
+      isActive: z.boolean().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { search, vendorType, isGuyanese, isActive } = input;
+    const { db } = context;
+
+    const conditions = [];
+
+    if (search) {
+      conditions.push(
+        sql`(
+          ${ilike(localContentSchema.localContentVendors.vendorName, `%${search}%`)} OR
+          ${ilike(localContentSchema.localContentVendors.tinNumber, `%${search}%`)}
+        )`
+      );
+    }
+
+    if (vendorType) {
+      conditions.push(
+        eq(localContentSchema.localContentVendors.vendorType, vendorType)
+      );
+    }
+
+    if (isGuyanese !== undefined) {
+      conditions.push(
+        eq(localContentSchema.localContentVendors.isGuyaneseOwned, isGuyanese)
+      );
+    }
+
+    if (isActive !== undefined) {
+      conditions.push(
+        eq(localContentSchema.localContentVendors.isActive, isActive)
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const vendors = await db
+      .select()
+      .from(localContentSchema.localContentVendors)
+      .where(whereClause)
+      .orderBy(asc(localContentSchema.localContentVendors.vendorName));
+
+    return { success: true, data: vendors };
+  });
+
+export const localContentVendorsCreate = protectedProcedure
+  .use(requirePermission("localcontent.create"))
+  .input(
+    z.object({
+      vendorName: z.string().min(1),
+      vendorType: z.string().min(1),
+      tradingName: z.string().optional(),
+      tinNumber: z.string().optional(),
+      businessRegistrationNumber: z.string().optional(),
+      localContentCertificateNumber: z.string().optional(),
+      contactName: z.string().optional(),
+      email: z.string().email().optional(),
+      phone: z.string().optional(),
+      address: z.string().optional(),
+      region: z.string().optional(),
+      isGuyaneseOwned: z.boolean().default(false),
+      guyaneseOwnershipPercent: z.string().optional(),
+      productsServices: z.array(z.string()).optional(),
+      industries: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const vendorData = {
+      id: nanoid(),
+      vendorCode: `VND-${nanoid(6).toUpperCase()}`,
+      vendorName: input.vendorName,
+      vendorType: input.vendorType,
+      tradingName: input.tradingName || null,
+      tinNumber: input.tinNumber || null,
+      businessRegistrationNumber: input.businessRegistrationNumber || null,
+      localContentCertificateNumber:
+        input.localContentCertificateNumber || null,
+      contactName: input.contactName || null,
+      email: input.email || null,
+      phone: input.phone || null,
+      address: input.address || null,
+      region: input.region || null,
+      organizationId: "default", // TODO: Get from user context when organization support is added
+      isGuyaneseOwned: input.isGuyaneseOwned,
+      guyaneseOwnershipPercent: input.guyaneseOwnershipPercent || null,
+      productsServices: input.productsServices
+        ? JSON.stringify(input.productsServices)
+        : null,
+      industries: input.industries ? JSON.stringify(input.industries) : null,
+      notes: input.notes || null,
+      isActive: true,
+      isApproved: false,
+      isVerified: false,
+      createdBy: user?.id,
+    };
+
+    const [newVendor] = await db
+      .insert(localContentSchema.localContentVendors)
+      .values(vendorData)
+      .returning();
+
+    return {
+      success: true,
+      data: newVendor,
+      message: "Vendor created successfully",
+    };
+  });
+
+export const localContentVendorsUpdate = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: z.object({
+        vendorName: z.string().min(1).optional(),
+        vendorType: z.string().optional(),
+        tradingName: z.string().optional(),
+        tinNumber: z.string().optional(),
+        contactName: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        address: z.string().optional(),
+        region: z.string().optional(),
+        isGuyaneseOwned: z.boolean().optional(),
+        guyaneseOwnershipPercent: z.string().optional(),
+        productsServices: z.array(z.string()).optional(),
+        industries: z.array(z.string()).optional(),
+        isActive: z.boolean().optional(),
+        isVerified: z.boolean().optional(),
+        notes: z.string().optional(),
       }),
-  },
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, data } = input;
 
-  // ===== PLANS =====
-  plans: {
-    list: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(
-        z.object({
-          page: z.number().min(1).default(1),
-          limit: z.number().min(1).max(100).default(20),
-          registrationId: z.string().optional(),
-          planYear: z.number().optional(),
-          status: z
-            .enum([
-              "DRAFT",
-              "SUBMITTED",
-              "UNDER_REVIEW",
-              "APPROVED",
-              "REJECTED",
-            ])
-            .optional(),
-        })
+    const updateData: Record<string, unknown> = {};
+
+    if (data.vendorName) updateData.vendorName = data.vendorName;
+    if (data.vendorType) updateData.vendorType = data.vendorType;
+    if (data.tradingName !== undefined)
+      updateData.tradingName = data.tradingName;
+    if (data.tinNumber !== undefined) updateData.tinNumber = data.tinNumber;
+    if (data.contactName !== undefined)
+      updateData.contactName = data.contactName;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.region !== undefined) updateData.region = data.region;
+    if (data.isGuyaneseOwned !== undefined)
+      updateData.isGuyaneseOwned = data.isGuyaneseOwned;
+    if (data.guyaneseOwnershipPercent !== undefined)
+      updateData.guyaneseOwnershipPercent = data.guyaneseOwnershipPercent;
+    if (data.productsServices)
+      updateData.productsServices = JSON.stringify(data.productsServices);
+    if (data.industries)
+      updateData.industries = JSON.stringify(data.industries);
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.isVerified !== undefined) updateData.isVerified = data.isVerified;
+    if (data.notes !== undefined) updateData.notes = data.notes;
+
+    const [updatedVendor] = await db
+      .update(localContentSchema.localContentVendors)
+      .set(updateData)
+      .where(eq(localContentSchema.localContentVendors.id, id))
+      .returning();
+
+    if (!updatedVendor) {
+      throw new ORPCError("NOT_FOUND", { message: "Vendor not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedVendor,
+      message: "Vendor updated successfully",
+    };
+  });
+
+// ========================================
+// LOCAL CONTENT CHECKLISTS (FLAT PROCEDURES)
+// ========================================
+
+export const localContentChecklistsList = protectedProcedure
+  .use(requirePermission("localcontent.read"))
+  .input(z.object({ registrationId: z.string().min(1) }))
+  .handler(async ({ input, context }) => {
+    const { registrationId } = input;
+    const { db } = context;
+
+    const checklists = await db
+      .select()
+      .from(localContentSchema.localContentChecklists)
+      .where(
+        eq(
+          localContentSchema.localContentChecklists.registrationId,
+          registrationId
+        )
       )
-      .handler(async ({ input, context }) => {
-        const { page, limit, registrationId, planYear, status } = input;
-        const { db } = context;
-        const offset = (page - 1) * limit;
-
-        const conditions = [];
-
-        if (registrationId) {
-          conditions.push(
-            eq(
-              localContentSchema.localContentPlans.registrationId,
-              registrationId
-            )
-          );
-        }
-
-        if (planYear) {
-          conditions.push(
-            eq(localContentSchema.localContentPlans.planYear, planYear)
-          );
-        }
-
-        if (status) {
-          conditions.push(
-            eq(localContentSchema.localContentPlans.status, status)
-          );
-        }
-
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
-
-        const [totalResult] = await db
-          .select({ count: count() })
-          .from(localContentSchema.localContentPlans)
-          .where(whereClause);
-
-        const plans = await db
-          .select()
-          .from(localContentSchema.localContentPlans)
-          .where(whereClause)
-          .orderBy(desc(localContentSchema.localContentPlans.planYear))
-          .limit(limit)
-          .offset(offset);
-
-        return {
-          success: true,
-          data: {
-            items: plans,
-            pagination: {
-              page,
-              limit,
-              total: totalResult.count,
-              pages: Math.ceil(totalResult.count / limit),
-            },
-          },
-        };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("localcontent.create"))
-      .input(createPlanSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const planData = {
-          ...input,
-          id: nanoid(),
-          planNumber: generatePlanNumber(),
-          organizationId: user?.organizationId || "default",
-          status: "DRAFT" as const,
-          employmentTargets: input.employmentTargets
-            ? JSON.stringify(input.employmentTargets)
-            : null,
-          procurementTargets: input.procurementTargets
-            ? JSON.stringify(input.procurementTargets)
-            : null,
-          trainingTargets: input.trainingTargets
-            ? JSON.stringify(input.trainingTargets)
-            : null,
-          technologyTransferTargets: input.technologyTransferTargets
-            ? JSON.stringify(input.technologyTransferTargets)
-            : null,
-          submissionDate: input.submissionDate
-            ? new Date(input.submissionDate)
-            : null,
-          approvalDate: input.approvalDate
-            ? new Date(input.approvalDate)
-            : null,
-          createdBy: user?.id,
-        };
-
-        const [newPlan] = await db
-          .insert(localContentSchema.localContentPlans)
-          .values(planData)
-          .returning();
-
-        return {
-          success: true,
-          data: newPlan,
-          message: "Local content plan created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: createPlanSchema.partial().extend({
-            status: z
-              .enum([
-                "DRAFT",
-                "SUBMITTED",
-                "UNDER_REVIEW",
-                "APPROVED",
-                "REJECTED",
-              ])
-              .optional(),
-          }),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, data } = input;
-
-        const updateData = {
-          ...data,
-          employmentTargets: data.employmentTargets
-            ? JSON.stringify(data.employmentTargets)
-            : undefined,
-          procurementTargets: data.procurementTargets
-            ? JSON.stringify(data.procurementTargets)
-            : undefined,
-          trainingTargets: data.trainingTargets
-            ? JSON.stringify(data.trainingTargets)
-            : undefined,
-          technologyTransferTargets: data.technologyTransferTargets
-            ? JSON.stringify(data.technologyTransferTargets)
-            : undefined,
-          submissionDate: data.submissionDate
-            ? new Date(data.submissionDate)
-            : undefined,
-          approvalDate: data.approvalDate
-            ? new Date(data.approvalDate)
-            : undefined,
-        };
-
-        const [updatedPlan] = await db
-          .update(localContentSchema.localContentPlans)
-          .set(updateData)
-          .where(eq(localContentSchema.localContentPlans.id, id))
-          .returning();
-
-        if (!updatedPlan) {
-          throw new ORPCError("NOT_FOUND", "Plan not found");
-        }
-
-        return {
-          success: true,
-          data: updatedPlan,
-          message: "Plan updated successfully",
-        };
-      }),
-
-    submit: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id } = input;
-
-        const [updatedPlan] = await db
-          .update(localContentSchema.localContentPlans)
-          .set({
-            status: "SUBMITTED",
-            submissionDate: new Date(),
-          })
-          .where(eq(localContentSchema.localContentPlans.id, id))
-          .returning();
-
-        if (!updatedPlan) {
-          throw new ORPCError("NOT_FOUND", "Plan not found");
-        }
-
-        return {
-          success: true,
-          data: updatedPlan,
-          message: "Plan submitted for review",
-        };
-      }),
-  },
-
-  // ===== REPORTS =====
-  reports: {
-    list: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(
-        z.object({
-          page: z.number().min(1).default(1),
-          limit: z.number().min(1).max(100).default(20),
-          registrationId: z.string().optional(),
-          reportPeriodType: z.enum(reportPeriodTypes).optional(),
-          status: z
-            .enum([
-              "DRAFT",
-              "SUBMITTED",
-              "UNDER_REVIEW",
-              "ACCEPTED",
-              "REJECTED",
-            ])
-            .optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { page, limit, registrationId, reportPeriodType, status } = input;
-        const { db } = context;
-        const offset = (page - 1) * limit;
-
-        const conditions = [];
-
-        if (registrationId) {
-          conditions.push(
-            eq(
-              localContentSchema.localContentReports.registrationId,
-              registrationId
-            )
-          );
-        }
-
-        if (reportPeriodType) {
-          conditions.push(
-            eq(
-              localContentSchema.localContentReports.reportPeriodType,
-              reportPeriodType
-            )
-          );
-        }
-
-        if (status) {
-          conditions.push(
-            eq(localContentSchema.localContentReports.status, status)
-          );
-        }
-
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
-
-        const [totalResult] = await db
-          .select({ count: count() })
-          .from(localContentSchema.localContentReports)
-          .where(whereClause);
-
-        const reports = await db
-          .select()
-          .from(localContentSchema.localContentReports)
-          .where(whereClause)
-          .orderBy(desc(localContentSchema.localContentReports.periodEndDate))
-          .limit(limit)
-          .offset(offset);
-
-        return {
-          success: true,
-          data: {
-            items: reports,
-            pagination: {
-              page,
-              limit,
-              total: totalResult.count,
-              pages: Math.ceil(totalResult.count / limit),
-            },
-          },
-        };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("localcontent.create"))
-      .input(createReportSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const reportData = {
-          ...input,
-          id: nanoid(),
-          reportNumber: generateReportNumber(),
-          organizationId: user?.organizationId || "default",
-          status: "DRAFT" as const,
-          periodStartDate: new Date(input.periodStartDate),
-          periodEndDate: new Date(input.periodEndDate),
-          employmentData: input.employmentData
-            ? JSON.stringify(input.employmentData)
-            : null,
-          procurementData: input.procurementData
-            ? JSON.stringify(input.procurementData)
-            : null,
-          trainingData: input.trainingData
-            ? JSON.stringify(input.trainingData)
-            : null,
-          createdBy: user?.id,
-        };
-
-        const [newReport] = await db
-          .insert(localContentSchema.localContentReports)
-          .values(reportData)
-          .returning();
-
-        return {
-          success: true,
-          data: newReport,
-          message: "Report created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: createReportSchema.partial().extend({
-            status: z
-              .enum([
-                "DRAFT",
-                "SUBMITTED",
-                "UNDER_REVIEW",
-                "ACCEPTED",
-                "REJECTED",
-              ])
-              .optional(),
-          }),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, data } = input;
-
-        const updateData = {
-          ...data,
-          periodStartDate: data.periodStartDate
-            ? new Date(data.periodStartDate)
-            : undefined,
-          periodEndDate: data.periodEndDate
-            ? new Date(data.periodEndDate)
-            : undefined,
-          employmentData: data.employmentData
-            ? JSON.stringify(data.employmentData)
-            : undefined,
-          procurementData: data.procurementData
-            ? JSON.stringify(data.procurementData)
-            : undefined,
-          trainingData: data.trainingData
-            ? JSON.stringify(data.trainingData)
-            : undefined,
-        };
-
-        const [updatedReport] = await db
-          .update(localContentSchema.localContentReports)
-          .set(updateData)
-          .where(eq(localContentSchema.localContentReports.id, id))
-          .returning();
-
-        if (!updatedReport) {
-          throw new ORPCError("NOT_FOUND", "Report not found");
-        }
-
-        return {
-          success: true,
-          data: updatedReport,
-          message: "Report updated successfully",
-        };
-      }),
-
-    submit: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id } = input;
-
-        const [updatedReport] = await db
-          .update(localContentSchema.localContentReports)
-          .set({
-            status: "SUBMITTED",
-            submissionDate: new Date(),
-          })
-          .where(eq(localContentSchema.localContentReports.id, id))
-          .returning();
-
-        if (!updatedReport) {
-          throw new ORPCError("NOT_FOUND", "Report not found");
-        }
-
-        return {
-          success: true,
-          data: updatedReport,
-          message: "Report submitted for review",
-        };
-      }),
-  },
-
-  // ===== VENDORS =====
-  vendors: {
-    list: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(
-        z.object({
-          search: z.string().optional(),
-          category: z.string().optional(),
-          isGuyanese: z.boolean().optional(),
-          isActive: z.boolean().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { search, category, isGuyanese, isActive } = input;
-        const { db } = context;
-
-        const conditions = [];
-
-        if (search) {
-          conditions.push(
-            sql`(
-              ${ilike(localContentSchema.localContentVendors.vendorName, `%${search}%`)} OR
-              ${ilike(localContentSchema.localContentVendors.tinNumber, `%${search}%`)}
-            )`
-          );
-        }
-
-        if (category) {
-          conditions.push(
-            ilike(
-              localContentSchema.localContentVendors.category,
-              `%${category}%`
-            )
-          );
-        }
-
-        if (isGuyanese !== undefined) {
-          conditions.push(
-            eq(
-              localContentSchema.localContentVendors.isGuyaneseOwned,
-              isGuyanese
-            )
-          );
-        }
-
-        if (isActive !== undefined) {
-          conditions.push(
-            eq(localContentSchema.localContentVendors.isActive, isActive)
-          );
-        }
-
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
-
-        const vendors = await db
-          .select()
-          .from(localContentSchema.localContentVendors)
-          .where(whereClause)
-          .orderBy(asc(localContentSchema.localContentVendors.vendorName));
-
-        return { success: true, data: vendors };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("localcontent.create"))
-      .input(
-        z.object({
-          registrationId: z.string().min(1),
-          vendorName: z.string().min(1),
-          category: z.string().optional(),
-          tinNumber: z.string().optional(),
-          nisNumber: z.string().optional(),
-          contactPerson: z.string().optional(),
-          contactEmail: z.string().email().optional(),
-          contactPhone: z.string().optional(),
-          address: z.string().optional(),
-          isGuyaneseOwned: z.boolean().default(false),
-          guyaneseOwnershipPercent: z.string().optional(),
-          servicesProvided: z.array(z.string()).optional(),
-          productsSupplied: z.array(z.string()).optional(),
-          notes: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const vendorData = {
-          ...input,
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          servicesProvided: input.servicesProvided
-            ? JSON.stringify(input.servicesProvided)
-            : null,
-          productsSupplied: input.productsSupplied
-            ? JSON.stringify(input.productsSupplied)
-            : null,
-          createdBy: user?.id,
-        };
-
-        const [newVendor] = await db
-          .insert(localContentSchema.localContentVendors)
-          .values(vendorData)
-          .returning();
-
-        return {
-          success: true,
-          data: newVendor,
-          message: "Vendor created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: z.object({
-            vendorName: z.string().min(1).optional(),
-            category: z.string().optional(),
-            tinNumber: z.string().optional(),
-            contactPerson: z.string().optional(),
-            contactEmail: z.string().email().optional(),
-            contactPhone: z.string().optional(),
-            address: z.string().optional(),
-            isGuyaneseOwned: z.boolean().optional(),
-            guyaneseOwnershipPercent: z.string().optional(),
-            servicesProvided: z.array(z.string()).optional(),
-            productsSupplied: z.array(z.string()).optional(),
-            isActive: z.boolean().optional(),
-            notes: z.string().optional(),
-          }),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, data } = input;
-
-        const updateData = {
-          ...data,
-          servicesProvided: data.servicesProvided
-            ? JSON.stringify(data.servicesProvided)
-            : undefined,
-          productsSupplied: data.productsSupplied
-            ? JSON.stringify(data.productsSupplied)
-            : undefined,
-        };
-
-        const [updatedVendor] = await db
-          .update(localContentSchema.localContentVendors)
-          .set(updateData)
-          .where(eq(localContentSchema.localContentVendors.id, id))
-          .returning();
-
-        if (!updatedVendor) {
-          throw new ORPCError("NOT_FOUND", "Vendor not found");
-        }
-
-        return {
-          success: true,
-          data: updatedVendor,
-          message: "Vendor updated successfully",
-        };
-      }),
-  },
-
-  // ===== CHECKLISTS =====
-  checklists: {
-    list: protectedProcedure
-      .use(requirePermission("localcontent.read"))
-      .input(z.object({ registrationId: z.string().min(1) }))
-      .handler(async ({ input, context }) => {
-        const { registrationId } = input;
-        const { db } = context;
-
-        const checklists = await db
-          .select()
-          .from(localContentSchema.localContentChecklists)
-          .where(
-            eq(
-              localContentSchema.localContentChecklists.registrationId,
-              registrationId
-            )
-          )
-          .orderBy(
-            asc(localContentSchema.localContentChecklists.checklistType)
-          );
-
-        return { success: true, data: checklists };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("localcontent.create"))
-      .input(
-        z.object({
-          registrationId: z.string().min(1),
-          checklistType: z.string().min(1),
-          checklistName: z.string().min(1),
-          items: z.array(
-            z.object({
-              item: z.string(),
-              required: z.boolean(),
-              completed: z.boolean().default(false),
-              notes: z.string().optional(),
-            })
-          ),
-          notes: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const checklistData = {
-          ...input,
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          items: JSON.stringify(input.items),
-          createdBy: user?.id,
-        };
-
-        const [newChecklist] = await db
-          .insert(localContentSchema.localContentChecklists)
-          .values(checklistData)
-          .returning();
-
-        return {
-          success: true,
-          data: newChecklist,
-          message: "Checklist created successfully",
-        };
-      }),
-
-    updateItem: protectedProcedure
-      .use(requirePermission("localcontent.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          itemIndex: z.number().min(0),
-          completed: z.boolean(),
-          notes: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, itemIndex, completed, notes } = input;
-
-        const [checklist] = await db
-          .select()
-          .from(localContentSchema.localContentChecklists)
-          .where(eq(localContentSchema.localContentChecklists.id, id))
-          .limit(1);
-
-        if (!checklist) {
-          throw new ORPCError("NOT_FOUND", "Checklist not found");
-        }
-
-        const items = JSON.parse((checklist.items as string) || "[]");
-        if (itemIndex >= items.length) {
-          throw new ORPCError("BAD_REQUEST", "Invalid item index");
-        }
-
-        items[itemIndex].completed = completed;
-        if (notes) {
-          items[itemIndex].notes = notes;
-        }
-
-        const [updatedChecklist] = await db
-          .update(localContentSchema.localContentChecklists)
-          .set({ items: JSON.stringify(items) })
-          .where(eq(localContentSchema.localContentChecklists.id, id))
-          .returning();
-
-        return {
-          success: true,
-          data: updatedChecklist,
-          message: "Checklist item updated",
-        };
-      }),
-  },
-};
+      .orderBy(asc(localContentSchema.localContentChecklists.category));
+
+    return { success: true, data: checklists };
+  });
+
+export const localContentChecklistsCreate = protectedProcedure
+  .use(requirePermission("localcontent.create"))
+  .input(
+    z.object({
+      registrationId: z.string().min(1),
+      category: z.enum([
+        "GOODS",
+        "SERVICES",
+        "EMPLOYMENT",
+        "TRAINING",
+        "TECHNOLOGY_TRANSFER",
+        "MANAGEMENT",
+        "OWNERSHIP",
+        "FINANCING",
+        "INSURANCE",
+        "LEGAL_SERVICES",
+        "RESEARCH_DEVELOPMENT",
+      ]),
+      itemCode: z.string().min(1),
+      itemDescription: z.string().min(1),
+      requirement: z.string().optional(),
+      legalReference: z.string().optional(),
+      targetValue: z.string().optional(),
+      targetPercent: z.string().optional(),
+      targetUnit: z.string().optional(),
+      isMandatory: z.boolean().default(true),
+      priority: z.string().default("medium"),
+      notes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const checklistData = {
+      id: nanoid(),
+      registrationId: input.registrationId,
+      category: input.category,
+      itemCode: input.itemCode,
+      itemDescription: input.itemDescription,
+      requirement: input.requirement || null,
+      legalReference: input.legalReference || null,
+      targetValue: input.targetValue || null,
+      targetPercent: input.targetPercent || null,
+      targetUnit: input.targetUnit || null,
+      isMandatory: input.isMandatory,
+      priority: input.priority,
+      notes: input.notes || null,
+      organizationId: "default", // TODO: Get from user context when organization support is added
+      evidenceProvided: false,
+      updatedBy: user?.id,
+    };
+
+    const [newChecklist] = await db
+      .insert(localContentSchema.localContentChecklists)
+      .values(checklistData)
+      .returning();
+
+    return {
+      success: true,
+      data: newChecklist,
+      message: "Checklist created successfully",
+    };
+  });
+
+export const localContentChecklistsUpdate = protectedProcedure
+  .use(requirePermission("localcontent.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      actualValue: z.string().optional(),
+      actualPercent: z.string().optional(),
+      isCompliant: z.boolean().optional(),
+      complianceNotes: z.string().optional(),
+      evidenceProvided: z.boolean().optional(),
+      evidenceDocuments: z.array(z.string()).optional(),
+      completedDate: z.string().datetime().optional(),
+      notes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { id, ...data } = input;
+
+    const updateData: Record<string, unknown> = {};
+
+    if (data.actualValue !== undefined)
+      updateData.actualValue = data.actualValue;
+    if (data.actualPercent !== undefined)
+      updateData.actualPercent = data.actualPercent;
+    if (data.isCompliant !== undefined)
+      updateData.isCompliant = data.isCompliant;
+    if (data.complianceNotes !== undefined)
+      updateData.complianceNotes = data.complianceNotes;
+    if (data.evidenceProvided !== undefined)
+      updateData.evidenceProvided = data.evidenceProvided;
+    if (data.evidenceDocuments)
+      updateData.evidenceDocuments = JSON.stringify(data.evidenceDocuments);
+    if (data.completedDate)
+      updateData.completedDate = new Date(data.completedDate);
+    if (data.notes !== undefined) updateData.notes = data.notes;
+    updateData.updatedBy = user?.id;
+
+    const [updatedChecklist] = await db
+      .update(localContentSchema.localContentChecklists)
+      .set(updateData)
+      .where(eq(localContentSchema.localContentChecklists.id, id))
+      .returning();
+
+    if (!updatedChecklist) {
+      throw new ORPCError("NOT_FOUND", { message: "Checklist not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedChecklist,
+      message: "Checklist item updated",
+    };
+  });

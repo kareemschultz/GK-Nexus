@@ -3,8 +3,9 @@ import crypto from "node:crypto";
 import { AIDocumentIntelligenceService } from "./ai-document-intelligence";
 import { BusinessIntelligenceAnalyticsService } from "./business-intelligence-analytics";
 import { EnhancedGRAIntegrationService } from "./enhanced-gra-integration";
+import { OcrProcessingService } from "./ocr-processing";
 
-export interface WorkflowExecution {
+export type WorkflowExecution = {
   workflowId: string;
   executionId: string;
   status: "pending" | "running" | "completed" | "failed" | "cancelled";
@@ -18,11 +19,11 @@ export interface WorkflowExecution {
     completedAt?: Date;
     result?: any;
     error?: string;
-    dependencies?: Array<string>;
+    dependencies?: string[];
   }>;
   context: {
     clientId?: string;
-    documentIds?: Array<string>;
+    documentIds?: string[];
     filingType?: string;
     priority: number;
     metadata: Record<string, any>;
@@ -36,9 +37,9 @@ export interface WorkflowExecution {
       externalApiCalls: number;
     };
   };
-}
+};
 
-export interface AIWorkflowConfig {
+export type AIWorkflowConfig = {
   id: string;
   name: string;
   description: string;
@@ -62,31 +63,31 @@ export interface AIWorkflowConfig {
       retryCount?: number;
       fallbackStep?: string;
     };
-    dependencies: Array<string>;
+    dependencies: string[];
   }>;
   parallelization: {
     enabled: boolean;
     maxConcurrent: number;
-    parallelGroups: Array<Array<string>>;
+    parallelGroups: string[][];
   };
   monitoring: {
     alertOnFailure: boolean;
-    notificationChannels: Array<string>;
+    notificationChannels: string[];
     performanceThresholds: {
       maxDuration: number;
       maxErrorRate: number;
     };
   };
-}
+};
 
-export interface SmartIntegrationRequest {
+export type SmartIntegrationRequest = {
   triggerType:
     | "document_processing"
     | "filing_preparation"
     | "compliance_check"
     | "analytics_update";
   inputData: {
-    documentIds?: Array<string>;
+    documentIds?: string[];
     clientId?: string;
     filingData?: Record<string, any>;
     timeRange?: { startDate: Date; endDate: Date };
@@ -113,16 +114,16 @@ export interface SmartIntegrationRequest {
     webhookSecret?: string;
     timeoutMs?: number;
   };
-}
+};
 
-export interface IntegrationResponse {
+export type IntegrationResponse = {
   requestId: string;
   workflowExecutionId: string;
   status: "accepted" | "processing" | "completed" | "failed";
   estimatedCompletion?: Date;
   results?: {
-    ocrResults?: Array<any>;
-    documentAnalysis?: Array<any>;
+    ocrResults?: any[];
+    documentAnalysis?: any[];
     filingStatus?: any;
     analyticsInsights?: any;
   };
@@ -147,9 +148,9 @@ export interface IntegrationResponse {
     dueDate?: Date;
     assignedTo?: string;
   }>;
-}
+};
 
-export interface MLModelOrchestration {
+export type MLModelOrchestration = {
   modelId: string;
   modelType:
     | "document_classifier"
@@ -180,15 +181,15 @@ export interface MLModelOrchestration {
     dataQuality: number;
     featureCount: number;
   };
-}
+};
 
 export class AIIntegrationOrchestratorService {
-  private ocrService: OcrProcessingService;
-  private documentIntelligence: AIDocumentIntelligenceService;
-  private graIntegration: EnhancedGRAIntegrationService;
-  private analyticsService: BusinessIntelligenceAnalyticsService;
+  private readonly ocrService: OcrProcessingService;
+  private readonly documentIntelligence: AIDocumentIntelligenceService;
+  private readonly graIntegration: EnhancedGRAIntegrationService;
+  private readonly analyticsService: BusinessIntelligenceAnalyticsService;
 
-  constructor(private ctx: Context) {
+  constructor(private readonly ctx: Context) {
     this.ocrService = new OcrProcessingService(ctx);
     this.documentIntelligence = new AIDocumentIntelligenceService(ctx);
     this.graIntegration = new EnhancedGRAIntegrationService(ctx);
@@ -283,7 +284,7 @@ export class AIIntegrationOrchestratorService {
       costOptimized: boolean;
       qualityFirst: boolean;
     };
-    customSteps?: Array<any>;
+    customSteps?: any[];
   }): Promise<AIWorkflowConfig> {
     const { templateType, name, description, optimization, customSteps } =
       params;
@@ -315,7 +316,7 @@ export class AIIntegrationOrchestratorService {
    * Intelligent document processing pipeline
    */
   async processDocumentsIntelligently(params: {
-    documentIds: Array<string>;
+    documentIds: string[];
     clientId: string;
     processingGoals: Array<
       "accuracy" | "speed" | "compliance" | "cost_efficiency"
@@ -335,7 +336,7 @@ export class AIIntegrationOrchestratorService {
       processingEfficiency: number;
       automationRate: number;
       qualityAssessment: any;
-      recommendedActions: Array<string>;
+      recommendedActions: string[];
     };
   }> {
     const {
@@ -441,12 +442,12 @@ export class AIIntegrationOrchestratorService {
   }): Promise<{
     submissionId: string;
     validationResults: any;
-    optimizationApplied: Array<string>;
+    optimizationApplied: string[];
     submissionStatus: string;
     predictedOutcome: {
       successProbability: number;
-      riskFactors: Array<string>;
-      recommendations: Array<string>;
+      riskFactors: string[];
+      recommendations: string[];
     };
   }> {
     const { filingData, filingType, clientId, taxYear, optimization } = params;
@@ -649,14 +650,14 @@ export class AIIntegrationOrchestratorService {
       message: string;
       metrics?: any;
     };
-    recommendations: Array<string>;
+    recommendations: string[];
   }> {
     const { action, modelId, modelType, trainingData, evaluationMetrics } =
       params;
 
     let modelInfo: MLModelOrchestration;
     let actionResult: any = { success: false, message: "" };
-    let recommendations: Array<string> = [];
+    let recommendations: string[] = [];
 
     switch (action) {
       case "deploy":
@@ -848,7 +849,7 @@ export class AIIntegrationOrchestratorService {
       // Calculate step duration
       const duration =
         stepExecution.completedAt.getTime() -
-        stepExecution.startedAt!.getTime();
+        stepExecution.startedAt?.getTime();
       execution.performance.stepDurations[step.id] = duration;
     } catch (error) {
       stepExecution.status = "failed";
@@ -930,7 +931,7 @@ export class AIIntegrationOrchestratorService {
     }
   }
 
-  private async executeAnalyticsStep(step: any, context: any): Promise<any> {
+  private async executeAnalyticsStep(step: any, _context: any): Promise<any> {
     switch (step.operation) {
       case "business_metrics":
         return await this.analyticsService.getBusinessMetricsDashboard(
@@ -975,7 +976,7 @@ export class AIIntegrationOrchestratorService {
     throw new Error("OCR processing timeout");
   }
 
-  private calculatePriority(goals: Array<string>): number {
+  private calculatePriority(goals: string[]): number {
     // AI-powered priority calculation based on goals
     const priorityMap: Record<string, number> = {
       accuracy: 5,
@@ -987,7 +988,7 @@ export class AIIntegrationOrchestratorService {
     return Math.max(...goals.map((goal) => priorityMap[goal] || 5));
   }
 
-  private calculateWorkflowPriority(context: any): number {
+  private calculateWorkflowPriority(_context: any): number {
     // Calculate workflow priority based on context
     return 5; // Default priority
   }
@@ -1008,15 +1009,15 @@ export class AIIntegrationOrchestratorService {
 
   // Placeholder implementations for complex operations
   private async getWorkflowTemplates(
-    triggerType: string
-  ): Promise<Array<AIWorkflowConfig>> {
+    _triggerType: string
+  ): Promise<AIWorkflowConfig[]> {
     // Return predefined workflow templates
     return [];
   }
 
   private async analyzeAndSelectWorkflow(
-    templates: Array<AIWorkflowConfig>,
-    request: SmartIntegrationRequest
+    templates: AIWorkflowConfig[],
+    _request: SmartIntegrationRequest
   ): Promise<AIWorkflowConfig> {
     // AI-powered workflow selection
     return templates[0] || this.getDefaultWorkflow();
@@ -1039,13 +1040,13 @@ export class AIIntegrationOrchestratorService {
   }
 
   // Additional private helper methods would be implemented here...
-  private async aggregateResults(execution: WorkflowExecution): Promise<any> {
+  private async aggregateResults(_execution: WorkflowExecution): Promise<any> {
     return {};
   }
 
   private async generateIntegrationInsights(
-    execution: WorkflowExecution,
-    results: any
+    _execution: WorkflowExecution,
+    _results: any
   ): Promise<any> {
     return {
       automationRate: 85,
@@ -1056,7 +1057,7 @@ export class AIIntegrationOrchestratorService {
 
   private calculatePerformanceMetrics(
     execution: WorkflowExecution,
-    startTime: number
+    _startTime: number
   ): any {
     return {
       processingTime: execution.performance.totalDuration,
@@ -1068,78 +1069,78 @@ export class AIIntegrationOrchestratorService {
   }
 
   private async generateNextActions(
-    results: any,
-    insights: any,
-    request: SmartIntegrationRequest
-  ): Promise<Array<any>> {
+    _results: any,
+    _insights: any,
+    _request: SmartIntegrationRequest
+  ): Promise<any[]> {
     return [];
   }
 
-  private async storeExecutionResults(data: any): Promise<void> {
+  private async storeExecutionResults(_data: any): Promise<void> {
     // Store execution data for learning and analytics
   }
 
   private async handleIntegrationError(
-    requestId: string,
-    error: any
+    _requestId: string,
+    _error: any
   ): Promise<void> {
     // Handle integration errors
   }
 
   private async generateWorkflowConfiguration(
-    templateType: string,
-    optimization: any,
-    customSteps?: Array<any>
+    _templateType: string,
+    _optimization: any,
+    _customSteps?: any[]
   ): Promise<AIWorkflowConfig> {
     return this.getDefaultWorkflow();
   }
 
   private async optimizeWorkflowWithAI(
     config: AIWorkflowConfig,
-    optimization: any
+    _optimization: any
   ): Promise<AIWorkflowConfig> {
     return config;
   }
 
   private async storeWorkflowConfiguration(
-    config: AIWorkflowConfig
+    _config: AIWorkflowConfig
   ): Promise<void> {
     // Store workflow configuration
   }
 
   private async extractStructuredDataIntelligently(
-    ocr: any,
-    classification: any,
-    goals: any
+    _ocr: any,
+    _classification: any,
+    _goals: any
   ): Promise<any> {
     return {};
   }
 
   private async assessDocumentQuality(
-    ocr: any,
-    structured: any
+    _ocr: any,
+    _structured: any
   ): Promise<number> {
     return 0.85;
   }
 
   private async autoSubmitForFiling(
-    documentId: string,
-    data: any,
-    clientId: string
+    _documentId: string,
+    _data: any,
+    _clientId: string
   ): Promise<void> {
     // Auto-submit for filing
   }
 
   private async handleDocumentProcessingError(
-    documentId: string,
-    error: any
+    _documentId: string,
+    _error: any
   ): Promise<void> {
     // Handle document processing errors
   }
 
   private async generateProcessingInsights(
-    documents: Array<any>,
-    goals: Array<string>
+    _documents: any[],
+    _goals: string[]
   ): Promise<any> {
     return {
       processingEfficiency: 92,
@@ -1149,25 +1150,28 @@ export class AIIntegrationOrchestratorService {
     };
   }
 
-  private async applyAutoCorrections(data: any, validation: any): Promise<any> {
+  private async applyAutoCorrections(
+    data: any,
+    _validation: any
+  ): Promise<any> {
     return data;
   }
 
   private async calculateOptimalSubmissionTime(
-    clientId: string,
-    filingType: string
+    _clientId: string,
+    _filingType: string
   ): Promise<Date> {
     return new Date(Date.now() + 24 * 60 * 60 * 1000); // Tomorrow
   }
 
-  private async applyRiskMitigation(data: any, assessment: any): Promise<any> {
+  private async applyRiskMitigation(data: any, _assessment: any): Promise<any> {
     return data;
   }
 
   private async predictFilingOutcome(
-    data: any,
-    validation: any,
-    clientId: string
+    _data: any,
+    _validation: any,
+    _clientId: string
   ): Promise<any> {
     return {
       successProbability: 0.95,
@@ -1176,31 +1180,31 @@ export class AIIntegrationOrchestratorService {
     };
   }
 
-  private async generateComplianceAlerts(compliance: any): Promise<Array<any>> {
+  private async generateComplianceAlerts(_compliance: any): Promise<any[]> {
     return [];
   }
 
   private async identifyRisksInRealTime(
-    scope: string,
-    targetId: string
+    _scope: string,
+    _targetId: string
   ): Promise<any> {
     return {};
   }
 
-  private async generateRiskAlerts(risks: any): Promise<Array<any>> {
+  private async generateRiskAlerts(_risks: any): Promise<any[]> {
     return [];
   }
 
   private async generateAIRecommendations(
-    insights: any,
-    timeframe: string
-  ): Promise<Array<any>> {
+    _insights: any,
+    _timeframe: string
+  ): Promise<any[]> {
     return [];
   }
 
   private async deployMLModel(
     modelType: string,
-    trainingData: any
+    _trainingData: any
   ): Promise<MLModelOrchestration> {
     return {
       modelId: crypto.randomUUID(),
@@ -1233,35 +1237,35 @@ export class AIIntegrationOrchestratorService {
   }
 
   private async retrainMLModel(
-    modelId: string,
+    _modelId: string,
     trainingData: any
   ): Promise<MLModelOrchestration> {
     return this.deployMLModel("document_classifier", trainingData);
   }
 
   private async evaluateMLModel(
-    modelId: string,
-    metrics: any
+    _modelId: string,
+    _metrics: any
   ): Promise<MLModelOrchestration> {
     return this.deployMLModel("document_classifier", {});
   }
 
   private async updateMLModel(
-    modelId: string,
-    params: any
+    _modelId: string,
+    _params: any
   ): Promise<MLModelOrchestration> {
     return this.deployMLModel("document_classifier", {});
   }
 
   private async rollbackMLModel(
-    modelId: string
+    _modelId: string
   ): Promise<MLModelOrchestration> {
     return this.deployMLModel("document_classifier", {});
   }
 
   private async generateModelOptimizationRecommendations(
-    model: MLModelOrchestration
-  ): Promise<Array<string>> {
+    _model: MLModelOrchestration
+  ): Promise<string[]> {
     return [
       "Increase training data",
       "Optimize hyperparameters",
@@ -1270,16 +1274,16 @@ export class AIIntegrationOrchestratorService {
   }
 
   private async handleWorkflowError(
-    execution: WorkflowExecution,
-    error: any
+    _execution: WorkflowExecution,
+    _error: any
   ): Promise<void> {
     // Handle workflow execution errors
   }
 
   private async handleStepError(
-    step: any,
-    stepExecution: any,
-    error: any
+    _step: any,
+    _stepExecution: any,
+    _error: any
   ): Promise<void> {
     // Handle individual step errors based on error handling strategy
   }

@@ -1,6 +1,6 @@
 import type { Context } from "@GK-Nexus/api/context";
 
-export interface BusinessMetrics {
+export type BusinessMetrics = {
   revenue: {
     current: number;
     previous: number;
@@ -27,9 +27,9 @@ export interface BusinessMetrics {
     riskLevel: "low" | "medium" | "high";
     upcomingDeadlines: number;
   };
-}
+};
 
-export interface TaxSeasonAnalytics {
+export type TaxSeasonAnalytics = {
   seasonPeriod: {
     start: Date;
     end: Date;
@@ -51,7 +51,7 @@ export interface TaxSeasonAnalytics {
     recommendedStaffing: Array<{
       period: string;
       requiredStaff: number;
-      skillsNeeded: Array<string>;
+      skillsNeeded: string[];
     }>;
     capacityBottlenecks: Array<{
       area: string;
@@ -71,16 +71,16 @@ export interface TaxSeasonAnalytics {
       impact: string;
     }>;
   };
-}
+};
 
-export interface ClientInsightsDashboard {
+export type ClientInsightsDashboard = {
   clientSegmentation: Array<{
     segment: string;
     size: number;
     revenue: number;
     profitability: number;
     growth: number;
-    characteristics: Array<string>;
+    characteristics: string[];
   }>;
   behaviorAnalysis: {
     communicationPreferences: Record<string, number>;
@@ -99,8 +99,8 @@ export interface ClientInsightsDashboard {
     clientId: string;
     clientName: string;
     riskScore: number;
-    riskFactors: Array<string>;
-    recommendations: Array<string>;
+    riskFactors: string[];
+    recommendations: string[];
   }>;
   opportunityAnalysis: Array<{
     opportunity: string;
@@ -109,9 +109,9 @@ export interface ClientInsightsDashboard {
     requiredInvestment: number;
     roi: number;
   }>;
-}
+};
 
-export interface ComplianceAnalytics {
+export type ComplianceAnalytics = {
   overallHealth: {
     complianceScore: number;
     trend: "improving" | "stable" | "declining";
@@ -146,16 +146,16 @@ export interface ComplianceAnalytics {
     documentationScore: number;
     processComplianceScore: number;
     systemComplianceScore: number;
-    recommendations: Array<string>;
+    recommendations: string[];
   };
-}
+};
 
-export interface OperationalIntelligence {
+export type OperationalIntelligence = {
   processEfficiency: Array<{
     process: string;
     currentDuration: number;
     targetDuration: number;
-    bottlenecks: Array<string>;
+    bottlenecks: string[];
     automationPotential: number;
   }>;
   resourceUtilization: Array<{
@@ -163,7 +163,7 @@ export interface OperationalIntelligence {
     utilization: number;
     capacity: number;
     efficiency: number;
-    recommendedActions: Array<string>;
+    recommendedActions: string[];
   }>;
   qualityMetrics: {
     errorRates: Array<{
@@ -173,7 +173,7 @@ export interface OperationalIntelligence {
     }>;
     clientSatisfaction: number;
     serviceQuality: number;
-    improvementAreas: Array<string>;
+    improvementAreas: string[];
   };
   costAnalysis: {
     operationalCosts: Array<{
@@ -189,9 +189,9 @@ export interface OperationalIntelligence {
       trend: string;
     }>;
   };
-}
+};
 
-export interface PredictiveAnalytics {
+export type PredictiveAnalytics = {
   revenueForecasting: Array<{
     period: string;
     predictedRevenue: number;
@@ -205,8 +205,8 @@ export interface PredictiveAnalytics {
     clientId: string;
     churnProbability: number;
     timeframe: string;
-    riskFactors: Array<string>;
-    preventiveActions: Array<string>;
+    riskFactors: string[];
+    preventiveActions: string[];
   }>;
   demandForecasting: Array<{
     service: string;
@@ -220,12 +220,12 @@ export interface PredictiveAnalytics {
     opportunity: string;
     marketSize: number;
     competitivePosition: string;
-    entryBarriers: Array<string>;
-    recommendations: Array<string>;
+    entryBarriers: string[];
+    recommendations: string[];
   }>;
-}
+};
 
-export interface AIInsights {
+export type AIInsights = {
   documentProcessing: {
     accuracyTrends: Array<{
       period: string;
@@ -257,10 +257,10 @@ export interface AIInsights {
     confidence: number;
     actionRequired: string;
   }>;
-}
+};
 
 export class BusinessIntelligenceAnalyticsService {
-  constructor(private ctx: Context) {}
+  constructor(_ctx: Context) {}
 
   /**
    * Generate comprehensive business metrics dashboard
@@ -361,10 +361,13 @@ export class BusinessIntelligenceAnalyticsService {
   async getClientInsightsDashboard(params: {
     analysisDepth: "basic" | "advanced" | "comprehensive";
     includePersonalization?: boolean;
-    segmentationCriteria?: Array<string>;
+    segmentationCriteria?: string[];
   }): Promise<ClientInsightsDashboard> {
-    const { analysisDepth, includePersonalization, segmentationCriteria } =
-      params;
+    const {
+      analysisDepth,
+      includePersonalization: _includePersonalization,
+      segmentationCriteria,
+    } = params;
 
     // AI-powered client segmentation
     const clientSegmentation = await this.performClientSegmentation(
@@ -402,7 +405,7 @@ export class BusinessIntelligenceAnalyticsService {
     const {
       scope,
       targetId,
-      includePredictive,
+      includePredictive: _includePredictive,
       riskTolerance = "moderate",
     } = params;
 
@@ -632,7 +635,7 @@ export class BusinessIntelligenceAnalyticsService {
   }> {
     const {
       reportType,
-      includeForecasting,
+      includeForecasting: _includeForecasting,
       stakeholderLevel = "executive",
     } = params;
 
@@ -674,7 +677,7 @@ export class BusinessIntelligenceAnalyticsService {
 
   // Private helper methods for calculations and analysis
 
-  private async calculateRevenueMetrics(timeRange: any, granularity: string) {
+  private async calculateRevenueMetrics(_timeRange: any, _granularity: string) {
     // Implementation would calculate actual revenue metrics from database
     return {
       current: 150_000,
@@ -685,7 +688,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async calculateClientMetrics(timeRange: any) {
+  private async calculateClientMetrics(_timeRange: any) {
     return {
       total: 250,
       active: 230,
@@ -695,7 +698,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async calculateEfficiencyMetrics(timeRange: any) {
+  private async calculateEfficiencyMetrics(_timeRange: any) {
     return {
       processingTime: 2.5, // hours
       automationRate: 75, // percentage
@@ -704,7 +707,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async calculateComplianceMetrics(timeRange: any) {
+  private async calculateComplianceMetrics(_timeRange: any) {
     return {
       onTimeFilings: 98.5, // percentage
       complianceScore: 92, // percentage
@@ -714,8 +717,8 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async forecastRevenue(
-    timeRange: any,
-    granularity: string
+    _timeRange: any,
+    _granularity: string
   ): Promise<number> {
     // AI-powered revenue forecasting
     return 162_000; // Predicted revenue for next period
@@ -745,7 +748,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async analyzeWorkloadDistribution(seasonPeriod: any, type: string) {
+  private async analyzeWorkloadDistribution(_seasonPeriod: any, _type: string) {
     // Analyze historical workload patterns
     return [
       { week: "Week 1", workload: 80, capacity: 100, utilization: 80 },
@@ -755,7 +758,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeClientBehaviorPatterns(seasonPeriod: any) {
+  private async analyzeClientBehaviorPatterns(_seasonPeriod: any) {
     return [
       {
         segment: "Small Business",
@@ -773,9 +776,9 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async generateResourceOptimization(
-    workload: any,
-    behavior: any,
-    level: string
+    _workload: any,
+    _behavior: any,
+    _level: string
   ) {
     return {
       recommendedStaffing: [
@@ -800,8 +803,8 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async generatePerformanceForecasting(
-    seasonPeriod: any,
-    taxSeason: any
+    _seasonPeriod: any,
+    _taxSeason: any
   ) {
     return {
       predictedVolume: [
@@ -821,7 +824,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async performClientSegmentation(criteria: any, depth: string) {
+  private async performClientSegmentation(_criteria: any, _depth: string) {
     return [
       {
         segment: "High Value Corporate",
@@ -850,7 +853,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeBehaviorPatterns(depth: string) {
+  private async analyzeBehaviorPatterns(_depth: string) {
     return {
       communicationPreferences: {
         email: 65,
@@ -886,7 +889,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeBusinessOpportunities(segmentation: any) {
+  private async analyzeBusinessOpportunities(_segmentation: any) {
     return [
       {
         opportunity: "Advisory Services Expansion",
@@ -901,7 +904,7 @@ export class BusinessIntelligenceAnalyticsService {
   // Additional private methods would continue here with similar implementations...
   // For brevity, I'll include just the key structural methods
 
-  private async calculateComplianceHealth(scope: string, targetId?: string) {
+  private async calculateComplianceHealth(_scope: string, _targetId?: string) {
     return {
       complianceScore: 92,
       trend: "improving" as const,
@@ -910,7 +913,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async analyzeFilingPerformance(scope: string, targetId?: string) {
+  private async analyzeFilingPerformance(_scope: string, _targetId?: string) {
     return {
       onTimeRate: 95.5,
       averageSubmissionDelay: 1.2,
@@ -922,9 +925,9 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async generateRiskHeatmap(
-    scope: string,
-    tolerance: string,
-    targetId?: string
+    _scope: string,
+    _targetId: string | undefined,
+    _tolerance: string
   ) {
     return [
       {
@@ -949,7 +952,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async assessAuditReadiness(scope: string, targetId?: string) {
+  private async assessAuditReadiness(_scope: string, _targetId?: string) {
     return {
       overallReadiness: 88,
       documentationScore: 92,
@@ -962,7 +965,10 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async analyzeProcessEfficiency(goals?: any, benchmarking?: boolean) {
+  private async analyzeProcessEfficiency(
+    _goals?: any,
+    _benchmarking?: boolean
+  ) {
     return [
       {
         process: "Tax Return Preparation",
@@ -974,7 +980,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeResourceUtilization(benchmarking?: boolean) {
+  private async analyzeResourceUtilization(_benchmarking?: boolean) {
     return [
       {
         resource: "Tax Preparers",
@@ -986,7 +992,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeQualityMetrics(goals?: any) {
+  private async analyzeQualityMetrics(_goals?: any) {
     return {
       errorRates: [
         {
@@ -1001,7 +1007,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async analyzeCosts(benchmarking?: boolean) {
+  private async analyzeCosts(_benchmarking?: boolean) {
     return {
       operationalCosts: [
         {
@@ -1023,9 +1029,9 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async predictRevenue(
-    horizon: number,
-    confidence: number,
-    scenarios?: boolean
+    _horizon: number,
+    _confidence: number,
+    _scenarios?: boolean
   ) {
     return [
       {
@@ -1040,7 +1046,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async predictClientChurn(horizon: number, confidence: number) {
+  private async predictClientChurn(_horizon: number, _confidence: number) {
     return [
       {
         clientId: "client-2",
@@ -1052,7 +1058,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async predictDemand(horizon: number, confidence: number) {
+  private async predictDemand(_horizon: number, _confidence: number) {
     return [
       {
         service: "Tax Advisory",
@@ -1065,7 +1071,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async identifyMarketOpportunities(horizon: number) {
+  private async identifyMarketOpportunities(_horizon: number) {
     return [
       {
         opportunity: "Digital Tax Services",
@@ -1077,7 +1083,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async analyzeDocumentProcessingInsights(focus?: any) {
+  private async analyzeDocumentProcessingInsights(_focus?: any) {
     return {
       accuracyTrends: [
         {
@@ -1101,7 +1107,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async identifyAutomationOpportunities(focus?: any) {
+  private async identifyAutomationOpportunities(_focus?: any) {
     return [
       {
         process: "Invoice data entry",
@@ -1113,7 +1119,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async generateIntelligentRecommendations(focus?: any) {
+  private async generateIntelligentRecommendations(_focus?: any) {
     return [
       {
         category: "Process Optimization",
@@ -1125,7 +1131,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async generateKeyMetricsSummary(reportType: string, level: string) {
+  private async generateKeyMetricsSummary(_reportType: string, _level: string) {
     return {
       revenue: { current: 150_000, growth: 7.1 },
       clients: { active: 230, new: 15 },
@@ -1134,7 +1140,7 @@ export class BusinessIntelligenceAnalyticsService {
     };
   }
 
-  private async identifyKeyTrends(reportType: string) {
+  private async identifyKeyTrends(_reportType: string) {
     return [
       {
         metric: "Client acquisition",
@@ -1149,7 +1155,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async generateAlerts(level: string) {
+  private async generateAlerts(_level: string) {
     return [
       {
         type: "Compliance",
@@ -1159,7 +1165,7 @@ export class BusinessIntelligenceAnalyticsService {
     ];
   }
 
-  private async generateExecutiveInsights(reportType: string, level: string) {
+  private async generateExecutiveInsights(_reportType: string, _level: string) {
     return [
       {
         category: "Revenue Growth",
@@ -1171,9 +1177,9 @@ export class BusinessIntelligenceAnalyticsService {
   }
 
   private async generateStrategicRecommendations(
-    metrics: any,
-    trends: any,
-    level: string
+    _metrics: any,
+    _trends: any,
+    _level: string
   ) {
     return [
       {

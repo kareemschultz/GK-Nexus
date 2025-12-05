@@ -67,7 +67,7 @@ function ActiveCasesPage() {
     queryKey: ["activeClients"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clients.list({ status: "active", page: 1, limit: 100 });
+      return client.clientList({ status: "active", page: 1, limit: 100 });
     },
   });
 

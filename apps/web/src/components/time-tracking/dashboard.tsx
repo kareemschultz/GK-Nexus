@@ -1,4 +1,4 @@
-import { Calendar, Clock, Play, TrendingUp, Users } from "lucide-react";
+import { Calendar, Clock, Play, Square, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-interface TimeEntry {
+type TimeEntry = {
   id: string;
   project: string;
   task: string;
@@ -16,9 +16,9 @@ interface TimeEntry {
   duration: number; // in minutes
   billable: boolean;
   description: string;
-}
+};
 
-interface ProjectStats {
+type ProjectStats = {
   id: string;
   name: string;
   client: string;
@@ -27,7 +27,7 @@ interface ProjectStats {
   budgetHours: number;
   progress: number;
   status: "active" | "completed" | "on-hold";
-}
+};
 
 const mockTimeEntries: TimeEntry[] = [
   {
@@ -147,6 +147,18 @@ export function TimeTrackingDashboard() {
   const stopTimer = () => {
     setIsTimerRunning(false);
     setCurrentTask(null);
+  };
+
+  const getProjectStatusVariant = (status: ProjectStats["status"]) => {
+    const variantMap: Record<
+      ProjectStats["status"],
+      "default" | "secondary" | "outline"
+    > = {
+      completed: "default",
+      active: "secondary",
+      "on-hold": "outline",
+    };
+    return variantMap[status];
   };
 
   return (
@@ -335,13 +347,7 @@ export function TimeTrackingDashboard() {
                       </div>
                       <div className="text-right">
                         <Badge
-                          variant={
-                            project.status === "completed"
-                              ? "default"
-                              : project.status === "active"
-                                ? "secondary"
-                                : "outline"
-                          }
+                          variant={getProjectStatusVariant(project.status)}
                         >
                           {project.status}
                         </Badge>

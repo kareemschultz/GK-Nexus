@@ -556,11 +556,11 @@ describe("API Endpoints", () => {
 
         const mockClientsRouter = {
           create: {
-            handler: vi
-              .fn()
-              .mockRejectedValue(
-                new ORPCError("BAD_REQUEST", "Validation failed")
-              ),
+            handler: vi.fn().mockRejectedValue(
+              new ORPCError("BAD_REQUEST", {
+                message: "Validation failed",
+              })
+            ),
           },
         };
 
@@ -579,11 +579,11 @@ describe("API Endpoints", () => {
 
         const mockClientsRouter = {
           create: {
-            handler: vi
-              .fn()
-              .mockRejectedValue(
-                new ORPCError("CONFLICT", "Email already exists")
-              ),
+            handler: vi.fn().mockRejectedValue(
+              new ORPCError("CONFLICT", {
+                message: "Email already exists",
+              })
+            ),
           },
         };
 
@@ -637,11 +637,11 @@ describe("API Endpoints", () => {
 
         const mockClientsRouter = {
           update: {
-            handler: vi
-              .fn()
-              .mockRejectedValue(
-                new ORPCError("NOT_FOUND", "Client not found")
-              ),
+            handler: vi.fn().mockRejectedValue(
+              new ORPCError("NOT_FOUND", {
+                message: "Client not found",
+              })
+            ),
           },
         };
 
@@ -753,14 +753,11 @@ describe("API Endpoints", () => {
 
         const mockClientsRouter = {
           delete: {
-            handler: vi
-              .fn()
-              .mockRejectedValue(
-                new ORPCError(
-                  "CONFLICT",
-                  "Cannot delete client with active records"
-                )
-              ),
+            handler: vi.fn().mockRejectedValue(
+              new ORPCError("CONFLICT", {
+                message: "Cannot delete client with active records",
+              })
+            ),
           },
         };
 
@@ -826,14 +823,11 @@ describe("API Endpoints", () => {
 
         const mockUsersRouter = {
           create: {
-            handler: vi
-              .fn()
-              .mockRejectedValue(
-                new ORPCError(
-                  "FORBIDDEN",
-                  "Cannot create user with higher privileges"
-                )
-              ),
+            handler: vi.fn().mockRejectedValue(
+              new ORPCError("FORBIDDEN", {
+                message: "Cannot create user with higher privileges",
+              })
+            ),
           },
         };
 
@@ -986,7 +980,9 @@ describe("API Endpoints", () => {
 
     it("should handle various error scenarios", async () => {
       for (const [scenarioName, scenario] of Object.entries(ERROR_SCENARIOS)) {
-        const error = new ORPCError("BAD_REQUEST" as any, scenario.message);
+        const error = new ORPCError("BAD_REQUEST" as any, {
+          message: scenario.message,
+        });
 
         expect(error.message).toBe(scenario.message);
         expect(error.code).toBeDefined();

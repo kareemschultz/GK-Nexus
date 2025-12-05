@@ -108,7 +108,7 @@ function RouteComponent() {
     queryKey: ["invoice", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.invoices.getById({ id });
+      return client.invoiceGetById({ id });
     },
   });
 
@@ -123,7 +123,7 @@ function RouteComponent() {
       paymentTerms?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.invoices.update(data);
+      return client.invoiceUpdate(data);
     },
     onSuccess: () => {
       invoiceQuery.refetch();
@@ -138,7 +138,7 @@ function RouteComponent() {
   const deleteInvoiceMutation = useMutation({
     mutationFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.invoices.delete({ id });
+      return client.invoiceDelete({ id });
     },
     onSuccess: () => {
       navigate({ to: "/invoices" });

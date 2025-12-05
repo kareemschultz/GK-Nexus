@@ -147,7 +147,8 @@ export interface ComplianceMonitoringResult {
 }
 
 export class AIDocumentIntelligenceService {
-  constructor(private ctx: Context) {}
+  // Constructor accepts Context for future use (organization-based queries, etc.)
+  constructor(_ctx: Context) {}
 
   /**
    * AI-powered document classification and analysis
@@ -315,7 +316,7 @@ export class AIDocumentIntelligenceService {
     analysisDepth: "basic" | "comprehensive" | "predictive";
     includeRecommendations?: boolean;
   }): Promise<ClientInsights> {
-    const { clientId, analysisDepth, includeRecommendations = true } = params;
+    const { clientId, analysisDepth } = params;
 
     // Analyze communication patterns
     const communicationPatterns =
@@ -493,7 +494,7 @@ export class AIDocumentIntelligenceService {
     };
   }
 
-  private async getClientContext(clientId: string): Promise<any> {
+  private async getClientContext(_clientId: string): Promise<any> {
     // Fetch client business context, history, etc.
     // This would integrate with the client data
     return {
@@ -548,7 +549,7 @@ export class AIDocumentIntelligenceService {
 
   private generateExtractionHints(
     documentType: string,
-    content: string
+    _content: string
   ): Array<any> {
     const hints = [];
 
@@ -617,7 +618,7 @@ export class AIDocumentIntelligenceService {
   private async checkComplianceRequirements(
     documentType: string,
     content: string,
-    clientContext: any
+    _clientContext: any
   ): Promise<Array<any>> {
     const flags = [];
 
@@ -693,9 +694,9 @@ export class AIDocumentIntelligenceService {
   }
 
   private async getTaxRules(
-    calculationType: string,
-    jurisdiction: string,
-    taxYear: number
+    _calculationType: string,
+    _jurisdiction: string,
+    _taxYear: number
   ): Promise<any> {
     // Get applicable tax rules and rates
     // This would integrate with a tax rules database
@@ -744,7 +745,7 @@ export class AIDocumentIntelligenceService {
 
   private detectCalculationErrors(
     documentData: any,
-    taxRules: any
+    _taxRules: any
   ): Array<any> {
     const errors = [];
 
@@ -768,9 +769,9 @@ export class AIDocumentIntelligenceService {
   }
 
   private async performComplianceChecks(
-    documentData: any,
+    _documentData: any,
     calculationType: string,
-    clientId?: string
+    _clientId?: string
   ): Promise<Array<any>> {
     const checks = [];
 
@@ -810,7 +811,7 @@ export class AIDocumentIntelligenceService {
 
   private async gatherClientRiskData(
     clientId: string,
-    timeframe?: any
+    _timeframe?: any
   ): Promise<any> {
     // Gather comprehensive client data for risk analysis
     return {
@@ -824,7 +825,7 @@ export class AIDocumentIntelligenceService {
 
   private async performRiskAnalysis(
     clientData: any,
-    assessmentType: string
+    _assessmentType: string
   ): Promise<any> {
     // AI-powered risk scoring
     const baseRiskScore = 30;
@@ -852,8 +853,8 @@ export class AIDocumentIntelligenceService {
   }
 
   private async analyzeDeadlines(
-    clientId: string,
-    timeframe?: any
+    _clientId: string,
+    _timeframe?: any
   ): Promise<any> {
     // AI-powered deadline analysis
     return {
@@ -899,7 +900,7 @@ export class AIDocumentIntelligenceService {
   }
 
   // Communication analysis methods
-  private async analyzeCommunicationPatterns(clientId: string): Promise<any> {
+  private async analyzeCommunicationPatterns(_clientId: string): Promise<any> {
     return {
       preferredChannels: ["email", "phone"],
       responseTime: 24, // hours
@@ -907,7 +908,7 @@ export class AIDocumentIntelligenceService {
     };
   }
 
-  private async assessDocumentCompliance(clientId: string): Promise<any> {
+  private async assessDocumentCompliance(_clientId: string): Promise<any> {
     return {
       completionRate: 85,
       averageProcessingTime: 3,
@@ -921,7 +922,7 @@ export class AIDocumentIntelligenceService {
     };
   }
 
-  private async buildTaxProfile(clientId: string): Promise<any> {
+  private async buildTaxProfile(_clientId: string): Promise<any> {
     return {
       businessType: "small_business",
       riskCategory: "low",
@@ -937,8 +938,8 @@ export class AIDocumentIntelligenceService {
   }
 
   private async generatePredictiveInsights(
-    clientId: string,
-    data: any
+    _clientId: string,
+    _data: any
   ): Promise<any> {
     return {
       nextActions: [
@@ -960,8 +961,8 @@ export class AIDocumentIntelligenceService {
 
   // Compliance monitoring methods
   private async getComplianceRequirements(
-    scope: string,
-    targetId: string
+    _scope: string,
+    _targetId: string
   ): Promise<any> {
     return {
       taxFilings: ["VAT", "PAYE", "Corporate"],
@@ -971,8 +972,8 @@ export class AIDocumentIntelligenceService {
   }
 
   private async runAutomaticComplianceChecks(
-    requirements: any,
-    level: string
+    _requirements: any,
+    _level: string
   ): Promise<Array<any>> {
     return [
       {
@@ -986,9 +987,9 @@ export class AIDocumentIntelligenceService {
   }
 
   private async monitorKeyComplianceAreas(
-    scope: string,
-    targetId: string,
-    requirements: any
+    _scope: string,
+    _targetId: string,
+    _requirements: any
   ): Promise<Array<any>> {
     return [
       {
@@ -1008,7 +1009,7 @@ export class AIDocumentIntelligenceService {
 
   private async generateComplianceAlerts(
     monitoringAreas: Array<any>,
-    checks: Array<any>
+    _checks: Array<any>
   ): Promise<Array<any>> {
     const alerts = [];
 
@@ -1083,7 +1084,7 @@ export class AIDocumentIntelligenceService {
   }
 
   private async identifyTemplateImprovements(
-    template: any,
+    _template: any,
     accuracyAnalysis: any,
     goal: number
   ): Promise<Array<any>> {
@@ -1118,18 +1119,15 @@ export class AIDocumentIntelligenceService {
 
   private async generateOptimizedTemplate(
     template: any,
-    improvements: Array<any>
+    _improvements: Array<any>
   ): Promise<any> {
     const optimizedTemplate = { ...template };
 
     // Apply improvements to template
-    for (const improvement of improvements) {
-      // This would apply actual template modifications
-      // For now, just mark that optimization was applied
-      optimizedTemplate.optimizedAt = new Date();
-      optimizedTemplate.optimizationCount =
-        (template.optimizationCount || 0) + 1;
-    }
+    // This would apply actual template modifications
+    // For now, just mark that optimization was applied
+    optimizedTemplate.optimizedAt = new Date();
+    optimizedTemplate.optimizationCount = (template.optimizationCount || 0) + 1;
 
     return optimizedTemplate;
   }

@@ -109,7 +109,7 @@ function RouteComponent() {
     queryKey: ["client", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clients.getById({ id });
+      return client.clientGetById({ id });
     },
   });
 
@@ -117,7 +117,7 @@ function RouteComponent() {
   const updateMutation = useMutation({
     mutationFn: async (data: ClientFormData) => {
       const { client } = await import("@/utils/orpc");
-      return client.clients.update({
+      return client.clientUpdate({
         id,
         data: {
           name: data.name,

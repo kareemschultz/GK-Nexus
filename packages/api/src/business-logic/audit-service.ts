@@ -1,13 +1,23 @@
 import { db } from "@GK-Nexus/db";
 import {
-  type AuditLog,
   auditLogs,
-  type LoginAttempt,
   loginAttempts,
-  type SystemEvent,
   systemEvents,
 } from "@GK-Nexus/db/schema/audit-logs";
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  gte,
+  type InferSelectModel,
+  lte,
+  sql,
+} from "drizzle-orm";
+
+// Infer types from table definitions
+type AuditLog = InferSelectModel<typeof auditLogs>;
+type SystemEvent = InferSelectModel<typeof systemEvents>;
+type LoginAttempt = InferSelectModel<typeof loginAttempts>;
 
 // Types for audit logging
 export interface AuditLogContext {

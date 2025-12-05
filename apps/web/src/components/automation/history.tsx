@@ -51,14 +51,15 @@ export function AutomationHistory() {
   };
 
   const getStatusBadge = (status: string) => {
-    const variant =
-      status === "completed"
-        ? "default"
-        : status === "failed"
-          ? "destructive"
-          : status === "running"
-            ? "secondary"
-            : "outline";
+    const variantMap: Record<
+      string,
+      "default" | "destructive" | "secondary" | "outline"
+    > = {
+      completed: "default",
+      failed: "destructive",
+      running: "secondary",
+    };
+    const variant = variantMap[status] ?? "outline";
 
     return <Badge variant={variant}>{status}</Badge>;
   };

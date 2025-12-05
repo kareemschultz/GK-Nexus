@@ -1,16 +1,18 @@
 import { db } from "@GK-Nexus/db";
 import {
-  type Permission,
   permissions,
-  type Role,
   rolePermissions,
   roles,
-  type UserPermission,
-  type UserRole,
   userPermissions,
   userRoles,
 } from "@GK-Nexus/db/schema/rbac";
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { type InferSelectModel, and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+
+// Infer types from schema
+type Permission = InferSelectModel<typeof permissions>;
+type Role = InferSelectModel<typeof roles>;
+type UserPermission = InferSelectModel<typeof userPermissions>;
+type UserRole = InferSelectModel<typeof userRoles>;
 
 // Types for permission checking
 export interface PermissionContext {
@@ -44,7 +46,7 @@ export class RbacService {
   static async checkPermission(
     context: PermissionContext
   ): Promise<PermissionResult> {
-    const { userId, resource, action, scope = "global", conditions } = context;
+    const { userId, resource, action, scope = "global", conditions: _conditions } = context;
 
     try {
       // Get user's direct permission overrides first (highest priority)
@@ -217,7 +219,6 @@ export class RbacService {
       })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.id))
-      .innerJoin(roles as any, eq(roles.parentRoleId, roles.id), "parentRoles")
       .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
       .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
       .where(
@@ -387,10 +388,10 @@ export class RbacService {
   static async removeRoleFromUser(
     userId: string,
     roleId: string,
-    removedBy: string,
-    reason?: string
+    _removedBy: string,
+    _reason?: string
   ): Promise<boolean> {
-    const result = await db
+    await db
       .update(userRoles)
       .set({
         isActive: false,

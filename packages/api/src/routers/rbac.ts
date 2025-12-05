@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AuditService } from "../business-logic/audit-service";
 import { RbacService } from "../business-logic/rbac-service";
-import { o } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Validation schemas
 const roleSchema = z.object({
@@ -77,42 +77,6 @@ const permissionSchema = z.object({
   createdBy: z.string().nullable(),
 });
 
-const userRoleSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  roleId: z.string(),
-  isActive: z.boolean(),
-  isTemporary: z.boolean(),
-  validFrom: z.date(),
-  validUntil: z.date().nullable(),
-  assignedBy: z.string(),
-  assignmentReason: z.string().nullable(),
-  approvedBy: z.string().nullable(),
-  approvedAt: z.date().nullable(),
-  approvalRequired: z.boolean(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-const userPermissionSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  permissionId: z.string(),
-  isGranted: z.boolean(),
-  isDenied: z.boolean(),
-  overridesRole: z.boolean(),
-  reason: z.string(),
-  conditions: z.string().nullable(),
-  constraints: z.string().nullable(),
-  validFrom: z.date(),
-  validUntil: z.date().nullable(),
-  assignedBy: z.string(),
-  approvedBy: z.string().nullable(),
-  approvedAt: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
 const permissionResultSchema = z.object({
   granted: z.boolean(),
   reason: z.string().optional(),
@@ -120,568 +84,534 @@ const permissionResultSchema = z.object({
   conditions: z.record(z.any()).optional(),
 });
 
-const userPermissionSummarySchema = z.object({
-  userId: z.string(),
-  roles: z.array(roleSchema),
-  permissions: z.array(permissionSchema),
-  effectivePermissions: z.record(permissionResultSchema),
-});
+// ============================================================================
+// FLAT RBAC PROCEDURES (domain prefix: rbac)
+// ============================================================================
 
-// RBAC Router
-export const rbacRouter = o
+// Check permission for a user
+export const rbacCheckPermission = protectedProcedure
+  .use(requirePermission("users.read"))
   .input(
     z.object({
-      userId: z.string().optional(),
+      userId: z.string(),
+      resource: z.string(),
+      action: z.string(),
+      scope: z.string().optional().default("global"),
+      conditions: z.record(z.any()).optional(),
     })
   )
   .handler(async ({ input, context }) => {
-    // Basic auth check - extract from context
     const currentUser = context.user;
-    if (!currentUser) {
-      throw new Error("Authentication required");
+
+    if (input.userId !== currentUser.id) {
+      const canCheckOthers = await RbacService.checkPermission({
+        userId: currentUser.id,
+        resource: "users",
+        action: "manage_permissions",
+        scope: "global",
+      });
+
+      if (!canCheckOthers.granted) {
+        throw new Error(
+          "Insufficient permissions to check permissions for other users"
+        );
+      }
     }
 
-    return {
-      currentUserId: currentUser.id,
-      hasAdminAccess: false, // Will be determined by specific endpoints
-    };
-  })
-  .router({
-    // Permission checking
-    checkPermission: o
-      .input(
-        z.object({
-          userId: z.string(),
-          resource: z.string(),
-          action: z.string(),
-          scope: z.string().optional().default("global"),
-          conditions: z.record(z.any()).optional(),
-        })
-      )
-      .output(permissionResultSchema)
-      .handler(async ({ input, context }) => {
-        const currentUser = context.user;
+    const result = await RbacService.checkPermission({
+      userId: input.userId,
+      resource: input.resource,
+      action: input.action,
+      scope: input.scope,
+      conditions: input.conditions,
+    });
 
-        // Check if user can check permissions for other users
-        if (input.userId !== currentUser.id) {
-          const canCheckOthers = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
-
-          if (!canCheckOthers.granted) {
-            throw new Error(
-              "Insufficient permissions to check permissions for other users"
-            );
-          }
-        }
-
-        const result = await RbacService.checkPermission({
-          userId: input.userId,
+    await AuditService.logUserAction(
+      currentUser.id,
+      "permission_check",
+      "permission",
+      "",
+      `Checked permission ${input.resource}:${input.action} for user ${input.userId}`,
+      {},
+      {
+        metadata: {
+          targetUserId: input.userId,
           resource: input.resource,
           action: input.action,
           scope: input.scope,
-          conditions: input.conditions,
-        });
+          result: result.granted,
+        },
+      }
+    );
 
-        // Log permission check
-        await AuditService.logUserAction(
-          currentUser.id,
-          "permission_check",
-          "permission",
-          "",
-          `Checked permission ${input.resource}:${input.action} for user ${input.userId}`,
-          {},
-          {
-            metadata: {
-              targetUserId: input.userId,
-              resource: input.resource,
-              action: input.action,
-              scope: input.scope,
-              result: result.granted,
-            },
-          }
+    return result;
+  });
+
+// Get user permissions summary
+export const rbacGetUserPermissions = protectedProcedure
+  .use(requirePermission("users.read"))
+  .input(z.object({ userId: z.string() }))
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
+
+    if (input.userId !== currentUser.id) {
+      const canViewOthers = await RbacService.checkPermission({
+        userId: currentUser.id,
+        resource: "users",
+        action: "view_sensitive",
+        scope: "global",
+      });
+
+      if (!canViewOthers.granted) {
+        throw new Error(
+          "Insufficient permissions to view permissions for other users"
         );
+      }
+    }
 
-        return result;
-      }),
+    const summary = await RbacService.getUserPermissionSummary(input.userId);
 
-    // Get user permission summary
-    getUserPermissions: o
-      .input(z.object({ userId: z.string() }))
-      .output(userPermissionSummarySchema)
-      .handler(async ({ input, context }) => {
-        const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "view",
+      "user_permissions",
+      input.userId,
+      `Viewed permissions for user ${input.userId}`,
+      {},
+      { severity: "info" }
+    );
 
-        // Check if user can view permissions for other users
-        if (input.userId !== currentUser.id) {
-          const canViewOthers = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "view_sensitive",
-            scope: "global",
-          });
+    return summary;
+  });
 
-          if (!canViewOthers.granted) {
-            throw new Error(
-              "Insufficient permissions to view permissions for other users"
-            );
-          }
-        }
+// List all roles
+export const rbacListRoles = protectedProcedure
+  .use(requirePermission("users.read"))
+  .input(z.object({ includeInactive: z.boolean().optional().default(false) }))
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-        const summary = await RbacService.getUserPermissionSummary(
-          input.userId
-        );
+    const canViewRoles = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "read",
+      scope: "global",
+    });
 
-        await AuditService.logUserAction(
-          currentUser.id,
-          "view",
-          "user_permissions",
-          input.userId,
-          `Viewed permissions for user ${input.userId}`,
-          {},
-          { severity: "info" }
-        );
+    if (!canViewRoles.granted) {
+      throw new Error("Insufficient permissions to view roles");
+    }
 
-        return summary;
-      }),
+    const roles = await RbacService.getAllRoles();
 
-    // Role management
-    roles: o.router({
-      list: o
-        .input(
-          z.object({ includeInactive: z.boolean().optional().default(false) })
-        )
-        .output(z.array(roleSchema))
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "read",
+      "role",
+      "",
+      "Listed all roles",
+      {},
+      { severity: "info" }
+    );
 
-          const canViewRoles = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "read",
-            scope: "global",
-          });
+    return roles.filter(
+      (role: { isActive: boolean }) => input.includeInactive || role.isActive
+    );
+  });
 
-          if (!canViewRoles.granted) {
-            throw new Error("Insufficient permissions to view roles");
-          }
+// Create a new role
+export const rbacCreateRole = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      name: z.string(),
+      displayName: z.string(),
+      description: z.string().optional(),
+      parentRoleId: z.string().optional(),
+      level: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const roles = await RbacService.getAllRoles();
+    const canCreateRoles = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "read",
-            "role",
-            "",
-            "Listed all roles",
-            {},
-            { severity: "info" }
-          );
+    if (!canCreateRoles.granted) {
+      throw new Error("Insufficient permissions to create roles");
+    }
 
-          return roles.filter((role) => input.includeInactive || role.isActive);
-        }),
+    const newRole = await RbacService.createRole(input, currentUser.id);
 
-      create: o
-        .input(
-          z.object({
-            name: z.string(),
-            displayName: z.string(),
-            description: z.string().optional(),
-            parentRoleId: z.string().optional(),
-            level: z.string().optional(),
-          })
-        )
-        .output(roleSchema)
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "create",
+      "role",
+      newRole.id,
+      `Created role: ${newRole.name}`,
+      {},
+      {
+        metadata: {
+          roleName: newRole.name,
+          roleDisplayName: newRole.displayName,
+        },
+        severity: "info",
+      }
+    );
 
-          const canCreateRoles = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
+    return newRole;
+  });
 
-          if (!canCreateRoles.granted) {
-            throw new Error("Insufficient permissions to create roles");
-          }
+// Assign role to user
+export const rbacAssignRoleToUser = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      userId: z.string(),
+      roleId: z.string(),
+      isTemporary: z.boolean().optional().default(false),
+      validUntil: z.date().optional(),
+      reason: z.string().optional(),
+      requiresApproval: z.boolean().optional().default(false),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const newRole = await RbacService.createRole(input, currentUser.id);
+    const canAssignRoles = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "create",
-            "role",
-            newRole.id,
-            `Created role: ${newRole.name}`,
-            {},
-            {
-              metadata: {
-                roleName: newRole.name,
-                roleDisplayName: newRole.displayName,
-              },
-              severity: "info",
-            }
-          );
+    if (!canAssignRoles.granted) {
+      throw new Error("Insufficient permissions to assign roles");
+    }
 
-          return newRole;
-        }),
+    const userRole = await RbacService.assignRoleToUser(
+      input.userId,
+      input.roleId,
+      currentUser.id,
+      {
+        isTemporary: input.isTemporary,
+        validUntil: input.validUntil,
+        reason: input.reason,
+        requiresApproval: input.requiresApproval,
+      }
+    );
 
-      assignToUser: o
-        .input(
-          z.object({
-            userId: z.string(),
-            roleId: z.string(),
-            isTemporary: z.boolean().optional().default(false),
-            validUntil: z.date().optional(),
-            reason: z.string().optional(),
-            requiresApproval: z.boolean().optional().default(false),
-          })
-        )
-        .output(userRoleSchema)
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "update",
+      "user",
+      input.userId,
+      `Assigned role ${input.roleId} to user ${input.userId}`,
+      {},
+      {
+        metadata: {
+          targetUserId: input.userId,
+          roleId: input.roleId,
+          isTemporary: input.isTemporary,
+          reason: input.reason,
+        },
+        severity: "info",
+      }
+    );
 
-          const canAssignRoles = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
+    return userRole;
+  });
 
-          if (!canAssignRoles.granted) {
-            throw new Error("Insufficient permissions to assign roles");
-          }
+// Remove role from user
+export const rbacRemoveRoleFromUser = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      userId: z.string(),
+      roleId: z.string(),
+      reason: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const userRole = await RbacService.assignRoleToUser(
-            input.userId,
-            input.roleId,
-            currentUser.id,
-            {
-              isTemporary: input.isTemporary,
-              validUntil: input.validUntil,
-              reason: input.reason,
-              requiresApproval: input.requiresApproval,
-            }
-          );
+    const canRemoveRoles = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "update",
-            "user",
-            input.userId,
-            `Assigned role ${input.roleId} to user ${input.userId}`,
-            {},
-            {
-              metadata: {
-                targetUserId: input.userId,
-                roleId: input.roleId,
-                isTemporary: input.isTemporary,
-                reason: input.reason,
-              },
-              severity: "info",
-            }
-          );
+    if (!canRemoveRoles.granted) {
+      throw new Error("Insufficient permissions to remove roles");
+    }
 
-          return userRole;
-        }),
+    const result = await RbacService.removeRoleFromUser(
+      input.userId,
+      input.roleId,
+      currentUser.id,
+      input.reason
+    );
 
-      removeFromUser: o
-        .input(
-          z.object({
-            userId: z.string(),
-            roleId: z.string(),
-            reason: z.string().optional(),
-          })
-        )
-        .output(z.boolean())
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "update",
+      "user",
+      input.userId,
+      `Removed role ${input.roleId} from user ${input.userId}`,
+      {},
+      {
+        metadata: {
+          targetUserId: input.userId,
+          roleId: input.roleId,
+          reason: input.reason,
+        },
+        severity: "info",
+      }
+    );
 
-          const canRemoveRoles = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
+    return result;
+  });
 
-          if (!canRemoveRoles.granted) {
-            throw new Error("Insufficient permissions to remove roles");
-          }
+// List all permissions
+export const rbacListPermissions = protectedProcedure
+  .use(requirePermission("users.read"))
+  .input(z.object({ includeInactive: z.boolean().optional().default(false) }))
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const result = await RbacService.removeRoleFromUser(
-            input.userId,
-            input.roleId,
-            currentUser.id,
-            input.reason
-          );
+    const canViewPermissions = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "read",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "update",
-            "user",
-            input.userId,
-            `Removed role ${input.roleId} from user ${input.userId}`,
-            {},
-            {
-              metadata: {
-                targetUserId: input.userId,
-                roleId: input.roleId,
-                reason: input.reason,
-              },
-              severity: "info",
-            }
-          );
+    if (!canViewPermissions.granted) {
+      throw new Error("Insufficient permissions to view permissions");
+    }
 
-          return result;
-        }),
-    }),
+    const permissions = await RbacService.getAllPermissions();
 
-    // Permission management
-    permissions: o.router({
-      list: o
-        .input(
-          z.object({ includeInactive: z.boolean().optional().default(false) })
-        )
-        .output(z.array(permissionSchema))
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "read",
+      "permission",
+      "",
+      "Listed all permissions",
+      {},
+      { severity: "info" }
+    );
 
-          const canViewPermissions = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "read",
-            scope: "global",
-          });
+    return permissions.filter(
+      (permission: { isActive: boolean }) =>
+        input.includeInactive || permission.isActive
+    );
+  });
 
-          if (!canViewPermissions.granted) {
-            throw new Error("Insufficient permissions to view permissions");
-          }
+// Create a new permission
+export const rbacCreatePermission = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      name: z.string(),
+      displayName: z.string(),
+      description: z.string().optional(),
+      resource: z.enum([
+        "users",
+        "clients",
+        "documents",
+        "tax_calculations",
+        "compliance",
+        "appointments",
+        "reports",
+        "audit_logs",
+        "settings",
+        "billing",
+        "tasks",
+        "communications",
+      ]),
+      action: z.enum([
+        "create",
+        "read",
+        "update",
+        "delete",
+        "approve",
+        "reject",
+        "submit",
+        "cancel",
+        "archive",
+        "restore",
+        "export",
+        "import",
+        "share",
+        "download",
+        "manage_permissions",
+        "view_sensitive",
+      ]),
+      scope: z
+        .enum(["global", "department", "team", "personal", "client_specific"])
+        .optional(),
+      conditions: z.record(z.any()).optional(),
+      isSensitive: z.boolean().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const permissions = await RbacService.getAllPermissions();
+    const canCreatePermissions = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "read",
-            "permission",
-            "",
-            "Listed all permissions",
-            {},
-            { severity: "info" }
-          );
+    if (!canCreatePermissions.granted) {
+      throw new Error("Insufficient permissions to create permissions");
+    }
 
-          return permissions.filter(
-            (permission) => input.includeInactive || permission.isActive
-          );
-        }),
+    const newPermission = await RbacService.createPermission(
+      input,
+      currentUser.id
+    );
 
-      create: o
-        .input(
-          z.object({
-            name: z.string(),
-            displayName: z.string(),
-            description: z.string().optional(),
-            resource: z.enum([
-              "users",
-              "clients",
-              "documents",
-              "tax_calculations",
-              "compliance",
-              "appointments",
-              "reports",
-              "audit_logs",
-              "settings",
-              "billing",
-              "tasks",
-              "communications",
-            ]),
-            action: z.enum([
-              "create",
-              "read",
-              "update",
-              "delete",
-              "approve",
-              "reject",
-              "submit",
-              "cancel",
-              "archive",
-              "restore",
-              "export",
-              "import",
-              "share",
-              "download",
-              "manage_permissions",
-              "view_sensitive",
-            ]),
-            scope: z
-              .enum([
-                "global",
-                "department",
-                "team",
-                "personal",
-                "client_specific",
-              ])
-              .optional(),
-            conditions: z.record(z.any()).optional(),
-            isSensitive: z.boolean().optional(),
-          })
-        )
-        .output(permissionSchema)
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "create",
+      "permission",
+      newPermission.id,
+      `Created permission: ${newPermission.name}`,
+      {},
+      {
+        metadata: {
+          permissionName: newPermission.name,
+          resource: newPermission.resource,
+          action: newPermission.action,
+        },
+        severity: "info",
+      }
+    );
 
-          const canCreatePermissions = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
+    return newPermission;
+  });
 
-          if (!canCreatePermissions.granted) {
-            throw new Error("Insufficient permissions to create permissions");
-          }
+// Grant permission directly to user
+export const rbacGrantPermissionToUser = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      userId: z.string(),
+      permissionId: z.string(),
+      reason: z.string(),
+      validUntil: z.date().optional(),
+      conditions: z.record(z.any()).optional(),
+      overridesRole: z.boolean().optional().default(false),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const newPermission = await RbacService.createPermission(
-            input,
-            currentUser.id
-          );
+    const canGrantPermissions = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "create",
-            "permission",
-            newPermission.id,
-            `Created permission: ${newPermission.name}`,
-            {},
-            {
-              metadata: {
-                permissionName: newPermission.name,
-                resource: newPermission.resource,
-                action: newPermission.action,
-              },
-              severity: "info",
-            }
-          );
+    if (!canGrantPermissions.granted) {
+      throw new Error("Insufficient permissions to grant permissions");
+    }
 
-          return newPermission;
-        }),
+    const userPermission = await RbacService.grantDirectPermission(
+      input.userId,
+      input.permissionId,
+      currentUser.id,
+      {
+        reason: input.reason,
+        validUntil: input.validUntil,
+        conditions: input.conditions,
+        overridesRole: input.overridesRole,
+      }
+    );
 
-      grantToUser: o
-        .input(
-          z.object({
-            userId: z.string(),
-            permissionId: z.string(),
-            reason: z.string(),
-            validUntil: z.date().optional(),
-            conditions: z.record(z.any()).optional(),
-            overridesRole: z.boolean().optional().default(false),
-          })
-        )
-        .output(userPermissionSchema)
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "update",
+      "user",
+      input.userId,
+      `Granted permission ${input.permissionId} to user ${input.userId}`,
+      {},
+      {
+        metadata: {
+          targetUserId: input.userId,
+          permissionId: input.permissionId,
+          reason: input.reason,
+          overridesRole: input.overridesRole,
+        },
+        severity: "info",
+      }
+    );
 
-          const canGrantPermissions = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
+    return userPermission;
+  });
 
-          if (!canGrantPermissions.granted) {
-            throw new Error("Insufficient permissions to grant permissions");
-          }
+// Deny permission to user
+export const rbacDenyPermissionToUser = protectedProcedure
+  .use(requirePermission("users.manage_permissions"))
+  .input(
+    z.object({
+      userId: z.string(),
+      permissionId: z.string(),
+      reason: z.string(),
+      validUntil: z.date().optional(),
+      conditions: z.record(z.any()).optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const currentUser = context.user;
 
-          const userPermission = await RbacService.grantDirectPermission(
-            input.userId,
-            input.permissionId,
-            currentUser.id,
-            {
-              reason: input.reason,
-              validUntil: input.validUntil,
-              conditions: input.conditions,
-              overridesRole: input.overridesRole,
-            }
-          );
+    const canDenyPermissions = await RbacService.checkPermission({
+      userId: currentUser.id,
+      resource: "users",
+      action: "manage_permissions",
+      scope: "global",
+    });
 
-          await AuditService.logUserAction(
-            currentUser.id,
-            "update",
-            "user",
-            input.userId,
-            `Granted permission ${input.permissionId} to user ${input.userId}`,
-            {},
-            {
-              metadata: {
-                targetUserId: input.userId,
-                permissionId: input.permissionId,
-                reason: input.reason,
-                overridesRole: input.overridesRole,
-              },
-              severity: "info",
-            }
-          );
+    if (!canDenyPermissions.granted) {
+      throw new Error("Insufficient permissions to deny permissions");
+    }
 
-          return userPermission;
-        }),
+    const userPermission = await RbacService.denyDirectPermission(
+      input.userId,
+      input.permissionId,
+      currentUser.id,
+      {
+        reason: input.reason,
+        validUntil: input.validUntil,
+        conditions: input.conditions,
+      }
+    );
 
-      denyToUser: o
-        .input(
-          z.object({
-            userId: z.string(),
-            permissionId: z.string(),
-            reason: z.string(),
-            validUntil: z.date().optional(),
-            conditions: z.record(z.any()).optional(),
-          })
-        )
-        .output(userPermissionSchema)
-        .handler(async ({ input, context }) => {
-          const currentUser = context.user;
+    await AuditService.logUserAction(
+      currentUser.id,
+      "update",
+      "user",
+      input.userId,
+      `Denied permission ${input.permissionId} to user ${input.userId}`,
+      {},
+      {
+        metadata: {
+          targetUserId: input.userId,
+          permissionId: input.permissionId,
+          reason: input.reason,
+        },
+        severity: "warning",
+      }
+    );
 
-          const canDenyPermissions = await RbacService.checkPermission({
-            userId: currentUser.id,
-            resource: "users",
-            action: "manage_permissions",
-            scope: "global",
-          });
-
-          if (!canDenyPermissions.granted) {
-            throw new Error("Insufficient permissions to deny permissions");
-          }
-
-          const userPermission = await RbacService.denyDirectPermission(
-            input.userId,
-            input.permissionId,
-            currentUser.id,
-            {
-              reason: input.reason,
-              validUntil: input.validUntil,
-              conditions: input.conditions,
-            }
-          );
-
-          await AuditService.logUserAction(
-            currentUser.id,
-            "update",
-            "user",
-            input.userId,
-            `Denied permission ${input.permissionId} to user ${input.userId}`,
-            {},
-            {
-              metadata: {
-                targetUserId: input.userId,
-                permissionId: input.permissionId,
-                reason: input.reason,
-              },
-              severity: "warning",
-            }
-          );
-
-          return userPermission;
-        }),
-    }),
+    return userPermission;
   });

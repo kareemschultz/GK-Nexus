@@ -79,7 +79,7 @@ function DocumentTemplatesPage() {
     queryKey: ["documents", "templates"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.documents.templates.list({});
+      return client.documentTemplateList({});
     },
   });
 

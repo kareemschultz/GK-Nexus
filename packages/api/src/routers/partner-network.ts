@@ -5,12 +5,6 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { protectedProcedure, requirePermission } from "../index";
 
-// ========================================
-// PARTNER NETWORK API ROUTER
-// ========================================
-// Complete partner relationship management for professional services
-// Includes: Partners, Referrals, Agreements, Reviews, Communications
-
 // Partner types
 const partnerTypes = [
   "LAW_FIRM",
@@ -59,10 +53,7 @@ const partnershipTiers = [
   "STRATEGIC",
 ] as const;
 
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
-
+// Helper functions
 const generatePartnerCode = (): string => {
   const year = new Date().getFullYear();
   const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -82,11 +73,7 @@ const generateAgreementNumber = (): string => {
   return `AGR-${year}-${randomPart}`;
 };
 
-// ========================================
-// INPUT SCHEMAS
-// ========================================
-
-// Partner schemas
+// Input schemas
 const partnerQuerySchema = z.object({
   organizationId: z.string().optional(),
   partnerType: z.enum(partnerTypes).optional(),
@@ -198,7 +185,6 @@ const updatePartnerSchema = z.object({
   metadata: z.any().optional(),
 });
 
-// Referral schemas
 const referralQuerySchema = z.object({
   organizationId: z.string().optional(),
   referringPartnerId: z.string().optional(),
@@ -262,7 +248,6 @@ const updateReferralSchema = z.object({
   metadata: z.any().optional(),
 });
 
-// Agreement schemas
 const agreementQuerySchema = z.object({
   organizationId: z.string().optional(),
   partnerId: z.string().optional(),
@@ -327,7 +312,6 @@ const updateAgreementSchema = z.object({
   metadata: z.any().optional(),
 });
 
-// Review schemas
 const reviewQuerySchema = z.object({
   organizationId: z.string().optional(),
   partnerId: z.string().optional(),
@@ -359,7 +343,6 @@ const createReviewSchema = z.object({
   metadata: z.any().optional(),
 });
 
-// Communication schemas
 const communicationQuerySchema = z.object({
   organizationId: z.string().optional(),
   partnerId: z.string().optional(),
@@ -392,1295 +375,1303 @@ const createCommunicationSchema = z.object({
 });
 
 // ========================================
-// ROUTER DEFINITION
+// PARTNERS (FLAT PROCEDURES)
 // ========================================
 
-export const partnerNetworkRouter = {
-  // ========================================
-  // PARTNERS SUB-ROUTER
-  // ========================================
-  partners: {
-    list: protectedProcedure
-      .use(requirePermission("partners.read"))
-      .input(partnerQuerySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { page, pageSize, ...filters } = input;
+export const partnerNetworkPartnersList = protectedProcedure
+  .use(requirePermission("partners.read"))
+  .input(partnerQuerySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { page, pageSize, ...filters } = input;
 
-        const conditions = [
-          eq(
-            partnerNetworkSchema.partners.organizationId,
-            filters.organizationId || user?.organizationId || "default"
+    const conditions = [
+      eq(
+        partnerNetworkSchema.partners.organizationId,
+        filters.organizationId || "default"
+      ),
+    ];
+
+    if (filters.partnerType) {
+      conditions.push(
+        eq(partnerNetworkSchema.partners.partnerType, filters.partnerType)
+      );
+    }
+    if (filters.status) {
+      conditions.push(eq(partnerNetworkSchema.partners.status, filters.status));
+    }
+    if (filters.tier) {
+      conditions.push(eq(partnerNetworkSchema.partners.tier, filters.tier));
+    }
+    if (filters.isVerified !== undefined) {
+      conditions.push(
+        eq(partnerNetworkSchema.partners.isVerified, filters.isVerified)
+      );
+    }
+    if (filters.isFeatured !== undefined) {
+      conditions.push(
+        eq(partnerNetworkSchema.partners.isFeatured, filters.isFeatured)
+      );
+    }
+    if (filters.acceptsReferrals !== undefined) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partners.acceptsReferrals,
+          filters.acceptsReferrals
+        )
+      );
+    }
+    if (filters.search) {
+      conditions.push(
+        or(
+          ilike(
+            partnerNetworkSchema.partners.companyName,
+            `%${filters.search}%`
           ),
-        ];
-
-        if (filters.partnerType) {
-          conditions.push(
-            eq(partnerNetworkSchema.partners.partnerType, filters.partnerType)
-          );
-        }
-        if (filters.status) {
-          conditions.push(
-            eq(partnerNetworkSchema.partners.status, filters.status)
-          );
-        }
-        if (filters.tier) {
-          conditions.push(eq(partnerNetworkSchema.partners.tier, filters.tier));
-        }
-        if (filters.isVerified !== undefined) {
-          conditions.push(
-            eq(partnerNetworkSchema.partners.isVerified, filters.isVerified)
-          );
-        }
-        if (filters.isFeatured !== undefined) {
-          conditions.push(
-            eq(partnerNetworkSchema.partners.isFeatured, filters.isFeatured)
-          );
-        }
-        if (filters.acceptsReferrals !== undefined) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partners.acceptsReferrals,
-              filters.acceptsReferrals
-            )
-          );
-        }
-        if (filters.search) {
-          conditions.push(
-            or(
-              ilike(
-                partnerNetworkSchema.partners.companyName,
-                `%${filters.search}%`
-              ),
-              ilike(
-                partnerNetworkSchema.partners.primaryContactName,
-                `%${filters.search}%`
-              ),
-              ilike(
-                partnerNetworkSchema.partners.partnerCode,
-                `%${filters.search}%`
-              )
-            )!
-          );
-        }
-
-        const whereClause = and(...conditions);
-        const offset = (page - 1) * pageSize;
-
-        const [items, totalResult] = await Promise.all([
-          db
-            .select()
-            .from(partnerNetworkSchema.partners)
-            .where(whereClause)
-            .limit(pageSize)
-            .offset(offset)
-            .orderBy(desc(partnerNetworkSchema.partners.createdAt)),
-          db
-            .select({ count: count() })
-            .from(partnerNetworkSchema.partners)
-            .where(whereClause),
-        ]);
-
-        const total = totalResult[0]?.count || 0;
-
-        return {
-          success: true,
-          data: {
-            items,
-            pagination: {
-              page,
-              pageSize,
-              total,
-              totalPages: Math.ceil(total / pageSize),
-            },
-          },
-        };
-      }),
-
-    getById: protectedProcedure
-      .use(requirePermission("partners.read"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [partner] = await db
-          .select()
-          .from(partnerNetworkSchema.partners)
-          .where(eq(partnerNetworkSchema.partners.id, input.id))
-          .limit(1);
-
-        if (!partner) {
-          throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
-        }
-
-        return { success: true, data: partner };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("partners.create"))
-      .input(createPartnerSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const partnerData = {
-          ...input,
-          id: nanoid(),
-          partnerCode: generatePartnerCode(),
-          organizationId: user?.organizationId || "default",
-          status: "PROSPECT" as const,
-          tier: "BASIC" as const,
-          createdBy: user?.id,
-        };
-
-        const [newPartner] = await db
-          .insert(partnerNetworkSchema.partners)
-          .values(partnerData)
-          .returning();
-
-        return {
-          success: true,
-          data: newPartner,
-          message: "Partner created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("partners.update"))
-      .input(updatePartnerSchema)
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, ...updateData } = input;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partners)
-          .where(eq(partnerNetworkSchema.partners.id, id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
-        }
-
-        const [updatedPartner] = await db
-          .update(partnerNetworkSchema.partners)
-          .set(updateData)
-          .where(eq(partnerNetworkSchema.partners.id, id))
-          .returning();
-
-        return {
-          success: true,
-          data: updatedPartner,
-          message: "Partner updated successfully",
-        };
-      }),
-
-    delete: protectedProcedure
-      .use(requirePermission("partners.delete"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partners)
-          .where(eq(partnerNetworkSchema.partners.id, input.id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
-        }
-
-        await db
-          .delete(partnerNetworkSchema.partners)
-          .where(eq(partnerNetworkSchema.partners.id, input.id));
-
-        return {
-          success: true,
-          message: "Partner deleted successfully",
-        };
-      }),
-
-    verify: protectedProcedure
-      .use(requirePermission("partners.update"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const [updatedPartner] = await db
-          .update(partnerNetworkSchema.partners)
-          .set({
-            isVerified: true,
-            verifiedDate: new Date(),
-            verifiedBy: user?.id,
-            status: "ACTIVE" as const,
-          })
-          .where(eq(partnerNetworkSchema.partners.id, input.id))
-          .returning();
-
-        if (!updatedPartner) {
-          throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedPartner,
-          message: "Partner verified successfully",
-        };
-      }),
-
-    updateTier: protectedProcedure
-      .use(requirePermission("partners.update"))
-      .input(z.object({ id: z.string(), tier: z.enum(partnershipTiers) }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [updatedPartner] = await db
-          .update(partnerNetworkSchema.partners)
-          .set({ tier: input.tier })
-          .where(eq(partnerNetworkSchema.partners.id, input.id))
-          .returning();
-
-        if (!updatedPartner) {
-          throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedPartner,
-          message: `Partner tier updated to ${input.tier}`,
-        };
-      }),
-
-    getStatistics: protectedProcedure
-      .use(requirePermission("partners.read"))
-      .input(z.object({ organizationId: z.string().optional() }))
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const orgId = input.organizationId || user?.organizationId || "default";
-
-        const [stats] = await db
-          .select({
-            total: count(),
-          })
-          .from(partnerNetworkSchema.partners)
-          .where(eq(partnerNetworkSchema.partners.organizationId, orgId));
-
-        const [activeStats] = await db
-          .select({
-            count: count(),
-          })
-          .from(partnerNetworkSchema.partners)
-          .where(
-            and(
-              eq(partnerNetworkSchema.partners.organizationId, orgId),
-              eq(partnerNetworkSchema.partners.status, "ACTIVE")
-            )
-          );
-
-        const [verifiedStats] = await db
-          .select({
-            count: count(),
-          })
-          .from(partnerNetworkSchema.partners)
-          .where(
-            and(
-              eq(partnerNetworkSchema.partners.organizationId, orgId),
-              eq(partnerNetworkSchema.partners.isVerified, true)
-            )
-          );
-
-        return {
-          success: true,
-          data: {
-            total: stats?.total || 0,
-            active: activeStats?.count || 0,
-            verified: verifiedStats?.count || 0,
-          },
-        };
-      }),
-  },
-
-  // ========================================
-  // REFERRALS SUB-ROUTER
-  // ========================================
-  referrals: {
-    list: protectedProcedure
-      .use(requirePermission("referrals.read"))
-      .input(referralQuerySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { page, pageSize, ...filters } = input;
-
-        const conditions = [
-          eq(
-            partnerNetworkSchema.partnerReferrals.organizationId,
-            filters.organizationId || user?.organizationId || "default"
+          ilike(
+            partnerNetworkSchema.partners.primaryContactName,
+            `%${filters.search}%`
           ),
-        ];
+          ilike(
+            partnerNetworkSchema.partners.partnerCode,
+            `%${filters.search}%`
+          )
+        )!
+      );
+    }
 
-        if (filters.referringPartnerId) {
-          conditions.push(
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(partnerNetworkSchema.partners)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(desc(partnerNetworkSchema.partners.createdAt)),
+      db
+        .select({ count: count() })
+        .from(partnerNetworkSchema.partners)
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+  });
+
+export const partnerNetworkPartnersGetById = protectedProcedure
+  .use(requirePermission("partners.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [partner] = await db
+      .select()
+      .from(partnerNetworkSchema.partners)
+      .where(eq(partnerNetworkSchema.partners.id, input.id))
+      .limit(1);
+
+    if (!partner) {
+      throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
+    }
+
+    return { success: true, data: partner };
+  });
+
+export const partnerNetworkPartnersCreate = protectedProcedure
+  .use(requirePermission("partners.create"))
+  .input(createPartnerSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const partnerData = {
+      ...input,
+      id: nanoid(),
+      partnerCode: generatePartnerCode(),
+      organizationId: "default",
+      status: "PROSPECT" as const,
+      tier: "BASIC" as const,
+      createdBy: user?.id,
+    };
+
+    const [newPartner] = await db
+      .insert(partnerNetworkSchema.partners)
+      .values(partnerData)
+      .returning();
+
+    return {
+      success: true,
+      data: newPartner,
+      message: "Partner created successfully",
+    };
+  });
+
+export const partnerNetworkPartnersUpdate = protectedProcedure
+  .use(requirePermission("partners.update"))
+  .input(updatePartnerSchema)
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, ...updateData } = input;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partners)
+      .where(eq(partnerNetworkSchema.partners.id, id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
+    }
+
+    // Transform date strings to Date objects
+    const transformedData = {
+      ...updateData,
+      partnerSince: updateData.partnerSince
+        ? new Date(updateData.partnerSince)
+        : undefined,
+      agreementDate: updateData.agreementDate
+        ? new Date(updateData.agreementDate)
+        : undefined,
+      agreementExpiryDate: updateData.agreementExpiryDate
+        ? new Date(updateData.agreementExpiryDate)
+        : undefined,
+      verifiedDate: updateData.verifiedDate
+        ? new Date(updateData.verifiedDate)
+        : undefined,
+    };
+
+    const [updatedPartner] = await db
+      .update(partnerNetworkSchema.partners)
+      .set(transformedData)
+      .where(eq(partnerNetworkSchema.partners.id, id))
+      .returning();
+
+    return {
+      success: true,
+      data: updatedPartner,
+      message: "Partner updated successfully",
+    };
+  });
+
+export const partnerNetworkPartnersDelete = protectedProcedure
+  .use(requirePermission("partners.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partners)
+      .where(eq(partnerNetworkSchema.partners.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
+    }
+
+    await db
+      .delete(partnerNetworkSchema.partners)
+      .where(eq(partnerNetworkSchema.partners.id, input.id));
+
+    return {
+      success: true,
+      message: "Partner deleted successfully",
+    };
+  });
+
+export const partnerNetworkPartnersVerify = protectedProcedure
+  .use(requirePermission("partners.update"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const [updatedPartner] = await db
+      .update(partnerNetworkSchema.partners)
+      .set({
+        isVerified: true,
+        verifiedDate: new Date(),
+        verifiedBy: user?.id,
+        status: "ACTIVE" as const,
+      })
+      .where(eq(partnerNetworkSchema.partners.id, input.id))
+      .returning();
+
+    if (!updatedPartner) {
+      throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedPartner,
+      message: "Partner verified successfully",
+    };
+  });
+
+export const partnerNetworkPartnersUpdateTier = protectedProcedure
+  .use(requirePermission("partners.update"))
+  .input(z.object({ id: z.string(), tier: z.enum(partnershipTiers) }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [updatedPartner] = await db
+      .update(partnerNetworkSchema.partners)
+      .set({ tier: input.tier })
+      .where(eq(partnerNetworkSchema.partners.id, input.id))
+      .returning();
+
+    if (!updatedPartner) {
+      throw new ORPCError("NOT_FOUND", { message: "Partner not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedPartner,
+      message: `Partner tier updated to ${input.tier}`,
+    };
+  });
+
+export const partnerNetworkPartnersStats = protectedProcedure
+  .use(requirePermission("partners.read"))
+  .input(z.object({ organizationId: z.string().optional() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const orgId = input.organizationId || "default";
+
+    const [stats] = await db
+      .select({
+        total: count(),
+      })
+      .from(partnerNetworkSchema.partners)
+      .where(eq(partnerNetworkSchema.partners.organizationId, orgId));
+
+    const [activeStats] = await db
+      .select({
+        count: count(),
+      })
+      .from(partnerNetworkSchema.partners)
+      .where(
+        and(
+          eq(partnerNetworkSchema.partners.organizationId, orgId),
+          eq(partnerNetworkSchema.partners.status, "ACTIVE")
+        )
+      );
+
+    const [verifiedStats] = await db
+      .select({
+        count: count(),
+      })
+      .from(partnerNetworkSchema.partners)
+      .where(
+        and(
+          eq(partnerNetworkSchema.partners.organizationId, orgId),
+          eq(partnerNetworkSchema.partners.isVerified, true)
+        )
+      );
+
+    return {
+      success: true,
+      data: {
+        total: stats?.total || 0,
+        active: activeStats?.count || 0,
+        verified: verifiedStats?.count || 0,
+      },
+    };
+  });
+
+// ========================================
+// REFERRALS (FLAT PROCEDURES)
+// ========================================
+
+export const partnerNetworkReferralsList = protectedProcedure
+  .use(requirePermission("referrals.read"))
+  .input(referralQuerySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { page, pageSize, ...filters } = input;
+
+    const conditions = [
+      eq(
+        partnerNetworkSchema.partnerReferrals.organizationId,
+        filters.organizationId || "default"
+      ),
+    ];
+
+    if (filters.referringPartnerId) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerReferrals.referringPartnerId,
+          filters.referringPartnerId
+        )
+      );
+    }
+    if (filters.receivingPartnerId) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerReferrals.receivingPartnerId,
+          filters.receivingPartnerId
+        )
+      );
+    }
+    if (filters.clientId) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReferrals.clientId, filters.clientId)
+      );
+    }
+    if (filters.status) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReferrals.status, filters.status)
+      );
+    }
+    if (filters.serviceCategory) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerReferrals.serviceCategory,
+          filters.serviceCategory
+        )
+      );
+    }
+    if (filters.commissionPaid !== undefined) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerReferrals.commissionPaid,
+          filters.commissionPaid
+        )
+      );
+    }
+    if (filters.dateFrom) {
+      conditions.push(
+        gte(
+          partnerNetworkSchema.partnerReferrals.referralDate,
+          new Date(filters.dateFrom)
+        )
+      );
+    }
+    if (filters.dateTo) {
+      conditions.push(
+        lte(
+          partnerNetworkSchema.partnerReferrals.referralDate,
+          new Date(filters.dateTo)
+        )
+      );
+    }
+
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(partnerNetworkSchema.partnerReferrals)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(desc(partnerNetworkSchema.partnerReferrals.referralDate)),
+      db
+        .select({ count: count() })
+        .from(partnerNetworkSchema.partnerReferrals)
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+  });
+
+export const partnerNetworkReferralsGetById = protectedProcedure
+  .use(requirePermission("referrals.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [referral] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerReferrals)
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
+      .limit(1);
+
+    if (!referral) {
+      throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
+    }
+
+    return { success: true, data: referral };
+  });
+
+export const partnerNetworkReferralsCreate = protectedProcedure
+  .use(requirePermission("referrals.create"))
+  .input(createReferralSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const referralData = {
+      ...input,
+      id: nanoid(),
+      referralNumber: generateReferralNumber(),
+      organizationId: "default",
+      status: "PENDING" as const,
+      referralDate: new Date(),
+      createdBy: user?.id,
+    };
+
+    const [newReferral] = await db
+      .insert(partnerNetworkSchema.partnerReferrals)
+      .values(referralData)
+      .returning();
+
+    return {
+      success: true,
+      data: newReferral,
+      message: "Referral created successfully",
+    };
+  });
+
+export const partnerNetworkReferralsUpdate = protectedProcedure
+  .use(requirePermission("referrals.update"))
+  .input(updateReferralSchema)
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, ...updateData } = input;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerReferrals)
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
+    }
+
+    // Transform date strings to Date objects
+    const transformedData = {
+      ...updateData,
+      deadline: updateData.deadline ? new Date(updateData.deadline) : undefined,
+      acceptedDate: updateData.acceptedDate
+        ? new Date(updateData.acceptedDate)
+        : undefined,
+      completedDate: updateData.completedDate
+        ? new Date(updateData.completedDate)
+        : undefined,
+      commissionPaidDate: updateData.commissionPaidDate
+        ? new Date(updateData.commissionPaidDate)
+        : undefined,
+    };
+
+    const [updatedReferral] = await db
+      .update(partnerNetworkSchema.partnerReferrals)
+      .set(transformedData)
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
+      .returning();
+
+    return {
+      success: true,
+      data: updatedReferral,
+      message: "Referral updated successfully",
+    };
+  });
+
+export const partnerNetworkReferralsAccept = protectedProcedure
+  .use(requirePermission("referrals.update"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [updatedReferral] = await db
+      .update(partnerNetworkSchema.partnerReferrals)
+      .set({
+        status: "ACCEPTED" as const,
+        acceptedDate: new Date(),
+      })
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
+      .returning();
+
+    if (!updatedReferral) {
+      throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedReferral,
+      message: "Referral accepted",
+    };
+  });
+
+export const partnerNetworkReferralsComplete = protectedProcedure
+  .use(requirePermission("referrals.update"))
+  .input(
+    z.object({
+      id: z.string(),
+      actualValue: z.string().optional(),
+      outcome: z.string().optional(),
+      successfulConversion: z.boolean().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, ...completionData } = input;
+
+    const [updatedReferral] = await db
+      .update(partnerNetworkSchema.partnerReferrals)
+      .set({
+        ...completionData,
+        status: "COMPLETED" as const,
+        completedDate: new Date(),
+      })
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
+      .returning();
+
+    if (!updatedReferral) {
+      throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedReferral,
+      message: "Referral completed",
+    };
+  });
+
+export const partnerNetworkReferralsDelete = protectedProcedure
+  .use(requirePermission("referrals.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerReferrals)
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
+    }
+
+    await db
+      .delete(partnerNetworkSchema.partnerReferrals)
+      .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id));
+
+    return {
+      success: true,
+      message: "Referral deleted successfully",
+    };
+  });
+
+// ========================================
+// AGREEMENTS (FLAT PROCEDURES)
+// ========================================
+
+export const partnerNetworkAgreementsList = protectedProcedure
+  .use(requirePermission("agreements.read"))
+  .input(agreementQuerySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { page, pageSize, ...filters } = input;
+
+    const conditions = [
+      eq(
+        partnerNetworkSchema.partnerAgreements.organizationId,
+        filters.organizationId || "default"
+      ),
+    ];
+
+    if (filters.partnerId) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerAgreements.partnerId, filters.partnerId)
+      );
+    }
+    if (filters.agreementType) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerAgreements.agreementType,
+          filters.agreementType
+        )
+      );
+    }
+    if (filters.status) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerAgreements.status, filters.status)
+      );
+    }
+    if (filters.expiringBefore) {
+      conditions.push(
+        lte(
+          partnerNetworkSchema.partnerAgreements.expiryDate,
+          new Date(filters.expiringBefore)
+        )
+      );
+    }
+
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(partnerNetworkSchema.partnerAgreements)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(desc(partnerNetworkSchema.partnerAgreements.createdAt)),
+      db
+        .select({ count: count() })
+        .from(partnerNetworkSchema.partnerAgreements)
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+  });
+
+export const partnerNetworkAgreementsGetById = protectedProcedure
+  .use(requirePermission("agreements.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [agreement] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerAgreements)
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
+      .limit(1);
+
+    if (!agreement) {
+      throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
+    }
+
+    return { success: true, data: agreement };
+  });
+
+export const partnerNetworkAgreementsCreate = protectedProcedure
+  .use(requirePermission("agreements.create"))
+  .input(createAgreementSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const agreementData = {
+      ...input,
+      id: nanoid(),
+      agreementNumber: generateAgreementNumber(),
+      organizationId: "default",
+      status: "draft" as const,
+      effectiveDate: new Date(input.effectiveDate),
+      expiryDate: input.expiryDate ? new Date(input.expiryDate) : undefined,
+      renewalDate: input.renewalDate ? new Date(input.renewalDate) : undefined,
+      createdBy: user?.id,
+    };
+
+    const [newAgreement] = await db
+      .insert(partnerNetworkSchema.partnerAgreements)
+      .values(agreementData)
+      .returning();
+
+    return {
+      success: true,
+      data: newAgreement,
+      message: "Agreement created successfully",
+    };
+  });
+
+export const partnerNetworkAgreementsUpdate = protectedProcedure
+  .use(requirePermission("agreements.update"))
+  .input(updateAgreementSchema)
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, ...updateData } = input;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerAgreements)
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
+    }
+
+    const transformedData = {
+      ...updateData,
+      effectiveDate: updateData.effectiveDate
+        ? new Date(updateData.effectiveDate)
+        : undefined,
+      expiryDate: updateData.expiryDate
+        ? new Date(updateData.expiryDate)
+        : undefined,
+      renewalDate: updateData.renewalDate
+        ? new Date(updateData.renewalDate)
+        : undefined,
+      ourSignatureDate: updateData.ourSignatureDate
+        ? new Date(updateData.ourSignatureDate)
+        : undefined,
+      partnerSignatureDate: updateData.partnerSignatureDate
+        ? new Date(updateData.partnerSignatureDate)
+        : undefined,
+      lastReviewDate: updateData.lastReviewDate
+        ? new Date(updateData.lastReviewDate)
+        : undefined,
+      nextReviewDate: updateData.nextReviewDate
+        ? new Date(updateData.nextReviewDate)
+        : undefined,
+    };
+
+    const [updatedAgreement] = await db
+      .update(partnerNetworkSchema.partnerAgreements)
+      .set(transformedData)
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, id))
+      .returning();
+
+    return {
+      success: true,
+      data: updatedAgreement,
+      message: "Agreement updated successfully",
+    };
+  });
+
+export const partnerNetworkAgreementsDelete = protectedProcedure
+  .use(requirePermission("agreements.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerAgreements)
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
+    }
+
+    await db
+      .delete(partnerNetworkSchema.partnerAgreements)
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id));
+
+    return {
+      success: true,
+      message: "Agreement deleted successfully",
+    };
+  });
+
+export const partnerNetworkAgreementsActivate = protectedProcedure
+  .use(requirePermission("agreements.update"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [updatedAgreement] = await db
+      .update(partnerNetworkSchema.partnerAgreements)
+      .set({ status: "active" })
+      .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
+      .returning();
+
+    if (!updatedAgreement) {
+      throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedAgreement,
+      message: "Agreement activated",
+    };
+  });
+
+// ========================================
+// REVIEWS (FLAT PROCEDURES)
+// ========================================
+
+export const partnerNetworkReviewsList = protectedProcedure
+  .use(requirePermission("reviews.read"))
+  .input(reviewQuerySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { page, pageSize, ...filters } = input;
+
+    const conditions = [
+      eq(
+        partnerNetworkSchema.partnerReviews.organizationId,
+        filters.organizationId || "default"
+      ),
+    ];
+
+    if (filters.partnerId) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReviews.partnerId, filters.partnerId)
+      );
+    }
+    if (filters.referralId) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReviews.referralId, filters.referralId)
+      );
+    }
+    if (filters.reviewerType) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerReviews.reviewerType,
+          filters.reviewerType
+        )
+      );
+    }
+    if (filters.status) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReviews.status, filters.status)
+      );
+    }
+    if (filters.minRating) {
+      conditions.push(
+        gte(
+          partnerNetworkSchema.partnerReviews.overallRating,
+          filters.minRating
+        )
+      );
+    }
+    if (filters.isPublic !== undefined) {
+      conditions.push(
+        eq(partnerNetworkSchema.partnerReviews.isPublic, filters.isPublic)
+      );
+    }
+
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(partnerNetworkSchema.partnerReviews)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(desc(partnerNetworkSchema.partnerReviews.createdAt)),
+      db
+        .select({ count: count() })
+        .from(partnerNetworkSchema.partnerReviews)
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+  });
+
+export const partnerNetworkReviewsGetById = protectedProcedure
+  .use(requirePermission("reviews.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [review] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerReviews)
+      .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
+      .limit(1);
+
+    if (!review) {
+      throw new ORPCError("NOT_FOUND", { message: "Review not found" });
+    }
+
+    return { success: true, data: review };
+  });
+
+export const partnerNetworkReviewsCreate = protectedProcedure
+  .use(requirePermission("reviews.create"))
+  .input(createReviewSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const reviewData = {
+      ...input,
+      id: nanoid(),
+      organizationId: "default",
+      reviewerUserId: user?.id,
+      status: "pending" as const,
+    };
+
+    const [newReview] = await db
+      .insert(partnerNetworkSchema.partnerReviews)
+      .values(reviewData)
+      .returning();
+
+    return {
+      success: true,
+      data: newReview,
+      message: "Review submitted successfully",
+    };
+  });
+
+export const partnerNetworkReviewsModerate = protectedProcedure
+  .use(requirePermission("reviews.update"))
+  .input(
+    z.object({
+      id: z.string(),
+      status: z.enum(["approved", "rejected", "hidden"]),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const [updatedReview] = await db
+      .update(partnerNetworkSchema.partnerReviews)
+      .set({
+        status: input.status,
+        moderatedBy: user?.id,
+        moderatedDate: new Date(),
+      })
+      .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
+      .returning();
+
+    if (!updatedReview) {
+      throw new ORPCError("NOT_FOUND", { message: "Review not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedReview,
+      message: `Review ${input.status}`,
+    };
+  });
+
+export const partnerNetworkReviewsAddResponse = protectedProcedure
+  .use(requirePermission("reviews.update"))
+  .input(z.object({ id: z.string(), response: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [updatedReview] = await db
+      .update(partnerNetworkSchema.partnerReviews)
+      .set({
+        partnerResponse: input.response,
+        responseDate: new Date(),
+      })
+      .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
+      .returning();
+
+    if (!updatedReview) {
+      throw new ORPCError("NOT_FOUND", { message: "Review not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedReview,
+      message: "Response added successfully",
+    };
+  });
+
+export const partnerNetworkReviewsDelete = protectedProcedure
+  .use(requirePermission("reviews.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerReviews)
+      .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
+      .limit(1);
+
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", { message: "Review not found" });
+    }
+
+    await db
+      .delete(partnerNetworkSchema.partnerReviews)
+      .where(eq(partnerNetworkSchema.partnerReviews.id, input.id));
+
+    return {
+      success: true,
+      message: "Review deleted successfully",
+    };
+  });
+
+// ========================================
+// COMMUNICATIONS (FLAT PROCEDURES)
+// ========================================
+
+export const partnerNetworkCommunicationsList = protectedProcedure
+  .use(requirePermission("communications.read"))
+  .input(communicationQuerySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { page, pageSize, ...filters } = input;
+
+    const conditions = [
+      eq(
+        partnerNetworkSchema.partnerCommunications.organizationId,
+        filters.organizationId || "default"
+      ),
+    ];
+
+    if (filters.partnerId) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerCommunications.partnerId,
+          filters.partnerId
+        )
+      );
+    }
+    if (filters.referralId) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerCommunications.referralId,
+          filters.referralId
+        )
+      );
+    }
+    if (filters.communicationType) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerCommunications.communicationType,
+          filters.communicationType
+        )
+      );
+    }
+    if (filters.direction) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerCommunications.direction,
+          filters.direction
+        )
+      );
+    }
+    if (filters.requiresFollowUp !== undefined) {
+      conditions.push(
+        eq(
+          partnerNetworkSchema.partnerCommunications.requiresFollowUp,
+          filters.requiresFollowUp
+        )
+      );
+    }
+    if (filters.dateFrom) {
+      conditions.push(
+        gte(
+          partnerNetworkSchema.partnerCommunications.createdAt,
+          new Date(filters.dateFrom)
+        )
+      );
+    }
+    if (filters.dateTo) {
+      conditions.push(
+        lte(
+          partnerNetworkSchema.partnerCommunications.createdAt,
+          new Date(filters.dateTo)
+        )
+      );
+    }
+
+    const whereClause = and(...conditions);
+    const offset = (page - 1) * pageSize;
+
+    const [items, totalResult] = await Promise.all([
+      db
+        .select()
+        .from(partnerNetworkSchema.partnerCommunications)
+        .where(whereClause)
+        .limit(pageSize)
+        .offset(offset)
+        .orderBy(desc(partnerNetworkSchema.partnerCommunications.createdAt)),
+      db
+        .select({ count: count() })
+        .from(partnerNetworkSchema.partnerCommunications)
+        .where(whereClause),
+    ]);
+
+    const total = totalResult[0]?.count || 0;
+
+    return {
+      success: true,
+      data: {
+        items,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages: Math.ceil(total / pageSize),
+        },
+      },
+    };
+  });
+
+export const partnerNetworkCommunicationsGetById = protectedProcedure
+  .use(requirePermission("communications.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+
+    const [communication] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerCommunications)
+      .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
+      .limit(1);
+
+    if (!communication) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Communication not found",
+      });
+    }
+
+    return { success: true, data: communication };
+  });
+
+export const partnerNetworkCommunicationsCreate = protectedProcedure
+  .use(requirePermission("communications.create"))
+  .input(createCommunicationSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const communicationData = {
+      ...input,
+      id: nanoid(),
+      organizationId: "default",
+      ourContactId: user?.id,
+      scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
+      followUpDate: input.followUpDate
+        ? new Date(input.followUpDate)
+        : undefined,
+    };
+
+    const [newCommunication] = await db
+      .insert(partnerNetworkSchema.partnerCommunications)
+      .values(communicationData)
+      .returning();
+
+    return {
+      success: true,
+      data: newCommunication,
+      message: "Communication logged successfully",
+    };
+  });
+
+export const partnerNetworkCommunicationsMarkFollowUpComplete =
+  protectedProcedure
+    .use(requirePermission("communications.update"))
+    .input(z.object({ id: z.string() }))
+    .handler(async ({ input, context }) => {
+      const { db } = context;
+
+      const [updatedCommunication] = await db
+        .update(partnerNetworkSchema.partnerCommunications)
+        .set({ followUpCompleted: true })
+        .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
+        .returning();
+
+      if (!updatedCommunication) {
+        throw new ORPCError("NOT_FOUND", {
+          message: "Communication not found",
+        });
+      }
+
+      return {
+        success: true,
+        data: updatedCommunication,
+        message: "Follow-up marked as complete",
+      };
+    });
+
+export const partnerNetworkCommunicationsGetPendingFollowUps =
+  protectedProcedure
+    .use(requirePermission("communications.read"))
+    .input(z.object({ organizationId: z.string().optional() }))
+    .handler(async ({ input, context }) => {
+      const { db } = context;
+      const orgId = input.organizationId || "default";
+
+      const pendingFollowUps = await db
+        .select()
+        .from(partnerNetworkSchema.partnerCommunications)
+        .where(
+          and(
             eq(
-              partnerNetworkSchema.partnerReferrals.referringPartnerId,
-              filters.referringPartnerId
-            )
-          );
-        }
-        if (filters.receivingPartnerId) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerReferrals.receivingPartnerId,
-              filters.receivingPartnerId
-            )
-          );
-        }
-        if (filters.clientId) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerReferrals.clientId, filters.clientId)
-          );
-        }
-        if (filters.status) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerReferrals.status, filters.status)
-          );
-        }
-        if (filters.serviceCategory) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerReferrals.serviceCategory,
-              filters.serviceCategory
-            )
-          );
-        }
-        if (filters.commissionPaid !== undefined) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerReferrals.commissionPaid,
-              filters.commissionPaid
-            )
-          );
-        }
-        if (filters.dateFrom) {
-          conditions.push(
-            gte(
-              partnerNetworkSchema.partnerReferrals.referralDate,
-              new Date(filters.dateFrom)
-            )
-          );
-        }
-        if (filters.dateTo) {
-          conditions.push(
-            lte(
-              partnerNetworkSchema.partnerReferrals.referralDate,
-              new Date(filters.dateTo)
-            )
-          );
-        }
-
-        const whereClause = and(...conditions);
-        const offset = (page - 1) * pageSize;
-
-        const [items, totalResult] = await Promise.all([
-          db
-            .select()
-            .from(partnerNetworkSchema.partnerReferrals)
-            .where(whereClause)
-            .limit(pageSize)
-            .offset(offset)
-            .orderBy(desc(partnerNetworkSchema.partnerReferrals.referralDate)),
-          db
-            .select({ count: count() })
-            .from(partnerNetworkSchema.partnerReferrals)
-            .where(whereClause),
-        ]);
-
-        const total = totalResult[0]?.count || 0;
-
-        return {
-          success: true,
-          data: {
-            items,
-            pagination: {
-              page,
-              pageSize,
-              total,
-              totalPages: Math.ceil(total / pageSize),
-            },
-          },
-        };
-      }),
-
-    getById: protectedProcedure
-      .use(requirePermission("referrals.read"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [referral] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerReferrals)
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
-          .limit(1);
-
-        if (!referral) {
-          throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
-        }
-
-        return { success: true, data: referral };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("referrals.create"))
-      .input(createReferralSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const referralData = {
-          ...input,
-          id: nanoid(),
-          referralNumber: generateReferralNumber(),
-          organizationId: user?.organizationId || "default",
-          status: "PENDING" as const,
-          referralDate: new Date(),
-          createdBy: user?.id,
-        };
-
-        const [newReferral] = await db
-          .insert(partnerNetworkSchema.partnerReferrals)
-          .values(referralData)
-          .returning();
-
-        return {
-          success: true,
-          data: newReferral,
-          message: "Referral created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("referrals.update"))
-      .input(updateReferralSchema)
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, ...updateData } = input;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerReferrals)
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
-        }
-
-        const [updatedReferral] = await db
-          .update(partnerNetworkSchema.partnerReferrals)
-          .set(updateData)
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
-          .returning();
-
-        return {
-          success: true,
-          data: updatedReferral,
-          message: "Referral updated successfully",
-        };
-      }),
-
-    accept: protectedProcedure
-      .use(requirePermission("referrals.update"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [updatedReferral] = await db
-          .update(partnerNetworkSchema.partnerReferrals)
-          .set({
-            status: "ACCEPTED" as const,
-            acceptedDate: new Date(),
-          })
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
-          .returning();
-
-        if (!updatedReferral) {
-          throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedReferral,
-          message: "Referral accepted",
-        };
-      }),
-
-    complete: protectedProcedure
-      .use(requirePermission("referrals.update"))
-      .input(
-        z.object({
-          id: z.string(),
-          actualValue: z.string().optional(),
-          outcome: z.string().optional(),
-          successfulConversion: z.boolean().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, ...completionData } = input;
-
-        const [updatedReferral] = await db
-          .update(partnerNetworkSchema.partnerReferrals)
-          .set({
-            ...completionData,
-            status: "COMPLETED" as const,
-            completedDate: new Date(),
-          })
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, id))
-          .returning();
-
-        if (!updatedReferral) {
-          throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedReferral,
-          message: "Referral completed",
-        };
-      }),
-
-    delete: protectedProcedure
-      .use(requirePermission("referrals.delete"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerReferrals)
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Referral not found" });
-        }
-
-        await db
-          .delete(partnerNetworkSchema.partnerReferrals)
-          .where(eq(partnerNetworkSchema.partnerReferrals.id, input.id));
-
-        return {
-          success: true,
-          message: "Referral deleted successfully",
-        };
-      }),
-  },
-
-  // ========================================
-  // AGREEMENTS SUB-ROUTER
-  // ========================================
-  agreements: {
-    list: protectedProcedure
-      .use(requirePermission("agreements.read"))
-      .input(agreementQuerySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { page, pageSize, ...filters } = input;
-
-        const conditions = [
-          eq(
-            partnerNetworkSchema.partnerAgreements.organizationId,
-            filters.organizationId || user?.organizationId || "default"
-          ),
-        ];
-
-        if (filters.partnerId) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerAgreements.partnerId,
-              filters.partnerId
-            )
-          );
-        }
-        if (filters.agreementType) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerAgreements.agreementType,
-              filters.agreementType
-            )
-          );
-        }
-        if (filters.status) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerAgreements.status, filters.status)
-          );
-        }
-        if (filters.expiringBefore) {
-          conditions.push(
-            lte(
-              partnerNetworkSchema.partnerAgreements.expiryDate,
-              new Date(filters.expiringBefore)
-            )
-          );
-        }
-
-        const whereClause = and(...conditions);
-        const offset = (page - 1) * pageSize;
-
-        const [items, totalResult] = await Promise.all([
-          db
-            .select()
-            .from(partnerNetworkSchema.partnerAgreements)
-            .where(whereClause)
-            .limit(pageSize)
-            .offset(offset)
-            .orderBy(desc(partnerNetworkSchema.partnerAgreements.createdAt)),
-          db
-            .select({ count: count() })
-            .from(partnerNetworkSchema.partnerAgreements)
-            .where(whereClause),
-        ]);
-
-        const total = totalResult[0]?.count || 0;
-
-        return {
-          success: true,
-          data: {
-            items,
-            pagination: {
-              page,
-              pageSize,
-              total,
-              totalPages: Math.ceil(total / pageSize),
-            },
-          },
-        };
-      }),
-
-    getById: protectedProcedure
-      .use(requirePermission("agreements.read"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [agreement] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerAgreements)
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
-          .limit(1);
-
-        if (!agreement) {
-          throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
-        }
-
-        return { success: true, data: agreement };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("agreements.create"))
-      .input(createAgreementSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const agreementData = {
-          ...input,
-          id: nanoid(),
-          agreementNumber: generateAgreementNumber(),
-          organizationId: user?.organizationId || "default",
-          status: "draft" as const,
-          effectiveDate: new Date(input.effectiveDate),
-          expiryDate: input.expiryDate ? new Date(input.expiryDate) : undefined,
-          renewalDate: input.renewalDate
-            ? new Date(input.renewalDate)
-            : undefined,
-          createdBy: user?.id,
-        };
-
-        const [newAgreement] = await db
-          .insert(partnerNetworkSchema.partnerAgreements)
-          .values(agreementData)
-          .returning();
-
-        return {
-          success: true,
-          data: newAgreement,
-          message: "Agreement created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("agreements.update"))
-      .input(updateAgreementSchema)
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, ...updateData } = input;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerAgreements)
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
-        }
-
-        // Transform date strings to Date objects
-        const transformedData = {
-          ...updateData,
-          effectiveDate: updateData.effectiveDate
-            ? new Date(updateData.effectiveDate)
-            : undefined,
-          expiryDate: updateData.expiryDate
-            ? new Date(updateData.expiryDate)
-            : undefined,
-          renewalDate: updateData.renewalDate
-            ? new Date(updateData.renewalDate)
-            : undefined,
-          ourSignatureDate: updateData.ourSignatureDate
-            ? new Date(updateData.ourSignatureDate)
-            : undefined,
-          partnerSignatureDate: updateData.partnerSignatureDate
-            ? new Date(updateData.partnerSignatureDate)
-            : undefined,
-          lastReviewDate: updateData.lastReviewDate
-            ? new Date(updateData.lastReviewDate)
-            : undefined,
-          nextReviewDate: updateData.nextReviewDate
-            ? new Date(updateData.nextReviewDate)
-            : undefined,
-        };
-
-        const [updatedAgreement] = await db
-          .update(partnerNetworkSchema.partnerAgreements)
-          .set(transformedData)
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, id))
-          .returning();
-
-        return {
-          success: true,
-          data: updatedAgreement,
-          message: "Agreement updated successfully",
-        };
-      }),
-
-    delete: protectedProcedure
-      .use(requirePermission("agreements.delete"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerAgreements)
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
-        }
-
-        await db
-          .delete(partnerNetworkSchema.partnerAgreements)
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id));
-
-        return {
-          success: true,
-          message: "Agreement deleted successfully",
-        };
-      }),
-
-    activate: protectedProcedure
-      .use(requirePermission("agreements.update"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [updatedAgreement] = await db
-          .update(partnerNetworkSchema.partnerAgreements)
-          .set({ status: "active" })
-          .where(eq(partnerNetworkSchema.partnerAgreements.id, input.id))
-          .returning();
-
-        if (!updatedAgreement) {
-          throw new ORPCError("NOT_FOUND", { message: "Agreement not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedAgreement,
-          message: "Agreement activated",
-        };
-      }),
-  },
-
-  // ========================================
-  // REVIEWS SUB-ROUTER
-  // ========================================
-  reviews: {
-    list: protectedProcedure
-      .use(requirePermission("reviews.read"))
-      .input(reviewQuerySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { page, pageSize, ...filters } = input;
-
-        const conditions = [
-          eq(
-            partnerNetworkSchema.partnerReviews.organizationId,
-            filters.organizationId || user?.organizationId || "default"
-          ),
-        ];
-
-        if (filters.partnerId) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerReviews.partnerId, filters.partnerId)
-          );
-        }
-        if (filters.referralId) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerReviews.referralId,
-              filters.referralId
-            )
-          );
-        }
-        if (filters.reviewerType) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerReviews.reviewerType,
-              filters.reviewerType
-            )
-          );
-        }
-        if (filters.status) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerReviews.status, filters.status)
-          );
-        }
-        if (filters.minRating) {
-          conditions.push(
-            gte(
-              partnerNetworkSchema.partnerReviews.overallRating,
-              filters.minRating
-            )
-          );
-        }
-        if (filters.isPublic !== undefined) {
-          conditions.push(
-            eq(partnerNetworkSchema.partnerReviews.isPublic, filters.isPublic)
-          );
-        }
-
-        const whereClause = and(...conditions);
-        const offset = (page - 1) * pageSize;
-
-        const [items, totalResult] = await Promise.all([
-          db
-            .select()
-            .from(partnerNetworkSchema.partnerReviews)
-            .where(whereClause)
-            .limit(pageSize)
-            .offset(offset)
-            .orderBy(desc(partnerNetworkSchema.partnerReviews.createdAt)),
-          db
-            .select({ count: count() })
-            .from(partnerNetworkSchema.partnerReviews)
-            .where(whereClause),
-        ]);
-
-        const total = totalResult[0]?.count || 0;
-
-        return {
-          success: true,
-          data: {
-            items,
-            pagination: {
-              page,
-              pageSize,
-              total,
-              totalPages: Math.ceil(total / pageSize),
-            },
-          },
-        };
-      }),
-
-    getById: protectedProcedure
-      .use(requirePermission("reviews.read"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [review] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerReviews)
-          .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
-          .limit(1);
-
-        if (!review) {
-          throw new ORPCError("NOT_FOUND", { message: "Review not found" });
-        }
-
-        return { success: true, data: review };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("reviews.create"))
-      .input(createReviewSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const reviewData = {
-          ...input,
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          reviewerUserId: user?.id,
-          status: "pending" as const,
-        };
-
-        const [newReview] = await db
-          .insert(partnerNetworkSchema.partnerReviews)
-          .values(reviewData)
-          .returning();
-
-        return {
-          success: true,
-          data: newReview,
-          message: "Review submitted successfully",
-        };
-      }),
-
-    moderate: protectedProcedure
-      .use(requirePermission("reviews.update"))
-      .input(
-        z.object({
-          id: z.string(),
-          status: z.enum(["approved", "rejected", "hidden"]),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const [updatedReview] = await db
-          .update(partnerNetworkSchema.partnerReviews)
-          .set({
-            status: input.status,
-            moderatedBy: user?.id,
-            moderatedDate: new Date(),
-          })
-          .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
-          .returning();
-
-        if (!updatedReview) {
-          throw new ORPCError("NOT_FOUND", { message: "Review not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedReview,
-          message: `Review ${input.status}`,
-        };
-      }),
-
-    addResponse: protectedProcedure
-      .use(requirePermission("reviews.update"))
-      .input(z.object({ id: z.string(), response: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [updatedReview] = await db
-          .update(partnerNetworkSchema.partnerReviews)
-          .set({
-            partnerResponse: input.response,
-            responseDate: new Date(),
-          })
-          .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
-          .returning();
-
-        if (!updatedReview) {
-          throw new ORPCError("NOT_FOUND", { message: "Review not found" });
-        }
-
-        return {
-          success: true,
-          data: updatedReview,
-          message: "Response added successfully",
-        };
-      }),
-
-    delete: protectedProcedure
-      .use(requirePermission("reviews.delete"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerReviews)
-          .where(eq(partnerNetworkSchema.partnerReviews.id, input.id))
-          .limit(1);
-
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", { message: "Review not found" });
-        }
-
-        await db
-          .delete(partnerNetworkSchema.partnerReviews)
-          .where(eq(partnerNetworkSchema.partnerReviews.id, input.id));
-
-        return {
-          success: true,
-          message: "Review deleted successfully",
-        };
-      }),
-  },
-
-  // ========================================
-  // COMMUNICATIONS SUB-ROUTER
-  // ========================================
-  communications: {
-    list: protectedProcedure
-      .use(requirePermission("communications.read"))
-      .input(communicationQuerySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { page, pageSize, ...filters } = input;
-
-        const conditions = [
-          eq(
-            partnerNetworkSchema.partnerCommunications.organizationId,
-            filters.organizationId || user?.organizationId || "default"
-          ),
-        ];
-
-        if (filters.partnerId) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerCommunications.partnerId,
-              filters.partnerId
-            )
-          );
-        }
-        if (filters.referralId) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerCommunications.referralId,
-              filters.referralId
-            )
-          );
-        }
-        if (filters.communicationType) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerCommunications.communicationType,
-              filters.communicationType
-            )
-          );
-        }
-        if (filters.direction) {
-          conditions.push(
-            eq(
-              partnerNetworkSchema.partnerCommunications.direction,
-              filters.direction
-            )
-          );
-        }
-        if (filters.requiresFollowUp !== undefined) {
-          conditions.push(
+              partnerNetworkSchema.partnerCommunications.organizationId,
+              orgId
+            ),
             eq(
               partnerNetworkSchema.partnerCommunications.requiresFollowUp,
-              filters.requiresFollowUp
-            )
-          );
-        }
-        if (filters.dateFrom) {
-          conditions.push(
-            gte(
-              partnerNetworkSchema.partnerCommunications.createdAt,
-              new Date(filters.dateFrom)
-            )
-          );
-        }
-        if (filters.dateTo) {
-          conditions.push(
-            lte(
-              partnerNetworkSchema.partnerCommunications.createdAt,
-              new Date(filters.dateTo)
-            )
-          );
-        }
-
-        const whereClause = and(...conditions);
-        const offset = (page - 1) * pageSize;
-
-        const [items, totalResult] = await Promise.all([
-          db
-            .select()
-            .from(partnerNetworkSchema.partnerCommunications)
-            .where(whereClause)
-            .limit(pageSize)
-            .offset(offset)
-            .orderBy(
-              desc(partnerNetworkSchema.partnerCommunications.createdAt)
+              true
             ),
-          db
-            .select({ count: count() })
-            .from(partnerNetworkSchema.partnerCommunications)
-            .where(whereClause),
-        ]);
-
-        const total = totalResult[0]?.count || 0;
-
-        return {
-          success: true,
-          data: {
-            items,
-            pagination: {
-              page,
-              pageSize,
-              total,
-              totalPages: Math.ceil(total / pageSize),
-            },
-          },
-        };
-      }),
-
-    getById: protectedProcedure
-      .use(requirePermission("communications.read"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [communication] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerCommunications)
-          .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
-          .limit(1);
-
-        if (!communication) {
-          throw new ORPCError("NOT_FOUND", {
-            message: "Communication not found",
-          });
-        }
-
-        return { success: true, data: communication };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("communications.create"))
-      .input(createCommunicationSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const communicationData = {
-          ...input,
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          ourContactId: user?.id,
-          scheduledAt: input.scheduledAt
-            ? new Date(input.scheduledAt)
-            : undefined,
-          followUpDate: input.followUpDate
-            ? new Date(input.followUpDate)
-            : undefined,
-        };
-
-        const [newCommunication] = await db
-          .insert(partnerNetworkSchema.partnerCommunications)
-          .values(communicationData)
-          .returning();
-
-        return {
-          success: true,
-          data: newCommunication,
-          message: "Communication logged successfully",
-        };
-      }),
-
-    markFollowUpComplete: protectedProcedure
-      .use(requirePermission("communications.update"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-
-        const [updatedCommunication] = await db
-          .update(partnerNetworkSchema.partnerCommunications)
-          .set({ followUpCompleted: true })
-          .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
-          .returning();
-
-        if (!updatedCommunication) {
-          throw new ORPCError("NOT_FOUND", {
-            message: "Communication not found",
-          });
-        }
-
-        return {
-          success: true,
-          data: updatedCommunication,
-          message: "Follow-up marked as complete",
-        };
-      }),
-
-    getPendingFollowUps: protectedProcedure
-      .use(requirePermission("communications.read"))
-      .input(z.object({ organizationId: z.string().optional() }))
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const orgId = input.organizationId || user?.organizationId || "default";
-
-        const pendingFollowUps = await db
-          .select()
-          .from(partnerNetworkSchema.partnerCommunications)
-          .where(
-            and(
-              eq(
-                partnerNetworkSchema.partnerCommunications.organizationId,
-                orgId
-              ),
-              eq(
-                partnerNetworkSchema.partnerCommunications.requiresFollowUp,
-                true
-              ),
-              eq(
-                partnerNetworkSchema.partnerCommunications.followUpCompleted,
-                false
-              )
+            eq(
+              partnerNetworkSchema.partnerCommunications.followUpCompleted,
+              false
             )
           )
-          .orderBy(partnerNetworkSchema.partnerCommunications.followUpDate);
+        )
+        .orderBy(partnerNetworkSchema.partnerCommunications.followUpDate);
 
-        return {
-          success: true,
-          data: pendingFollowUps,
-        };
-      }),
+      return {
+        success: true,
+        data: pendingFollowUps,
+      };
+    });
 
-    delete: protectedProcedure
-      .use(requirePermission("communications.delete"))
-      .input(z.object({ id: z.string() }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
+export const partnerNetworkCommunicationsDelete = protectedProcedure
+  .use(requirePermission("communications.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
 
-        const [existing] = await db
-          .select()
-          .from(partnerNetworkSchema.partnerCommunications)
-          .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
-          .limit(1);
+    const [existing] = await db
+      .select()
+      .from(partnerNetworkSchema.partnerCommunications)
+      .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id))
+      .limit(1);
 
-        if (!existing) {
-          throw new ORPCError("NOT_FOUND", {
-            message: "Communication not found",
-          });
-        }
+    if (!existing) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Communication not found",
+      });
+    }
 
-        await db
-          .delete(partnerNetworkSchema.partnerCommunications)
-          .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id));
+    await db
+      .delete(partnerNetworkSchema.partnerCommunications)
+      .where(eq(partnerNetworkSchema.partnerCommunications.id, input.id));
 
-        return {
-          success: true,
-          message: "Communication deleted successfully",
-        };
-      }),
-  },
-};
+    return {
+      success: true,
+      message: "Communication deleted successfully",
+    };
+  });

@@ -1,5 +1,12 @@
-import crypto from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { TestScenario } from "./integration-test-framework";
+
+// Mock expect function for validation (defined early to avoid temporal dead zone)
+const expect = {
+  any: (type: any) => `__expect_any_${type.name}__`,
+  stringMatching: (pattern: RegExp) =>
+    `__expect_string_matching_${pattern.source}__`,
+};
 
 /**
  * Predefined test scenarios for GK-Nexus Phase 3 Infrastructure
@@ -29,7 +36,8 @@ export const graIntegrationScenarios: TestScenario[] = [
           },
         },
         expectedResult: { success: true, connectionId: expect.any(String) },
-        validation: (actual, expected) => actual.success && actual.connectionId,
+        validation: (actual, _expected) =>
+          actual.success && actual.connectionId,
       },
       {
         id: "step-2",
@@ -39,7 +47,7 @@ export const graIntegrationScenarios: TestScenario[] = [
           filingType: "paye_monthly",
           taxYear: 2024,
           taxPeriod: "2024-01",
-          clientId: crypto.randomUUID(),
+          clientId: randomUUID(),
           submissionData: {
             totalGrossPay: 50_000,
             totalPAYE: 7500,
@@ -48,7 +56,8 @@ export const graIntegrationScenarios: TestScenario[] = [
           },
         },
         expectedResult: { success: true, submissionId: expect.any(String) },
-        validation: (actual, expected) => actual.success && actual.submissionId,
+        validation: (actual, _expected) =>
+          actual.success && actual.submissionId,
       },
       {
         id: "step-3",
@@ -58,7 +67,7 @@ export const graIntegrationScenarios: TestScenario[] = [
           submissionId: "${step-2.submissionId}",
         },
         expectedResult: { status: "submitted" },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.status &&
           ["submitted", "processing", "accepted"].includes(actual.status),
       },
@@ -80,7 +89,7 @@ export const graIntegrationScenarios: TestScenario[] = [
           filingType: "vat_quarterly",
           taxYear: 2024,
           taxPeriod: "2024-Q1",
-          clientId: crypto.randomUUID(),
+          clientId: randomUUID(),
           submissionData: {
             totalSales: 100_000,
             totalPurchases: 60_000,
@@ -90,14 +99,14 @@ export const graIntegrationScenarios: TestScenario[] = [
           },
           attachedDocuments: [
             {
-              id: crypto.randomUUID(),
+              id: randomUUID(),
               name: "Sales_Register_Q1.pdf",
               type: "application/pdf",
               size: 1_024_000,
               required: true,
             },
             {
-              id: crypto.randomUUID(),
+              id: randomUUID(),
               name: "Purchase_Register_Q1.pdf",
               type: "application/pdf",
               size: 512_000,
@@ -106,7 +115,7 @@ export const graIntegrationScenarios: TestScenario[] = [
           ],
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
       {
         id: "step-2",
@@ -136,7 +145,7 @@ export const ocrProcessingScenarios: TestScenario[] = [
         name: "Queue Receipt Document",
         action: "ocr_queue_document",
         payload: {
-          documentId: crypto.randomUUID(),
+          documentId: randomUUID(),
           originalFileName: "receipt_001.jpg",
           documentType: "receipt",
           fileSize: 256_000,
@@ -146,7 +155,8 @@ export const ocrProcessingScenarios: TestScenario[] = [
           processingEngine: "tesseract",
         },
         expectedResult: { success: true, processingId: expect.any(String) },
-        validation: (actual, expected) => actual.success && actual.processingId,
+        validation: (actual, _expected) =>
+          actual.success && actual.processingId,
       },
       {
         id: "step-2",
@@ -156,7 +166,7 @@ export const ocrProcessingScenarios: TestScenario[] = [
           processingId: "${step-1.processingId}",
         },
         expectedResult: { status: "completed", confidence: expect.any(Number) },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.status === "completed" && actual.confidence > 50,
       },
       {
@@ -171,7 +181,7 @@ export const ocrProcessingScenarios: TestScenario[] = [
           extractedText: expect.any(String),
           structuredData: expect.any(Object),
         },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.status === "completed" &&
           actual.extractedText &&
           actual.structuredData,
@@ -192,7 +202,7 @@ export const ocrProcessingScenarios: TestScenario[] = [
         name: "Queue Multi-page Invoice",
         action: "ocr_queue_document",
         payload: {
-          documentId: crypto.randomUUID(),
+          documentId: randomUUID(),
           originalFileName: "invoice_multipage.pdf",
           documentType: "invoice",
           fileSize: 1_024_000,
@@ -200,11 +210,11 @@ export const ocrProcessingScenarios: TestScenario[] = [
           pageCount: 3,
           language: "en",
           processingEngine: "tesseract",
-          extractionTemplateId: crypto.randomUUID(),
+          extractionTemplateId: randomUUID(),
           priority: 2, // High priority
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
       {
         id: "step-2",
@@ -226,7 +236,7 @@ export const ocrProcessingScenarios: TestScenario[] = [
             /^(processing|completed|manual_review)$/
           ),
         },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           ["processing", "completed", "manual_review"].includes(actual.status),
       },
     ],
@@ -261,7 +271,7 @@ export const reportingScenarios: TestScenario[] = [
           },
         },
         expectedResult: { success: true, reportId: expect.any(String) },
-        validation: (actual, expected) => actual.success && actual.reportId,
+        validation: (actual, _expected) => actual.success && actual.reportId,
       },
       {
         id: "step-2",
@@ -273,7 +283,7 @@ export const reportingScenarios: TestScenario[] = [
         expectedResult: {
           status: expect.stringMatching(/^(generating|completed)$/),
         },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           ["generating", "completed"].includes(actual.status),
       },
       {
@@ -292,7 +302,7 @@ export const reportingScenarios: TestScenario[] = [
           reportId: "${step-1.reportId}",
         },
         expectedResult: { status: "completed", outputFiles: expect.any(Array) },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.status === "completed" &&
           actual.outputFiles &&
           actual.outputFiles.length > 0,
@@ -318,14 +328,14 @@ export const reportingScenarios: TestScenario[] = [
             dateFrom: "2024-01-01",
             dateTo: "2024-03-31",
             filters: {
-              clientIds: [crypto.randomUUID()],
+              clientIds: [randomUUID()],
               includeDetails: true,
             },
             outputFormat: "excel",
           },
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
     ],
     timeout: 180_000, // 3 minutes
@@ -356,7 +366,7 @@ export const queueProcessingScenarios: TestScenario[] = [
           },
         },
         expectedResult: { jobId: expect.any(String), status: "queued" },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.jobId && actual.status === "queued",
       },
       {
@@ -369,7 +379,7 @@ export const queueProcessingScenarios: TestScenario[] = [
           expectedResult: { emailSent: true },
         },
         expectedResult: { status: "completed", result: { emailSent: true } },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.status === "completed" && actual.result.emailSent,
       },
     ],
@@ -392,7 +402,7 @@ export const queueProcessingScenarios: TestScenario[] = [
           payload: { exportType: "csv", recordCount: 10_000 },
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.jobId,
+        validation: (actual, _expected) => actual.jobId,
       },
       {
         id: "step-2",
@@ -404,7 +414,7 @@ export const queueProcessingScenarios: TestScenario[] = [
           payload: { submissionType: "urgent_filing" },
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.jobId,
+        validation: (actual, _expected) => actual.jobId,
       },
       {
         id: "step-3",
@@ -441,7 +451,8 @@ export const monitoringScenarios: TestScenario[] = [
           severity: "warning",
         },
         expectedResult: { alertRuleId: expect.any(String), isActive: true },
-        validation: (actual, expected) => actual.alertRuleId && actual.isActive,
+        validation: (actual, _expected) =>
+          actual.alertRuleId && actual.isActive,
       },
       {
         id: "step-2",
@@ -453,7 +464,7 @@ export const monitoringScenarios: TestScenario[] = [
           severity: "warning",
         },
         expectedResult: { alertId: expect.any(String), status: "active" },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.alertId && actual.status === "active",
       },
       {
@@ -482,7 +493,7 @@ export const monitoringScenarios: TestScenario[] = [
           query: "SELECT COUNT(*) FROM organizations",
         },
         expectedResult: { success: true, duration: expect.any(Number) },
-        validation: (actual, expected) =>
+        validation: (actual, _expected) =>
           actual.success && actual.duration < 10_000,
       },
       {
@@ -521,7 +532,7 @@ export const e2eScenarios: TestScenario[] = [
         name: "Process Tax Document with OCR",
         action: "ocr_queue_document",
         payload: {
-          documentId: crypto.randomUUID(),
+          documentId: randomUUID(),
           originalFileName: "tax_documents.pdf",
           documentType: "financial_statement",
           fileSize: 2_048_000,
@@ -529,7 +540,7 @@ export const e2eScenarios: TestScenario[] = [
           pageCount: 5,
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
 
       // Step 2: Wait for OCR Processing
@@ -552,7 +563,7 @@ export const e2eScenarios: TestScenario[] = [
           environment: "sandbox",
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
 
       // Step 4: Submit to GRA using OCR data
@@ -563,7 +574,7 @@ export const e2eScenarios: TestScenario[] = [
         payload: {
           filingType: "corporate_tax",
           taxYear: 2024,
-          clientId: crypto.randomUUID(),
+          clientId: randomUUID(),
           submissionData: {
             // This would normally come from OCR results
             totalIncome: 500_000,
@@ -573,7 +584,7 @@ export const e2eScenarios: TestScenario[] = [
           },
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
 
       // Step 5: Generate Compliance Report
@@ -591,7 +602,7 @@ export const e2eScenarios: TestScenario[] = [
           },
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
     ],
     timeout: 600_000, // 10 minutes for complete workflow
@@ -613,7 +624,7 @@ export const performanceScenarios: TestScenario[] = [
         name: "Queue Multiple Documents",
         action: "ocr_queue_document",
         payload: {
-          documentId: crypto.randomUUID(),
+          documentId: randomUUID(),
           originalFileName: "batch_document.pdf",
           documentType: "receipt",
           fileSize: 512_000,
@@ -621,7 +632,7 @@ export const performanceScenarios: TestScenario[] = [
           pageCount: 1,
         },
         expectedResult: { success: true },
-        validation: (actual, expected) => actual.success,
+        validation: (actual, _expected) => actual.success,
       },
     ],
     timeout: 30_000,
@@ -676,10 +687,3 @@ export function getAllScenarios(): TestScenario[] {
     ...performanceScenarios,
   ];
 }
-
-// Mock expect function for validation (would use actual testing library in real implementation)
-const expect = {
-  any: (type: any) => `__expect_any_${type.name}__`,
-  stringMatching: (pattern: RegExp) =>
-    `__expect_string_matching_${pattern.source}__`,
-};

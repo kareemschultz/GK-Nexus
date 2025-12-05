@@ -95,14 +95,14 @@ function RouteComponent() {
     queryKey: ["clients"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clients.list({ limit: 100, offset: 0 });
+      return client.clientList({ page: 1, limit: 100 });
     },
   });
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (data: CreateInvoiceData) => {
       const { client } = await import("@/utils/orpc");
-      return client.invoices.create(data);
+      return client.invoiceCreate(data);
     },
     onSuccess: (invoice) => {
       navigate({ to: "/invoices/$id", params: { id: invoice.id } });

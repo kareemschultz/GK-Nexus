@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { type UseFormReturn, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -40,6 +40,10 @@ import {
   SelectValue,
 } from "./ui/select";
 
+// Regex patterns for validation (moved to top level for performance)
+const TIN_REGEX = /^\d{9}$/;
+const NIS_REGEX = /^[A-Z]\d{6}$/;
+
 // Entity types based on GK-Enterprise-Suite requirements
 export const ENTITY_TYPES = [
   { value: "INDIVIDUAL", label: "Individual", icon: Users },
@@ -49,17 +53,7 @@ export const ENTITY_TYPES = [
 ] as const;
 
 // Import comprehensive service catalog
-import {
-  BUSINESS_UNITS,
-  getServiceTypesByBusiness,
-  SERVICE_TYPES,
-} from "@/lib/service-catalog";
-
-// Re-export for backwards compatibility
-export { BUSINESS_UNITS, SERVICE_TYPES };
-
-// Helper to get services by business
-export const getServicesByBusiness = getServiceTypesByBusiness;
+import { BUSINESS_UNITS, SERVICE_TYPES } from "@/lib/service-catalog";
 
 // Validation schemas for each step - Updated with proper Guyana formats
 const step1Schema = z
@@ -80,7 +74,7 @@ const step1Schema = z
       .refine(
         (val) => {
           const cleaned = val.replace(/[-\s]/g, "");
-          return /^\d{9}$/.test(cleaned);
+          return TIN_REGEX.test(cleaned);
         },
         { message: "TIN must be 9 digits (format: XXX-XXX-XXX)" }
       ),
@@ -89,9 +83,11 @@ const step1Schema = z
       .optional()
       .refine(
         (val) => {
-          if (!val) return true; // Optional
+          if (!val) {
+            return true; // Optional
+          }
           const cleaned = val.replace(/[-\s]/g, "").toUpperCase();
-          return /^[A-Z]\d{6}$/.test(cleaned);
+          return NIS_REGEX.test(cleaned);
         },
         { message: "NIS format: A-123456 (1 letter + 6 digits)" }
       ),
@@ -145,17 +141,31 @@ const clientSchema = step1Schema
   .merge(step3Schema)
   .merge(step4Schema);
 
-type Step1Data = z.infer<typeof step1Schema>;
-type Step2Data = z.infer<typeof step2Schema>;
-type Step3Data = z.infer<typeof step3Schema>;
-type Step4Data = z.infer<typeof step4Schema>;
 type ClientFormData = z.infer<typeof clientSchema>;
+type ClientForm = UseFormReturn<ClientFormData>;
 
-interface OnboardingStep {
+type OnboardingStep = {
   title: string;
   description: string;
-  component: React.ComponentType<any>;
-}
+  component: React.ComponentType<unknown>;
+};
+
+// Helper function to format client display name
+const formatClientName = (data: {
+  entityType: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  businessName?: string;
+}) => {
+  if (data.entityType === "INDIVIDUAL") {
+    if (data.middleName) {
+      return `${data.firstName} ${data.middleName} ${data.lastName}`;
+    }
+    return `${data.firstName} ${data.lastName}`;
+  }
+  return data.businessName || "";
+};
 
 // Step 1: Entity Structure
 function EntityStructureStep({
@@ -163,7 +173,7 @@ function EntityStructureStep({
   onNext,
   isSubmitting,
 }: {
-  form: any;
+  form: ClientForm;
   onNext: () => void;
   isSubmitting: boolean;
 }) {
@@ -207,48 +217,46 @@ function EntityStructureStep({
 
         {/* Conditional fields based on entity type */}
         {entityType === "INDIVIDUAL" ? (
-          <>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="firstName">
-                  First Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="firstName"
-                  {...form.register("firstName")}
-                  placeholder="Enter first name"
-                />
-                {form.formState.errors.firstName && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {form.formState.errors.firstName.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label htmlFor="middleName">Middle Name</Label>
-                <Input
-                  id="middleName"
-                  {...form.register("middleName")}
-                  placeholder="Enter middle name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="lastName">
-                  Last Name <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="lastName"
-                  {...form.register("lastName")}
-                  placeholder="Enter last name"
-                />
-                {form.formState.errors.lastName && (
-                  <p className="mt-1 text-red-500 text-sm">
-                    {form.formState.errors.lastName.message}
-                  </p>
-                )}
-              </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="firstName">
+                First Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                {...form.register("firstName")}
+                placeholder="Enter first name"
+              />
+              {form.formState.errors.firstName && (
+                <p className="mt-1 text-red-500 text-sm">
+                  {form.formState.errors.firstName.message}
+                </p>
+              )}
             </div>
-          </>
+            <div>
+              <Label htmlFor="middleName">Middle Name</Label>
+              <Input
+                id="middleName"
+                {...form.register("middleName")}
+                placeholder="Enter middle name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lastName">
+                Last Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="lastName"
+                {...form.register("lastName")}
+                placeholder="Enter last name"
+              />
+              {form.formState.errors.lastName && (
+                <p className="mt-1 text-red-500 text-sm">
+                  {form.formState.errors.lastName.message}
+                </p>
+              )}
+            </div>
+          </div>
         ) : (
           <div>
             <Label htmlFor="businessName">
@@ -386,7 +394,7 @@ function ContactInformationStep({
   onBack,
   isSubmitting,
 }: {
-  form: any;
+  form: ClientForm;
   onNext: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -539,7 +547,7 @@ function DocumentUploadStep({
   onBack,
   isSubmitting,
 }: {
-  form: any;
+  form: ClientForm;
   onNext: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -591,6 +599,17 @@ function DocumentUploadStep({
     );
   };
 
+  // Helper function to get document border class
+  const getDocumentBorderClass = (docId: string, isRequired: boolean) => {
+    if (uploadedFiles[docId]) {
+      return "border-green-500 bg-green-50 dark:bg-green-950/20";
+    }
+    if (isRequired) {
+      return "border-orange-300 bg-orange-50/50 dark:bg-orange-950/10";
+    }
+    return "border-muted";
+  };
+
   return (
     <div className="space-y-6">
       {/* Progress Summary */}
@@ -639,11 +658,7 @@ function DocumentUploadStep({
               <div
                 className={cn(
                   "rounded-lg border p-4 transition-all",
-                  uploadedFiles[doc.id]
-                    ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                    : doc.required
-                      ? "border-orange-300 bg-orange-50/50 dark:bg-orange-950/10"
-                      : "border-muted"
+                  getDocumentBorderClass(doc.id, doc.required)
                 )}
                 key={doc.id}
               >
@@ -778,7 +793,7 @@ function ServiceSelectionStep({
   onBack,
   isSubmitting,
 }: {
-  form: any;
+  form: ClientForm;
   onNext: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -819,20 +834,23 @@ function ServiceSelectionStep({
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {kajServices.map((service) => (
-              <div
+              <button
                 className={cn(
-                  "cursor-pointer rounded-lg border p-3 transition-all",
+                  "cursor-pointer rounded-lg border p-3 text-left transition-all",
                   selectedServices.includes(service.value)
                     ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
                     : "border-muted hover:border-blue-300"
                 )}
                 key={service.value}
                 onClick={() => toggleService(service.value)}
+                type="button"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <h5 className="font-medium text-sm">{service.label}</h5>
+                      <span className="font-medium text-sm">
+                        {service.label}
+                      </span>
                       {service.agency && (
                         <Badge className="text-xs" variant="outline">
                           {service.agency}
@@ -848,7 +866,7 @@ function ServiceSelectionStep({
                     onChange={() => toggleService(service.value)}
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -866,20 +884,23 @@ function ServiceSelectionStep({
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {gcmcServices.map((service) => (
-              <div
+              <button
                 className={cn(
-                  "cursor-pointer rounded-lg border p-3 transition-all",
+                  "cursor-pointer rounded-lg border p-3 text-left transition-all",
                   selectedServices.includes(service.value)
                     ? "border-green-500 bg-green-50 dark:bg-green-950/30"
                     : "border-muted hover:border-green-300"
                 )}
                 key={service.value}
                 onClick={() => toggleService(service.value)}
+                type="button"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="mb-1 flex items-center gap-2">
-                      <h5 className="font-medium text-sm">{service.label}</h5>
+                      <span className="font-medium text-sm">
+                        {service.label}
+                      </span>
                       {service.agency && (
                         <Badge className="text-xs" variant="outline">
                           {service.agency}
@@ -895,7 +916,7 @@ function ServiceSelectionStep({
                     onChange={() => toggleService(service.value)}
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -956,7 +977,7 @@ function ReviewStep({
   onBack,
   isSubmitting,
 }: {
-  form: any;
+  form: ClientForm;
   onSubmit: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -984,11 +1005,7 @@ function ReviewStep({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name:</span>
                 <span className="font-medium">
-                  {formData.entityType === "INDIVIDUAL"
-                    ? formData.middleName
-                      ? `${formData.firstName} ${formData.middleName} ${formData.lastName}`
-                      : `${formData.firstName} ${formData.lastName}`
-                    : formData.businessName}
+                  {formatClientName(formData)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1142,6 +1159,17 @@ export default function ClientOnboardingWizard({
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
+  // Helper to get step indicator styles
+  const getStepIndicatorClass = (index: number) => {
+    if (index < currentStep) {
+      return "bg-primary text-primary-foreground";
+    }
+    if (index === currentStep) {
+      return "border-2 border-primary bg-primary/20 text-primary";
+    }
+    return "bg-muted text-muted-foreground";
+  };
+
   const handleNext = async () => {
     // Validate current step
     let isValid = false;
@@ -1200,12 +1228,7 @@ export default function ClientOnboardingWizard({
       };
 
       // Build the display name based on entity type (include middle name if present)
-      const clientName =
-        validatedData.entityType === "INDIVIDUAL"
-          ? validatedData.middleName
-            ? `${validatedData.firstName} ${validatedData.middleName} ${validatedData.lastName}`
-            : `${validatedData.firstName} ${validatedData.lastName}`
-          : validatedData.businessName || "";
+      const clientName = formatClientName(validatedData);
 
       // Call the actual API to create the client
       const { client: orpcClient } = await import("@/utils/orpc");
@@ -1323,16 +1346,12 @@ export default function ClientOnboardingWizard({
                   ? "text-foreground"
                   : "text-muted-foreground"
               )}
-              key={index}
+              key={step.title}
             >
               <div
                 className={cn(
                   "mb-2 flex h-8 w-8 items-center justify-center rounded-full font-medium text-sm",
-                  index < currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : index === currentStep
-                      ? "border-2 border-primary bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground"
+                  getStepIndicatorClass(index)
                 )}
               >
                 {index < currentStep ? (

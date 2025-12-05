@@ -13,27 +13,6 @@ const invoiceItemSchema = z.object({
   total: z.number().positive(),
 });
 
-const invoiceSchema = z.object({
-  id: z.string(),
-  invoiceNumber: z.string(),
-  clientId: z.string(),
-  clientName: z.string(),
-  clientEmail: z.string(),
-  clientAddress: z.string(),
-  issueDate: z.string(),
-  dueDate: z.string(),
-  status: z.enum(["draft", "sent", "paid", "overdue", "cancelled"]),
-  items: z.array(invoiceItemSchema),
-  subtotal: z.number().positive(),
-  vatAmount: z.number().min(0),
-  total: z.number().positive(),
-  notes: z.string().optional(),
-  paymentTerms: z.string().default("Net 30"),
-  currency: z.string().default("GYD"),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
 const createInvoiceSchema = z.object({
   clientId: z.string(),
   items: z.array(invoiceItemSchema.omit({ id: true })),
@@ -158,191 +137,199 @@ const mockInvoices = [
   },
 ];
 
-export const invoicesRouter = {
-  // Get all invoices
-  list: protectedProcedure
-    .use(requirePermission("invoices.read"))
-    .input(
-      z.object({
-        status: z
-          .enum(["all", "draft", "sent", "paid", "overdue", "cancelled"])
-          .default("all"),
-        clientId: z.string().optional(),
-        limit: z.number().min(1).max(100).default(10),
-        offset: z.number().min(0).default(0),
-      })
-    )
-    .handler(({ input }) => {
-      let filteredInvoices = mockInvoices;
+// ========================================
+// INVOICES (FLAT PROCEDURES)
+// ========================================
 
-      if (input.status !== "all") {
-        filteredInvoices = filteredInvoices.filter(
-          (inv) => inv.status === input.status
-        );
-      }
+// Get all invoices
+export const invoiceList = protectedProcedure
+  .use(requirePermission("invoices.read"))
+  .input(
+    z.object({
+      status: z
+        .enum(["all", "draft", "sent", "paid", "overdue", "cancelled"])
+        .default("all"),
+      clientId: z.string().optional(),
+      limit: z.number().min(1).max(100).default(10),
+      offset: z.number().min(0).default(0),
+      page: z.number().optional(),
+    })
+  )
+  .handler(({ input }) => {
+    let filteredInvoices = mockInvoices;
 
-      if (input.clientId) {
-        filteredInvoices = filteredInvoices.filter(
-          (inv) => inv.clientId === input.clientId
-        );
-      }
-
-      const paginatedInvoices = filteredInvoices.slice(
-        input.offset,
-        input.offset + input.limit
+    if (input.status !== "all") {
+      filteredInvoices = filteredInvoices.filter(
+        (inv) => inv.status === input.status
       );
+    }
+
+    if (input.clientId) {
+      filteredInvoices = filteredInvoices.filter(
+        (inv) => inv.clientId === input.clientId
+      );
+    }
+
+    const paginatedInvoices = filteredInvoices.slice(
+      input.offset,
+      input.offset + input.limit
+    );
+
+    return {
+      invoices: paginatedInvoices,
+      total: filteredInvoices.length,
+      hasMore: input.offset + input.limit < filteredInvoices.length,
+      // For portal/payments.tsx compatibility
+      data: {
+        items: paginatedInvoices,
+        total: filteredInvoices.length,
+      },
+    };
+  });
+
+// Get single invoice by ID
+export const invoiceGetById = protectedProcedure
+  .use(requirePermission("invoices.read"))
+  .input(z.object({ id: z.string() }))
+  .handler(({ input }) => {
+    const invoice = mockInvoices.find((inv) => inv.id === input.id);
+    if (!invoice) {
+      throw new Error("Invoice not found");
+    }
+    return invoice;
+  });
+
+// Create new invoice
+export const invoiceCreate = protectedProcedure
+  .use(requirePermission("invoices.create"))
+  .input(createInvoiceSchema)
+  .handler(({ input }) => {
+    const invoiceNumber = `INV-2024-${String(mockInvoices.length + 1).padStart(3, "0")}`;
+    const now = new Date().toISOString();
+
+    // Calculate totals
+    let subtotal = 0;
+    let vatAmount = 0;
+
+    const itemsWithIds = input.items.map((item, index) => {
+      const itemTotal = item.quantity * item.unitPrice;
+      const itemVat = (itemTotal * item.vatRate) / 100;
+      subtotal += itemTotal;
+      vatAmount += itemVat;
 
       return {
-        invoices: paginatedInvoices,
-        total: filteredInvoices.length,
-        hasMore: input.offset + input.limit < filteredInvoices.length,
+        ...item,
+        id: `item-${Date.now()}-${index}`,
+        total: itemTotal + itemVat,
       };
-    }),
+    });
 
-  // Get single invoice by ID
-  getById: protectedProcedure
-    .use(requirePermission("invoices.read"))
-    .input(z.object({ id: z.string() }))
-    .handler(({ input }) => {
-      const invoice = mockInvoices.find((inv) => inv.id === input.id);
-      if (!invoice) {
-        throw new Error("Invoice not found");
-      }
-      return invoice;
-    }),
+    const total = subtotal + vatAmount;
 
-  // Create new invoice
-  create: protectedProcedure
-    .use(requirePermission("invoices.create"))
-    .input(createInvoiceSchema)
-    .handler(({ input }) => {
-      const invoiceNumber = `INV-2024-${String(mockInvoices.length + 1).padStart(3, "0")}`;
-      const now = new Date().toISOString();
+    const newInvoice = {
+      id: `inv-${Date.now()}`,
+      invoiceNumber,
+      clientId: input.clientId,
+      clientName: "Mock Client", // In real app, fetch from clients
+      clientEmail: "client@example.com",
+      clientAddress: "123 Client Street, City, State",
+      issueDate: now.split("T")[0],
+      dueDate: input.dueDate,
+      status: "draft" as const,
+      items: itemsWithIds,
+      subtotal,
+      vatAmount,
+      total,
+      notes: input.notes || "",
+      paymentTerms: input.paymentTerms,
+      currency: "GYD",
+      createdAt: now,
+      updatedAt: now,
+    };
 
-      // Calculate totals
+    mockInvoices.push(newInvoice);
+    return newInvoice;
+  });
+
+// Update invoice
+export const invoiceUpdate = protectedProcedure
+  .use(requirePermission("invoices.update"))
+  .input(updateInvoiceSchema)
+  .handler(({ input }) => {
+    const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
+    if (invoiceIndex === -1) {
+      throw new Error("Invoice not found");
+    }
+
+    const updatedInvoice = {
+      ...mockInvoices[invoiceIndex],
+      ...input,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Recalculate totals if items were updated
+    if (input.items) {
       let subtotal = 0;
       let vatAmount = 0;
 
-      const itemsWithIds = input.items.map((item, index) => {
+      input.items.forEach((item) => {
         const itemTotal = item.quantity * item.unitPrice;
         const itemVat = (itemTotal * item.vatRate) / 100;
         subtotal += itemTotal;
         vatAmount += itemVat;
-
-        return {
-          ...item,
-          id: `item-${Date.now()}-${index}`,
-          total: itemTotal + itemVat,
-        };
       });
 
-      const total = subtotal + vatAmount;
+      updatedInvoice.subtotal = subtotal;
+      updatedInvoice.vatAmount = vatAmount;
+      updatedInvoice.total = subtotal + vatAmount;
+    }
 
-      const newInvoice = {
-        id: `inv-${Date.now()}`,
-        invoiceNumber,
-        clientId: input.clientId,
-        clientName: "Mock Client", // In real app, fetch from clients
-        clientEmail: "client@example.com",
-        clientAddress: "123 Client Street, City, State",
-        issueDate: now.split("T")[0],
-        dueDate: input.dueDate,
-        status: "draft" as const,
-        items: itemsWithIds,
-        subtotal,
-        vatAmount,
-        total,
-        notes: input.notes || "",
-        paymentTerms: input.paymentTerms,
-        currency: "GYD",
-        createdAt: now,
-        updatedAt: now,
-      };
+    mockInvoices[invoiceIndex] = updatedInvoice;
+    return updatedInvoice;
+  });
 
-      mockInvoices.push(newInvoice);
-      return newInvoice;
-    }),
+// Delete invoice
+export const invoiceDelete = protectedProcedure
+  .use(requirePermission("invoices.delete"))
+  .input(z.object({ id: z.string() }))
+  .handler(({ input }) => {
+    const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
+    if (invoiceIndex === -1) {
+      throw new Error("Invoice not found");
+    }
 
-  // Update invoice
-  update: protectedProcedure
-    .use(requirePermission("invoices.update"))
-    .input(updateInvoiceSchema)
-    .handler(({ input }) => {
-      const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
-      if (invoiceIndex === -1) {
-        throw new Error("Invoice not found");
-      }
+    mockInvoices.splice(invoiceIndex, 1);
+    return { success: true };
+  });
 
-      const updatedInvoice = {
-        ...mockInvoices[invoiceIndex],
-        ...input,
-        updatedAt: new Date().toISOString(),
-      };
+// Get invoice statistics
+export const invoiceStats = protectedProcedure
+  .use(requirePermission("invoices.read"))
+  .handler(() => {
+    const totalInvoices = mockInvoices.length;
+    const paidInvoices = mockInvoices.filter(
+      (inv) => inv.status === "paid"
+    ).length;
+    const pendingInvoices = mockInvoices.filter(
+      (inv) => inv.status === "sent"
+    ).length;
+    const overdueInvoices = mockInvoices.filter(
+      (inv) => inv.status === "overdue"
+    ).length;
+    const totalRevenue = mockInvoices
+      .filter((inv) => inv.status === "paid")
+      .reduce((sum, inv) => sum + inv.total, 0);
+    const pendingRevenue = mockInvoices
+      .filter((inv) => inv.status === "sent")
+      .reduce((sum, inv) => sum + inv.total, 0);
 
-      // Recalculate totals if items were updated
-      if (input.items) {
-        let subtotal = 0;
-        let vatAmount = 0;
-
-        input.items.forEach((item) => {
-          const itemTotal = item.quantity * item.unitPrice;
-          const itemVat = (itemTotal * item.vatRate) / 100;
-          subtotal += itemTotal;
-          vatAmount += itemVat;
-        });
-
-        updatedInvoice.subtotal = subtotal;
-        updatedInvoice.vatAmount = vatAmount;
-        updatedInvoice.total = subtotal + vatAmount;
-      }
-
-      mockInvoices[invoiceIndex] = updatedInvoice;
-      return updatedInvoice;
-    }),
-
-  // Delete invoice
-  delete: protectedProcedure
-    .use(requirePermission("invoices.delete"))
-    .input(z.object({ id: z.string() }))
-    .handler(({ input }) => {
-      const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
-      if (invoiceIndex === -1) {
-        throw new Error("Invoice not found");
-      }
-
-      mockInvoices.splice(invoiceIndex, 1);
-      return { success: true };
-    }),
-
-  // Get invoice statistics
-  stats: protectedProcedure
-    .use(requirePermission("invoices.read"))
-    .handler(() => {
-      const totalInvoices = mockInvoices.length;
-      const paidInvoices = mockInvoices.filter(
-        (inv) => inv.status === "paid"
-      ).length;
-      const pendingInvoices = mockInvoices.filter(
-        (inv) => inv.status === "sent"
-      ).length;
-      const overdueInvoices = mockInvoices.filter(
-        (inv) => inv.status === "overdue"
-      ).length;
-      const totalRevenue = mockInvoices
-        .filter((inv) => inv.status === "paid")
-        .reduce((sum, inv) => sum + inv.total, 0);
-      const pendingRevenue = mockInvoices
-        .filter((inv) => inv.status === "sent")
-        .reduce((sum, inv) => sum + inv.total, 0);
-
-      return {
-        totalInvoices,
-        paidInvoices,
-        pendingInvoices,
-        overdueInvoices,
-        totalRevenue,
-        pendingRevenue,
-        avgInvoiceValue: totalInvoices > 0 ? totalRevenue / paidInvoices : 0,
-      };
-    }),
-};
+    return {
+      totalInvoices,
+      paidInvoices,
+      pendingInvoices,
+      overdueInvoices,
+      totalRevenue,
+      pendingRevenue,
+      avgInvoiceValue: totalInvoices > 0 ? totalRevenue / paidInvoices : 0,
+    };
+  });

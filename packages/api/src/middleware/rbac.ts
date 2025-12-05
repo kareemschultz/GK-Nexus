@@ -123,7 +123,64 @@ export type Permission =
   | "appointments.create"
   | "appointments.read"
   | "appointments.update"
-  | "appointments.delete";
+  | "appointments.delete"
+  // AI
+  | "ai.document.classify"
+  | "ai.tax.validate"
+  | "ai.risk.assess"
+  | "ai.client.insights"
+  | "ai.compliance.monitor"
+  | "ai.gra.validate"
+  | "ai.gra.submit"
+  | "ai.analytics.tax"
+  | "ai.analytics.clients"
+  | "ai.analytics.executive"
+  | "ai.analytics.metrics"
+  | "ai.orchestration.execute"
+  | "ai.orchestration.documents"
+  | "ai.orchestration.filing"
+  | "ai.orchestration.insights"
+  | "ai.orchestration.models"
+  | "ai.system.monitor"
+  | "ai.system.metrics"
+  // Audit
+  | "audit.create"
+  | "audit.read"
+  | "audit.export"
+  | "audit.archive"
+  // Agreements
+  | "agreements.create"
+  | "agreements.read"
+  | "agreements.update"
+  | "agreements.delete"
+  // Partners (alternative naming)
+  | "partners.create"
+  | "partners.read"
+  | "partners.update"
+  | "partners.delete"
+  // Referrals
+  | "referrals.create"
+  | "referrals.read"
+  | "referrals.update"
+  | "referrals.delete"
+  // Reviews
+  | "reviews.create"
+  | "reviews.read"
+  | "reviews.update"
+  | "reviews.delete"
+  // Local Content (alternative naming)
+  | "localcontent.create"
+  | "localcontent.read"
+  | "localcontent.update"
+  // Additional tax/payroll
+  | "taxes.read"
+  | "taxes.calculate"
+  | "taxes.file"
+  | "payroll.calculate"
+  // Reports
+  | "reports.create"
+  // Settings
+  | "settings.read";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   super_admin: [
@@ -626,12 +683,16 @@ export function hasPermission(
 export function requirePermission(permission: Permission) {
   return (context: { user?: { role: Role; permissions?: Permission[] } }) => {
     if (!context.user) {
-      throw new ORPCError("UNAUTHORIZED", "Authentication required");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
+      });
     }
 
     const { role, permissions } = context.user;
     if (!hasPermission(role, permissions || null, permission)) {
-      throw new ORPCError("FORBIDDEN", `Permission ${permission} is required`);
+      throw new ORPCError("FORBIDDEN", {
+        message: `Permission ${permission} is required`,
+      });
     }
   };
 }
@@ -639,7 +700,9 @@ export function requirePermission(permission: Permission) {
 export function requireAnyPermission(...permissions: Permission[]) {
   return (context: { user?: { role: Role; permissions?: Permission[] } }) => {
     if (!context.user) {
-      throw new ORPCError("UNAUTHORIZED", "Authentication required");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
+      });
     }
 
     const { role, permissions: userPermissions } = context.user;
@@ -648,10 +711,9 @@ export function requireAnyPermission(...permissions: Permission[]) {
     );
 
     if (!hasAnyPermission) {
-      throw new ORPCError(
-        "FORBIDDEN",
-        `One of the following permissions is required: ${permissions.join(", ")}`
-      );
+      throw new ORPCError("FORBIDDEN", {
+        message: `One of the following permissions is required: ${permissions.join(", ")}`,
+      });
     }
   };
 }
@@ -659,11 +721,15 @@ export function requireAnyPermission(...permissions: Permission[]) {
 export function requireRole(requiredRole: Role) {
   return (context: { user?: { role: Role } }) => {
     if (!context.user) {
-      throw new ORPCError("UNAUTHORIZED", "Authentication required");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
+      });
     }
 
     if (context.user.role !== requiredRole) {
-      throw new ORPCError("FORBIDDEN", `Role ${requiredRole} is required`);
+      throw new ORPCError("FORBIDDEN", {
+        message: `Role ${requiredRole} is required`,
+      });
     }
   };
 }
@@ -671,14 +737,15 @@ export function requireRole(requiredRole: Role) {
 export function requireAnyRole(...roles: Role[]) {
   return (context: { user?: { role: Role } }) => {
     if (!context.user) {
-      throw new ORPCError("UNAUTHORIZED", "Authentication required");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
+      });
     }
 
     if (!roles.includes(context.user.role)) {
-      throw new ORPCError(
-        "FORBIDDEN",
-        `One of the following roles is required: ${roles.join(", ")}`
-      );
+      throw new ORPCError("FORBIDDEN", {
+        message: `One of the following roles is required: ${roles.join(", ")}`,
+      });
     }
   };
 }
@@ -686,7 +753,9 @@ export function requireAnyRole(...roles: Role[]) {
 export function canAccessClient(clientId: string) {
   return (context: { user?: { role: Role; assignedClients?: string[] } }) => {
     if (!context.user) {
-      throw new ORPCError("UNAUTHORIZED", "Authentication required");
+      throw new ORPCError("UNAUTHORIZED", {
+        message: "Authentication required",
+      });
     }
 
     const { role, assignedClients } = context.user;
@@ -698,10 +767,9 @@ export function canAccessClient(clientId: string) {
 
     // Other users can only access their assigned clients
     if (!assignedClients?.includes(clientId)) {
-      throw new ORPCError(
-        "FORBIDDEN",
-        "Access to this client is not permitted"
-      );
+      throw new ORPCError("FORBIDDEN", {
+        message: "Access to this client is not permitted",
+      });
     }
   };
 }

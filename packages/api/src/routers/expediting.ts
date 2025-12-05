@@ -13,12 +13,6 @@ function generateRequestNumber(): string {
   return `${prefix}-${year}-${random}`;
 }
 
-function _generateQueueId(): string {
-  const prefix = "QUE";
-  const timestamp = Date.now().toString(36).toUpperCase();
-  return `${prefix}-${timestamp}`;
-}
-
 // Government agencies in Guyana
 const governmentAgencies = [
   "GRA",
@@ -146,750 +140,759 @@ const createAgencyContactSchema = z.object({
   alternatePhone: z.string().optional(),
   email: z.string().email().optional(),
   website: z.string().url().optional(),
-  operatingHours: z.record(z.string()).optional(),
+  operatingHours: z.record(z.string(), z.string()).optional(),
   servicesOffered: z.array(z.string()).optional(),
-  processingTimes: z.record(z.string()).optional(),
-  fees: z.record(z.string()).optional(),
+  processingTimes: z.record(z.string(), z.string()).optional(),
+  fees: z.record(z.string(), z.string()).optional(),
   tips: z.string().optional(),
   notes: z.string().optional(),
 });
 
-export const expeditingRouter = {
-  // ===== EXPEDITING REQUESTS =====
-  requests: {
-    list: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .input(expeditingQuerySchema)
-      .handler(async ({ input, context }) => {
-        const {
+// ========================================
+// EXPEDITING REQUESTS (FLAT PROCEDURES)
+// ========================================
+
+export const expeditingRequestsList = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .input(expeditingQuerySchema)
+  .handler(async ({ input, context }) => {
+    const {
+      page,
+      limit,
+      search,
+      agency,
+      requestType,
+      status,
+      priority,
+      clientId,
+      assignedToId,
+      sortBy,
+      sortOrder,
+    } = input;
+    const { db } = context;
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+
+    if (search) {
+      conditions.push(
+        sql`(
+          ${ilike(expeditingSchema.expeditingRequests.title, `%${search}%`)} OR
+          ${ilike(expeditingSchema.expeditingRequests.requestNumber, `%${search}%`)} OR
+          ${ilike(expeditingSchema.expeditingRequests.agencyReferenceNumber, `%${search}%`)}
+        )`
+      );
+    }
+
+    if (agency) {
+      conditions.push(eq(expeditingSchema.expeditingRequests.agency, agency));
+    }
+
+    if (requestType) {
+      conditions.push(
+        eq(expeditingSchema.expeditingRequests.requestType, requestType)
+      );
+    }
+
+    if (status) {
+      conditions.push(eq(expeditingSchema.expeditingRequests.status, status));
+    }
+
+    if (priority) {
+      conditions.push(
+        eq(expeditingSchema.expeditingRequests.priority, priority)
+      );
+    }
+
+    if (clientId) {
+      conditions.push(
+        eq(expeditingSchema.expeditingRequests.clientId, clientId)
+      );
+    }
+
+    if (assignedToId) {
+      conditions.push(
+        eq(expeditingSchema.expeditingRequests.assignedToId, assignedToId)
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(expeditingSchema.expeditingRequests)
+      .where(whereClause);
+
+    // Get the column for sorting
+    const sortColumnMap: Record<string, unknown> = {
+      createdAt: expeditingSchema.expeditingRequests.createdAt,
+      requestNumber: expeditingSchema.expeditingRequests.requestNumber,
+      title: expeditingSchema.expeditingRequests.title,
+      status: expeditingSchema.expeditingRequests.status,
+      priority: expeditingSchema.expeditingRequests.priority,
+      agency: expeditingSchema.expeditingRequests.agency,
+    };
+    const sortColumn =
+      sortColumnMap[sortBy] || expeditingSchema.expeditingRequests.createdAt;
+    const orderClause =
+      sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+    const requests = await db
+      .select()
+      .from(expeditingSchema.expeditingRequests)
+      .where(whereClause)
+      .orderBy(orderClause)
+      .limit(limit)
+      .offset(offset);
+
+    const total = totalResult?.count ?? 0;
+
+    return {
+      success: true,
+      data: {
+        items: requests,
+        pagination: {
           page,
           limit,
-          search,
-          agency,
-          requestType,
-          status,
-          priority,
-          clientId,
-          assignedToId,
-          sortBy,
-          sortOrder,
-        } = input;
-        const { db } = context;
-        const offset = (page - 1) * limit;
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    };
+  });
 
-        const conditions = [];
+export const expeditingRequestsGetById = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .input(z.object({ id: z.string().min(1) }))
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id } = input;
 
-        if (search) {
-          conditions.push(
-            sql`(
-              ${ilike(expeditingSchema.expeditingRequests.title, `%${search}%`)} OR
-              ${ilike(expeditingSchema.expeditingRequests.requestNumber, `%${search}%`)} OR
-              ${ilike(expeditingSchema.expeditingRequests.agencyReferenceNumber, `%${search}%`)}
-            )`
-          );
-        }
+    const [request] = await db
+      .select()
+      .from(expeditingSchema.expeditingRequests)
+      .where(eq(expeditingSchema.expeditingRequests.id, id))
+      .limit(1);
 
-        if (agency) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.agency, agency)
-          );
-        }
+    if (!request) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Expediting request not found",
+      });
+    }
 
-        if (requestType) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.requestType, requestType)
-          );
-        }
+    // Get activities for this request
+    const activities = await db
+      .select()
+      .from(expeditingSchema.expeditingActivities)
+      .where(eq(expeditingSchema.expeditingActivities.requestId, id))
+      .orderBy(desc(expeditingSchema.expeditingActivities.activityDate));
 
-        if (status) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.status, status)
-          );
-        }
+    return {
+      success: true,
+      data: {
+        ...request,
+        activities,
+      },
+    };
+  });
 
-        if (priority) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.priority, priority)
-          );
-        }
+export const expeditingRequestsCreate = protectedProcedure
+  .use(requirePermission("expediting.create"))
+  .input(createExpediteRequestSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
 
-        if (clientId) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.clientId, clientId)
-          );
-        }
+    // Calculate total fee
+    const govFee = Number.parseFloat(input.governmentFee || "0");
+    const svcFee = Number.parseFloat(input.serviceFee || "0");
+    const totalFee = govFee + svcFee;
 
-        if (assignedToId) {
-          conditions.push(
-            eq(expeditingSchema.expeditingRequests.assignedToId, assignedToId)
-          );
-        }
+    const requestData = {
+      ...input,
+      id: nanoid(),
+      requestNumber: generateRequestNumber(),
+      organizationId: "default", // User type doesn't have organizationId
+      totalFee: totalFee.toString(),
+      documentsRequired: input.documentsRequired
+        ? JSON.stringify(input.documentsRequired)
+        : null,
+      documentsProvided: input.documentsProvided
+        ? JSON.stringify(input.documentsProvided)
+        : null,
+      targetCompletionDate: input.targetCompletionDate
+        ? new Date(input.targetCompletionDate)
+        : null,
+      createdBy: user?.id,
+    };
 
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
+    const [newRequest] = await db
+      .insert(expeditingSchema.expeditingRequests)
+      .values(requestData)
+      .returning();
 
-        const [totalResult] = await db
-          .select({ count: count() })
-          .from(expeditingSchema.expeditingRequests)
-          .where(whereClause);
+    return {
+      success: true,
+      data: newRequest,
+      message: "Expediting request created successfully",
+    };
+  });
 
-        const sortColumn =
-          expeditingSchema.expeditingRequests[
-            sortBy as keyof typeof expeditingSchema.expeditingRequests
-          ] || expeditingSchema.expeditingRequests.createdAt;
-        const orderClause =
-          sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
-
-        const requests = await db
-          .select()
-          .from(expeditingSchema.expeditingRequests)
-          .where(whereClause)
-          .orderBy(orderClause)
-          .limit(limit)
-          .offset(offset);
-
-        return {
-          success: true,
-          data: {
-            items: requests,
-            pagination: {
-              page,
-              limit,
-              total: totalResult.count,
-              pages: Math.ceil(totalResult.count / limit),
-            },
-          },
-        };
+export const expeditingRequestsUpdate = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: createExpediteRequestSchema.partial().extend({
+        status: z.enum(expeditingStatuses).optional(),
+        assignedToId: z.string().optional(),
+        expeditorName: z.string().optional(),
+        expeditorPhone: z.string().optional(),
+        outcome: z.string().optional(),
+        actualCompletionDate: z.string().datetime().optional(),
       }),
-
-    getById: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .input(z.object({ id: z.string().min(1) }))
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id } = input;
-
-        const [request] = await db
-          .select()
-          .from(expeditingSchema.expeditingRequests)
-          .where(eq(expeditingSchema.expeditingRequests.id, id))
-          .limit(1);
-
-        if (!request) {
-          throw new ORPCError("NOT_FOUND", "Expediting request not found");
-        }
-
-        // Get activities for this request
-        const activities = await db
-          .select()
-          .from(expeditingSchema.expeditingActivities)
-          .where(eq(expeditingSchema.expeditingActivities.requestId, id))
-          .orderBy(desc(expeditingSchema.expeditingActivities.activityDate));
-
-        return {
-          success: true,
-          data: {
-            ...request,
-            activities,
-          },
-        };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("expediting.create"))
-      .input(createExpediteRequestSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        // Calculate total fee
-        const govFee = Number.parseFloat(input.governmentFee || "0");
-        const svcFee = Number.parseFloat(input.serviceFee || "0");
-        const totalFee = govFee + svcFee;
-
-        const requestData = {
-          ...input,
-          id: nanoid(),
-          requestNumber: generateRequestNumber(),
-          organizationId: user?.organizationId || "default",
-          totalFee: totalFee.toString(),
-          documentsRequired: input.documentsRequired
-            ? JSON.stringify(input.documentsRequired)
-            : null,
-          documentsProvided: input.documentsProvided
-            ? JSON.stringify(input.documentsProvided)
-            : null,
-          targetCompletionDate: input.targetCompletionDate
-            ? new Date(input.targetCompletionDate)
-            : null,
-          createdBy: user?.id,
-        };
-
-        const [newRequest] = await db
-          .insert(expeditingSchema.expeditingRequests)
-          .values(requestData)
-          .returning();
-
-        return {
-          success: true,
-          data: newRequest,
-          message: "Expediting request created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: createExpediteRequestSchema.partial().extend({
-            status: z.enum(expeditingStatuses).optional(),
-            assignedToId: z.string().optional(),
-            expeditorName: z.string().optional(),
-            expeditorPhone: z.string().optional(),
-            outcome: z.string().optional(),
-            actualCompletionDate: z.string().datetime().optional(),
-          }),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, data } = input;
-
-        const updateData = {
-          ...data,
-          documentsRequired: data.documentsRequired
-            ? JSON.stringify(data.documentsRequired)
-            : undefined,
-          documentsProvided: data.documentsProvided
-            ? JSON.stringify(data.documentsProvided)
-            : undefined,
-          targetCompletionDate: data.targetCompletionDate
-            ? new Date(data.targetCompletionDate)
-            : undefined,
-          actualCompletionDate: data.actualCompletionDate
-            ? new Date(data.actualCompletionDate)
-            : undefined,
-        };
-
-        const [updatedRequest] = await db
-          .update(expeditingSchema.expeditingRequests)
-          .set(updateData)
-          .where(eq(expeditingSchema.expeditingRequests.id, id))
-          .returning();
-
-        if (!updatedRequest) {
-          throw new ORPCError("NOT_FOUND", "Expediting request not found");
-        }
-
-        return {
-          success: true,
-          data: updatedRequest,
-          message: "Expediting request updated successfully",
-        };
-      }),
-
-    assign: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          assignedToId: z.string().min(1),
-          expeditorName: z.string().optional(),
-          expeditorPhone: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, assignedToId, expeditorName, expeditorPhone } = input;
-
-        const [updatedRequest] = await db
-          .update(expeditingSchema.expeditingRequests)
-          .set({
-            assignedToId,
-            expeditorName,
-            expeditorPhone,
-            status: "ASSIGNED",
-          })
-          .where(eq(expeditingSchema.expeditingRequests.id, id))
-          .returning();
-
-        if (!updatedRequest) {
-          throw new ORPCError("NOT_FOUND", "Expediting request not found");
-        }
-
-        return {
-          success: true,
-          data: updatedRequest,
-          message: "Request assigned successfully",
-        };
-      }),
-
-    complete: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          outcome: z.string().min(1),
-          resultDocuments: z.array(z.string()).optional(),
-          notes: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const { id, outcome, resultDocuments, notes } = input;
-
-        const [updatedRequest] = await db
-          .update(expeditingSchema.expeditingRequests)
-          .set({
-            status: "COMPLETED",
-            outcome,
-            resultDocuments: resultDocuments
-              ? JSON.stringify(resultDocuments)
-              : null,
-            actualCompletionDate: new Date(),
-            notes,
-          })
-          .where(eq(expeditingSchema.expeditingRequests.id, id))
-          .returning();
-
-        if (!updatedRequest) {
-          throw new ORPCError("NOT_FOUND", "Expediting request not found");
-        }
-
-        return {
-          success: true,
-          data: updatedRequest,
-          message: "Request completed successfully",
-        };
-      }),
-
-    stats: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .handler(async ({ context }) => {
-        const { db } = context;
-
-        const statusStats = await db
-          .select({
-            status: expeditingSchema.expeditingRequests.status,
-            count: count(),
-          })
-          .from(expeditingSchema.expeditingRequests)
-          .groupBy(expeditingSchema.expeditingRequests.status);
-
-        const agencyStats = await db
-          .select({
-            agency: expeditingSchema.expeditingRequests.agency,
-            count: count(),
-          })
-          .from(expeditingSchema.expeditingRequests)
-          .groupBy(expeditingSchema.expeditingRequests.agency);
-
-        const priorityStats = await db
-          .select({
-            priority: expeditingSchema.expeditingRequests.priority,
-            count: count(),
-          })
-          .from(expeditingSchema.expeditingRequests)
-          .groupBy(expeditingSchema.expeditingRequests.priority);
-
-        const [totalResult] = await db
-          .select({ total: count() })
-          .from(expeditingSchema.expeditingRequests);
-
-        return {
-          success: true,
-          data: {
-            total: totalResult.total,
-            byStatus: statusStats,
-            byAgency: agencyStats,
-            byPriority: priorityStats,
-          },
-        };
-      }),
-  },
-
-  // ===== ACTIVITIES =====
-  activities: {
-    list: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .input(
-        z.object({
-          requestId: z.string().min(1),
-          page: z.number().min(1).default(1),
-          limit: z.number().min(1).max(100).default(20),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { requestId, page, limit } = input;
-        const { db } = context;
-        const offset = (page - 1) * limit;
-
-        const [totalResult] = await db
-          .select({ count: count() })
-          .from(expeditingSchema.expeditingActivities)
-          .where(
-            eq(expeditingSchema.expeditingActivities.requestId, requestId)
-          );
-
-        const activities = await db
-          .select()
-          .from(expeditingSchema.expeditingActivities)
-          .where(eq(expeditingSchema.expeditingActivities.requestId, requestId))
-          .orderBy(desc(expeditingSchema.expeditingActivities.activityDate))
-          .limit(limit)
-          .offset(offset);
-
-        return {
-          success: true,
-          data: {
-            items: activities,
-            pagination: {
-              page,
-              limit,
-              total: totalResult.count,
-              pages: Math.ceil(totalResult.count / limit),
-            },
-          },
-        };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(createActivitySchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const activityData = {
-          ...input,
-          id: nanoid(),
-          activityDate: new Date(input.activityDate),
-          followUpDate: input.followUpDate
-            ? new Date(input.followUpDate)
-            : null,
-          documentsSubmitted: input.documentsSubmitted
-            ? JSON.stringify(input.documentsSubmitted)
-            : null,
-          documentsCollected: input.documentsCollected
-            ? JSON.stringify(input.documentsCollected)
-            : null,
-          performedBy: user?.id || "system",
-        };
-
-        const [newActivity] = await db
-          .insert(expeditingSchema.expeditingActivities)
-          .values(activityData)
-          .returning();
-
-        // Update request status if provided
-        if (input.newStatus) {
-          await db
-            .update(expeditingSchema.expeditingRequests)
-            .set({ status: input.newStatus })
-            .where(eq(expeditingSchema.expeditingRequests.id, input.requestId));
-        }
-
-        return {
-          success: true,
-          data: newActivity,
-          message: "Activity recorded successfully",
-        };
-      }),
-  },
-
-  // ===== AGENCY CONTACTS =====
-  agencyContacts: {
-    list: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .input(
-        z.object({
-          agency: z.enum(governmentAgencies).optional(),
-          city: z.string().optional(),
-          search: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { agency, city, search } = input;
-        const { db } = context;
-
-        const conditions = [eq(expeditingSchema.agencyContacts.isActive, true)];
-
-        if (agency) {
-          conditions.push(eq(expeditingSchema.agencyContacts.agency, agency));
-        }
-
-        if (city) {
-          conditions.push(
-            ilike(expeditingSchema.agencyContacts.city, `%${city}%`)
-          );
-        }
-
-        if (search) {
-          conditions.push(
-            sql`(
-              ${ilike(expeditingSchema.agencyContacts.contactName, `%${search}%`)} OR
-              ${ilike(expeditingSchema.agencyContacts.departmentName, `%${search}%`)} OR
-              ${ilike(expeditingSchema.agencyContacts.officeName, `%${search}%`)}
-            )`
-          );
-        }
-
-        const contacts = await db
-          .select()
-          .from(expeditingSchema.agencyContacts)
-          .where(and(...conditions))
-          .orderBy(asc(expeditingSchema.agencyContacts.agency));
-
-        return { success: true, data: contacts };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("expediting.create"))
-      .input(createAgencyContactSchema)
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const contactData = {
-          ...input,
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          operatingHours: input.operatingHours
-            ? JSON.stringify(input.operatingHours)
-            : null,
-          servicesOffered: input.servicesOffered
-            ? JSON.stringify(input.servicesOffered)
-            : null,
-          processingTimes: input.processingTimes
-            ? JSON.stringify(input.processingTimes)
-            : null,
-          fees: input.fees ? JSON.stringify(input.fees) : null,
-          updatedBy: user?.id,
-        };
-
-        const [newContact] = await db
-          .insert(expeditingSchema.agencyContacts)
-          .values(contactData)
-          .returning();
-
-        return {
-          success: true,
-          data: newContact,
-          message: "Agency contact created successfully",
-        };
-      }),
-
-    update: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          data: createAgencyContactSchema.partial(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-        const { id, data } = input;
-
-        const updateData = {
-          ...data,
-          operatingHours: data.operatingHours
-            ? JSON.stringify(data.operatingHours)
-            : undefined,
-          servicesOffered: data.servicesOffered
-            ? JSON.stringify(data.servicesOffered)
-            : undefined,
-          processingTimes: data.processingTimes
-            ? JSON.stringify(data.processingTimes)
-            : undefined,
-          fees: data.fees ? JSON.stringify(data.fees) : undefined,
-          lastVerified: new Date(),
-          updatedBy: user?.id,
-        };
-
-        const [updatedContact] = await db
-          .update(expeditingSchema.agencyContacts)
-          .set(updateData)
-          .where(eq(expeditingSchema.agencyContacts.id, id))
-          .returning();
-
-        if (!updatedContact) {
-          throw new ORPCError("NOT_FOUND", "Agency contact not found");
-        }
-
-        return {
-          success: true,
-          data: updatedContact,
-          message: "Agency contact updated successfully",
-        };
-      }),
-  },
-
-  // ===== QUEUE MANAGEMENT =====
-  queue: {
-    list: protectedProcedure
-      .use(requirePermission("expediting.read"))
-      .input(
-        z.object({
-          date: z.string().datetime().optional(),
-          agency: z.enum(governmentAgencies).optional(),
-          expeditorId: z.string().optional(),
-          status: z
-            .enum(["planned", "in_progress", "completed", "cancelled"])
-            .optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { date, agency, expeditorId, status } = input;
-        const { db } = context;
-
-        const conditions = [];
-
-        if (date) {
-          const targetDate = new Date(date);
-          const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-          const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-          conditions.push(
-            and(
-              gte(expeditingSchema.expeditingQueue.queueDate, startOfDay),
-              lte(expeditingSchema.expeditingQueue.queueDate, endOfDay)
-            )
-          );
-        }
-
-        if (agency) {
-          conditions.push(eq(expeditingSchema.expeditingQueue.agency, agency));
-        }
-
-        if (expeditorId) {
-          conditions.push(
-            eq(expeditingSchema.expeditingQueue.expeditorId, expeditorId)
-          );
-        }
-
-        if (status) {
-          conditions.push(eq(expeditingSchema.expeditingQueue.status, status));
-        }
-
-        const whereClause =
-          conditions.length > 0 ? and(...conditions) : undefined;
-
-        const queue = await db
-          .select()
-          .from(expeditingSchema.expeditingQueue)
-          .where(whereClause)
-          .orderBy(desc(expeditingSchema.expeditingQueue.queueDate));
-
-        return { success: true, data: queue };
-      }),
-
-    create: protectedProcedure
-      .use(requirePermission("expediting.create"))
-      .input(
-        z.object({
-          queueDate: z.string().datetime(),
-          agency: z.enum(governmentAgencies),
-          expeditorId: z.string().min(1),
-          requestIds: z.array(z.string()),
-          plannedStartTime: z.string().datetime().optional(),
-          plannedEndTime: z.string().datetime().optional(),
-          routeNotes: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db, user } = context;
-
-        const queueData = {
-          id: nanoid(),
-          organizationId: user?.organizationId || "default",
-          queueDate: new Date(input.queueDate),
-          agency: input.agency,
-          expeditorId: input.expeditorId,
-          requestIds: JSON.stringify(input.requestIds),
-          requestCount: input.requestIds.length,
-          plannedStartTime: input.plannedStartTime
-            ? new Date(input.plannedStartTime)
-            : null,
-          plannedEndTime: input.plannedEndTime
-            ? new Date(input.plannedEndTime)
-            : null,
-          routeNotes: input.routeNotes,
-          status: "planned",
-        };
-
-        const [newQueue] = await db
-          .insert(expeditingSchema.expeditingQueue)
-          .values(queueData)
-          .returning();
-
-        // Update request statuses to IN_QUEUE
-        for (const requestId of input.requestIds) {
-          await db
-            .update(expeditingSchema.expeditingRequests)
-            .set({ status: "IN_QUEUE" })
-            .where(eq(expeditingSchema.expeditingRequests.id, requestId));
-        }
-
-        return {
-          success: true,
-          data: newQueue,
-          message: "Queue created successfully",
-        };
-      }),
-
-    updateStatus: protectedProcedure
-      .use(requirePermission("expediting.update"))
-      .input(
-        z.object({
-          id: z.string().min(1),
-          status: z.enum(["planned", "in_progress", "completed", "cancelled"]),
-          actualStartTime: z.string().datetime().optional(),
-          actualEndTime: z.string().datetime().optional(),
-          completionNotes: z.string().optional(),
-          requestsCompleted: z.number().optional(),
-          requestsPending: z.number().optional(),
-          transportExpense: z.string().optional(),
-          otherExpenses: z.string().optional(),
-        })
-      )
-      .handler(async ({ input, context }) => {
-        const { db } = context;
-        const {
-          id,
-          actualStartTime,
-          actualEndTime,
-          transportExpense,
-          otherExpenses,
-          ...data
-        } = input;
-
-        const transport = Number.parseFloat(transportExpense || "0");
-        const other = Number.parseFloat(otherExpenses || "0");
-
-        const updateData = {
-          ...data,
-          actualStartTime: actualStartTime
-            ? new Date(actualStartTime)
-            : undefined,
-          actualEndTime: actualEndTime ? new Date(actualEndTime) : undefined,
-          transportExpense,
-          otherExpenses,
-          totalExpenses: (transport + other).toString(),
-        };
-
-        const [updatedQueue] = await db
-          .update(expeditingSchema.expeditingQueue)
-          .set(updateData)
-          .where(eq(expeditingSchema.expeditingQueue.id, id))
-          .returning();
-
-        if (!updatedQueue) {
-          throw new ORPCError("NOT_FOUND", "Queue not found");
-        }
-
-        return {
-          success: true,
-          data: updatedQueue,
-          message: "Queue status updated successfully",
-        };
-      }),
-  },
-};
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, data } = input;
+
+    const updateData = {
+      ...data,
+      documentsRequired: data.documentsRequired
+        ? JSON.stringify(data.documentsRequired)
+        : undefined,
+      documentsProvided: data.documentsProvided
+        ? JSON.stringify(data.documentsProvided)
+        : undefined,
+      targetCompletionDate: data.targetCompletionDate
+        ? new Date(data.targetCompletionDate)
+        : undefined,
+      actualCompletionDate: data.actualCompletionDate
+        ? new Date(data.actualCompletionDate)
+        : undefined,
+    };
+
+    const [updatedRequest] = await db
+      .update(expeditingSchema.expeditingRequests)
+      .set(updateData)
+      .where(eq(expeditingSchema.expeditingRequests.id, id))
+      .returning();
+
+    if (!updatedRequest) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Expediting request not found",
+      });
+    }
+
+    return {
+      success: true,
+      data: updatedRequest,
+      message: "Expediting request updated successfully",
+    };
+  });
+
+export const expeditingRequestsAssign = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      assignedToId: z.string().min(1),
+      expeditorName: z.string().optional(),
+      expeditorPhone: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, assignedToId, expeditorName, expeditorPhone } = input;
+
+    const [updatedRequest] = await db
+      .update(expeditingSchema.expeditingRequests)
+      .set({
+        assignedToId,
+        expeditorName,
+        expeditorPhone,
+        status: "ASSIGNED",
+      })
+      .where(eq(expeditingSchema.expeditingRequests.id, id))
+      .returning();
+
+    if (!updatedRequest) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Expediting request not found",
+      });
+    }
+
+    return {
+      success: true,
+      data: updatedRequest,
+      message: "Request assigned successfully",
+    };
+  });
+
+export const expeditingRequestsComplete = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      outcome: z.string().min(1),
+      resultDocuments: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const { id, outcome, resultDocuments, notes } = input;
+
+    const [updatedRequest] = await db
+      .update(expeditingSchema.expeditingRequests)
+      .set({
+        status: "COMPLETED",
+        outcome,
+        resultDocuments: resultDocuments
+          ? JSON.stringify(resultDocuments)
+          : null,
+        actualCompletionDate: new Date(),
+        notes,
+      })
+      .where(eq(expeditingSchema.expeditingRequests.id, id))
+      .returning();
+
+    if (!updatedRequest) {
+      throw new ORPCError("NOT_FOUND", {
+        message: "Expediting request not found",
+      });
+    }
+
+    return {
+      success: true,
+      data: updatedRequest,
+      message: "Request completed successfully",
+    };
+  });
+
+export const expeditingRequestsStats = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .handler(async ({ context }) => {
+    const { db } = context;
+
+    const statusStats = await db
+      .select({
+        status: expeditingSchema.expeditingRequests.status,
+        count: count(),
+      })
+      .from(expeditingSchema.expeditingRequests)
+      .groupBy(expeditingSchema.expeditingRequests.status);
+
+    const agencyStats = await db
+      .select({
+        agency: expeditingSchema.expeditingRequests.agency,
+        count: count(),
+      })
+      .from(expeditingSchema.expeditingRequests)
+      .groupBy(expeditingSchema.expeditingRequests.agency);
+
+    const priorityStats = await db
+      .select({
+        priority: expeditingSchema.expeditingRequests.priority,
+        count: count(),
+      })
+      .from(expeditingSchema.expeditingRequests)
+      .groupBy(expeditingSchema.expeditingRequests.priority);
+
+    const [totalResult] = await db
+      .select({ total: count() })
+      .from(expeditingSchema.expeditingRequests);
+
+    const total = totalResult?.total ?? 0;
+
+    return {
+      success: true,
+      data: {
+        total,
+        byStatus: statusStats,
+        byAgency: agencyStats,
+        byPriority: priorityStats,
+      },
+    };
+  });
+
+// ========================================
+// ACTIVITIES (FLAT PROCEDURES)
+// ========================================
+
+export const expeditingActivitiesList = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .input(
+    z.object({
+      requestId: z.string().min(1),
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(100).default(20),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { requestId, page, limit } = input;
+    const { db } = context;
+    const offset = (page - 1) * limit;
+
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(expeditingSchema.expeditingActivities)
+      .where(eq(expeditingSchema.expeditingActivities.requestId, requestId));
+
+    const total = totalResult?.count ?? 0;
+
+    const activities = await db
+      .select()
+      .from(expeditingSchema.expeditingActivities)
+      .where(eq(expeditingSchema.expeditingActivities.requestId, requestId))
+      .orderBy(desc(expeditingSchema.expeditingActivities.activityDate))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      success: true,
+      data: {
+        items: activities,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      },
+    };
+  });
+
+export const expeditingActivitiesCreate = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(createActivitySchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const activityData = {
+      ...input,
+      id: nanoid(),
+      activityDate: new Date(input.activityDate),
+      followUpDate: input.followUpDate ? new Date(input.followUpDate) : null,
+      documentsSubmitted: input.documentsSubmitted
+        ? JSON.stringify(input.documentsSubmitted)
+        : null,
+      documentsCollected: input.documentsCollected
+        ? JSON.stringify(input.documentsCollected)
+        : null,
+      performedBy: user?.id || "system",
+    };
+
+    const [newActivity] = await db
+      .insert(expeditingSchema.expeditingActivities)
+      .values(activityData)
+      .returning();
+
+    // Update request status if provided
+    if (input.newStatus) {
+      await db
+        .update(expeditingSchema.expeditingRequests)
+        .set({ status: input.newStatus })
+        .where(eq(expeditingSchema.expeditingRequests.id, input.requestId));
+    }
+
+    return {
+      success: true,
+      data: newActivity,
+      message: "Activity recorded successfully",
+    };
+  });
+
+// ========================================
+// AGENCY CONTACTS (FLAT PROCEDURES)
+// ========================================
+
+export const expeditingAgencyContactsList = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .input(
+    z.object({
+      agency: z.enum(governmentAgencies).optional(),
+      city: z.string().optional(),
+      search: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { agency, city, search } = input;
+    const { db } = context;
+
+    const conditions = [eq(expeditingSchema.agencyContacts.isActive, true)];
+
+    if (agency) {
+      conditions.push(eq(expeditingSchema.agencyContacts.agency, agency));
+    }
+
+    if (city) {
+      conditions.push(ilike(expeditingSchema.agencyContacts.city, `%${city}%`));
+    }
+
+    if (search) {
+      conditions.push(
+        sql`(
+          ${ilike(expeditingSchema.agencyContacts.contactName, `%${search}%`)} OR
+          ${ilike(expeditingSchema.agencyContacts.departmentName, `%${search}%`)} OR
+          ${ilike(expeditingSchema.agencyContacts.officeName, `%${search}%`)}
+        )`
+      );
+    }
+
+    const contacts = await db
+      .select()
+      .from(expeditingSchema.agencyContacts)
+      .where(and(...conditions))
+      .orderBy(asc(expeditingSchema.agencyContacts.agency));
+
+    return { success: true, data: contacts };
+  });
+
+export const expeditingAgencyContactsCreate = protectedProcedure
+  .use(requirePermission("expediting.create"))
+  .input(createAgencyContactSchema)
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const contactData = {
+      ...input,
+      id: nanoid(),
+      organizationId: "default", // User type doesn't have organizationId
+      operatingHours: input.operatingHours
+        ? JSON.stringify(input.operatingHours)
+        : null,
+      servicesOffered: input.servicesOffered
+        ? JSON.stringify(input.servicesOffered)
+        : null,
+      processingTimes: input.processingTimes
+        ? JSON.stringify(input.processingTimes)
+        : null,
+      fees: input.fees ? JSON.stringify(input.fees) : null,
+      updatedBy: user?.id,
+    };
+
+    const [newContact] = await db
+      .insert(expeditingSchema.agencyContacts)
+      .values(contactData)
+      .returning();
+
+    return {
+      success: true,
+      data: newContact,
+      message: "Agency contact created successfully",
+    };
+  });
+
+export const expeditingAgencyContactsUpdate = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      data: createAgencyContactSchema.partial(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+    const { id, data } = input;
+
+    const updateData = {
+      ...data,
+      operatingHours: data.operatingHours
+        ? JSON.stringify(data.operatingHours)
+        : undefined,
+      servicesOffered: data.servicesOffered
+        ? JSON.stringify(data.servicesOffered)
+        : undefined,
+      processingTimes: data.processingTimes
+        ? JSON.stringify(data.processingTimes)
+        : undefined,
+      fees: data.fees ? JSON.stringify(data.fees) : undefined,
+      lastVerified: new Date(),
+      updatedBy: user?.id,
+    };
+
+    const [updatedContact] = await db
+      .update(expeditingSchema.agencyContacts)
+      .set(updateData)
+      .where(eq(expeditingSchema.agencyContacts.id, id))
+      .returning();
+
+    if (!updatedContact) {
+      throw new ORPCError("NOT_FOUND", { message: "Agency contact not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedContact,
+      message: "Agency contact updated successfully",
+    };
+  });
+
+// ========================================
+// QUEUE MANAGEMENT (FLAT PROCEDURES)
+// ========================================
+
+export const expeditingQueueList = protectedProcedure
+  .use(requirePermission("expediting.read"))
+  .input(
+    z.object({
+      date: z.string().datetime().optional(),
+      agency: z.enum(governmentAgencies).optional(),
+      expeditorId: z.string().optional(),
+      status: z
+        .enum(["planned", "in_progress", "completed", "cancelled"])
+        .optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { date, agency, expeditorId, status } = input;
+    const { db } = context;
+
+    const conditions = [];
+
+    if (date) {
+      const targetDate = new Date(date);
+      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+      conditions.push(
+        and(
+          gte(expeditingSchema.expeditingQueue.queueDate, startOfDay),
+          lte(expeditingSchema.expeditingQueue.queueDate, endOfDay)
+        )
+      );
+    }
+
+    if (agency) {
+      conditions.push(eq(expeditingSchema.expeditingQueue.agency, agency));
+    }
+
+    if (expeditorId) {
+      conditions.push(
+        eq(expeditingSchema.expeditingQueue.expeditorId, expeditorId)
+      );
+    }
+
+    if (status) {
+      conditions.push(eq(expeditingSchema.expeditingQueue.status, status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const queue = await db
+      .select()
+      .from(expeditingSchema.expeditingQueue)
+      .where(whereClause)
+      .orderBy(desc(expeditingSchema.expeditingQueue.queueDate));
+
+    return { success: true, data: queue };
+  });
+
+export const expeditingQueueCreate = protectedProcedure
+  .use(requirePermission("expediting.create"))
+  .input(
+    z.object({
+      queueDate: z.string().datetime(),
+      agency: z.enum(governmentAgencies),
+      expeditorId: z.string().min(1),
+      requestIds: z.array(z.string()),
+      plannedStartTime: z.string().datetime().optional(),
+      plannedEndTime: z.string().datetime().optional(),
+      routeNotes: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db, user } = context;
+
+    const queueData = {
+      id: nanoid(),
+      organizationId: "default", // User type doesn't have organizationId
+      queueDate: new Date(input.queueDate),
+      agency: input.agency,
+      expeditorId: input.expeditorId,
+      requestIds: JSON.stringify(input.requestIds),
+      requestCount: input.requestIds.length,
+      plannedStartTime: input.plannedStartTime
+        ? new Date(input.plannedStartTime)
+        : null,
+      plannedEndTime: input.plannedEndTime
+        ? new Date(input.plannedEndTime)
+        : null,
+      routeNotes: input.routeNotes,
+      status: "planned",
+    };
+
+    const [newQueue] = await db
+      .insert(expeditingSchema.expeditingQueue)
+      .values(queueData)
+      .returning();
+
+    // Update request statuses to IN_QUEUE
+    for (const requestId of input.requestIds) {
+      await db
+        .update(expeditingSchema.expeditingRequests)
+        .set({ status: "IN_QUEUE" })
+        .where(eq(expeditingSchema.expeditingRequests.id, requestId));
+    }
+
+    return {
+      success: true,
+      data: newQueue,
+      message: "Queue created successfully",
+    };
+  });
+
+export const expeditingQueueUpdateStatus = protectedProcedure
+  .use(requirePermission("expediting.update"))
+  .input(
+    z.object({
+      id: z.string().min(1),
+      status: z.enum(["planned", "in_progress", "completed", "cancelled"]),
+      actualStartTime: z.string().datetime().optional(),
+      actualEndTime: z.string().datetime().optional(),
+      completionNotes: z.string().optional(),
+      requestsCompleted: z.number().optional(),
+      requestsPending: z.number().optional(),
+      transportExpense: z.string().optional(),
+      otherExpenses: z.string().optional(),
+    })
+  )
+  .handler(async ({ input, context }) => {
+    const { db } = context;
+    const {
+      id,
+      actualStartTime,
+      actualEndTime,
+      transportExpense,
+      otherExpenses,
+      ...data
+    } = input;
+
+    const transport = Number.parseFloat(transportExpense || "0");
+    const other = Number.parseFloat(otherExpenses || "0");
+
+    const updateData = {
+      ...data,
+      actualStartTime: actualStartTime ? new Date(actualStartTime) : undefined,
+      actualEndTime: actualEndTime ? new Date(actualEndTime) : undefined,
+      transportExpense,
+      otherExpenses,
+      totalExpenses: (transport + other).toString(),
+    };
+
+    const [updatedQueue] = await db
+      .update(expeditingSchema.expeditingQueue)
+      .set(updateData)
+      .where(eq(expeditingSchema.expeditingQueue.id, id))
+      .returning();
+
+    if (!updatedQueue) {
+      throw new ORPCError("NOT_FOUND", { message: "Queue not found" });
+    }
+
+    return {
+      success: true,
+      data: updatedQueue,
+      message: "Queue status updated successfully",
+    };
+  });

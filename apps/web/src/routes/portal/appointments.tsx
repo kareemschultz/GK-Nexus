@@ -184,7 +184,7 @@ function AppointmentsPage() {
     queryKey: ["appointments"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.appointments.list({ page: 1, limit: 100 });
+      return client.appointmentList({ page: 1, limit: 100 });
     },
   });
 
@@ -228,7 +228,7 @@ function AppointmentsPage() {
       description?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.appointments.create(data);
+      return client.appointmentCreate(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });

@@ -125,7 +125,7 @@ function AppointmentDetailPage() {
     queryKey: ["appointment", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.appointments.getById({ id });
+      return client.appointmentGetById({ id });
     },
   });
 
@@ -203,7 +203,7 @@ function AppointmentDetailPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.appointments.update({
+      return client.appointmentUpdate({
         id,
         ...data,
       });
@@ -217,7 +217,7 @@ function AppointmentDetailPage() {
   const cancelMutation = useMutation({
     mutationFn: async (reason: string) => {
       const { client } = await import("@/utils/orpc");
-      return client.appointments.cancel({
+      return client.appointmentCancel({
         id,
         reason,
       });
