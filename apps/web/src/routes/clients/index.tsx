@@ -540,27 +540,7 @@ function RouteComponent() {
               {/* Main search bar */}
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <SmartSearch
-                    onChange={(value) =>
-                      handleFilterChange("searchTerm", value)
-                    }
-                    onSuggestionSelect={(suggestion) => {
-                      if (suggestion.type === "client") {
-                        const client = clients.find(
-                          (c) => c.name === suggestion.value
-                        );
-                        if (client) {
-                          setSelectedClient(client);
-                          setShowClientDetails(true);
-                        }
-                      } else {
-                        handleFilterChange("searchTerm", suggestion.value);
-                      }
-                    }}
-                    placeholder="Search clients, contacts, or industries..."
-                    suggestions={searchSuggestions}
-                    value={filters.searchTerm}
-                  />
+                  <SmartSearch placeholder="Search clients, contacts, or industries..." />
                 </div>
                 <Button
                   className={showAdvancedFilters ? "bg-muted" : ""}
@@ -949,12 +929,11 @@ function RouteComponent() {
           <CardContent>
             {filteredClients.length === 0 ? (
               <EmptyState
-                action={
-                  <Button onClick={() => navigate({ to: "/clients/new" })}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add First Client
-                  </Button>
-                }
+                action={{
+                  label: "Add First Client",
+                  onClick: () => navigate({ to: "/clients/new" }),
+                  icon: UserPlus,
+                }}
                 description={
                   hasActiveFilters
                     ? "Try adjusting your search or filter criteria to find clients."
@@ -1161,8 +1140,7 @@ function RouteComponent() {
                           {getStatusIcon(client.status)}
                           <Checkbox
                             checked={selectedClients.includes(client.id)}
-                            onCheckedChange={(e) => {
-                              e.stopPropagation();
+                            onCheckedChange={() => {
                               toggleClientSelection(client.id);
                             }}
                             onClick={(e) => e.stopPropagation()}

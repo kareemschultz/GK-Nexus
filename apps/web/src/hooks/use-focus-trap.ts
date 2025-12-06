@@ -40,7 +40,7 @@ export function useFocusTrap(isActive = true) {
       }
 
       const firstElement = focusableElements[0];
-      const lastElement = focusableElements.at(-1);
+      const lastElement = focusableElements[focusableElements.length - 1];
 
       if (event.shiftKey) {
         // Shift + Tab - moving backwards

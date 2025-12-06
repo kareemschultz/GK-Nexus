@@ -22,7 +22,7 @@ import {
   type Role,
   RoleSchema,
 } from "@/lib/rbac";
-import { RBAC_TEST_SCENARIOS } from "../../packages/api/src/test/test-helpers";
+import { RBAC_TEST_SCENARIOS } from "../../../../packages/api/src/test/test-helpers";
 
 describe("Enterprise RBAC System", () => {
   describe("Schema Validation", () => {
@@ -115,9 +115,7 @@ describe("Enterprise RBAC System", () => {
       });
 
       it("should validate RBAC test scenarios", () => {
-        for (const [scenarioName, scenario] of Object.entries(
-          RBAC_TEST_SCENARIOS
-        )) {
+        for (const scenario of Object.values(RBAC_TEST_SCENARIOS)) {
           const role = scenario.role as Role;
 
           // Test permissions that should be granted
@@ -202,7 +200,7 @@ describe("Enterprise RBAC System", () => {
           checkPermission("CLIENT", "system:admin");
           expect.fail("Should have thrown an error");
         } catch (error) {
-          expect(error.message).toContain("system:admin");
+          expect((error as Error).message).toContain("system:admin");
         }
       });
     });
@@ -288,9 +286,7 @@ describe("Enterprise RBAC System", () => {
       });
 
       it("should contain valid permissions in each group", () => {
-        for (const [groupName, permissions] of Object.entries(
-          PERMISSION_GROUPS
-        )) {
+        for (const permissions of Object.values(PERMISSION_GROUPS)) {
           for (const permission of permissions) {
             expect(() => PermissionSchema.parse(permission)).not.toThrow();
           }

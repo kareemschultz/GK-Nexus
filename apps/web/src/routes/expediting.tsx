@@ -125,18 +125,20 @@ const EmptyState = ({
 );
 
 const serviceTypes = [
-  "LICENSE_APPLICATION",
+  "DOCUMENT_SUBMISSION",
+  "DOCUMENT_COLLECTION",
+  "APPLICATION_FOLLOW_UP",
+  "CERTIFICATE_RENEWAL",
+  "COMPLIANCE_CLEARANCE",
   "PERMIT_APPLICATION",
-  "CERTIFICATE_REQUEST",
+  "LICENSE_APPLICATION",
+  "TAX_CLEARANCE",
   "REGISTRATION",
-  "RENEWAL",
-  "AMENDMENT",
-  "APPEAL",
   "INQUIRY",
-  "OTHER",
+  "GENERAL_EXPEDITING",
 ] as const;
 
-const priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
+const priorities = ["STANDARD", "PRIORITY", "URGENT", "RUSH"] as const;
 
 function ExpeditingPage() {
   const [activeTab, setActiveTab] = useState("requests");
@@ -157,16 +159,22 @@ function ExpeditingPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.requests.list({
+      return client.expeditingRequestsList({
         search: searchTerm || undefined,
         status:
           statusFilter !== "all"
             ? (statusFilter as
                 | "PENDING"
-                | "IN_PROGRESS"
+                | "ASSIGNED"
+                | "IN_QUEUE"
+                | "AT_AGENCY"
+                | "PROCESSING"
+                | "AWAITING_RESPONSE"
+                | "DOCUMENTS_READY"
                 | "COMPLETED"
-                | "DELAYED"
-                | "CANCELLED")
+                | "FAILED"
+                | "CANCELLED"
+                | "ON_HOLD")
             : undefined,
         page: 1,
         limit: 50,
@@ -179,7 +187,7 @@ function ExpeditingPage() {
     queryKey: ["expediteAgencies"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.agencies.list({});
+      return client.expeditingAgencyContactsList({});
     },
   });
 
@@ -188,7 +196,7 @@ function ExpeditingPage() {
     queryKey: ["expediteStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.requests.stats();
+      return client.expeditingRequestsStats();
     },
   });
 
@@ -196,15 +204,18 @@ function ExpeditingPage() {
   const createRequestMutation = useMutation({
     mutationFn: async (data: {
       clientId: string;
-      agencyId: string;
-      serviceType: (typeof serviceTypes)[number];
+      agency: string;
+      requestType: (typeof serviceTypes)[number];
+      title: string;
       description: string;
       priority: (typeof priorities)[number];
-      estimatedCompletionDate?: string;
+      targetCompletionDate?: string;
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.requests.create(data);
+      return client.expeditingRequestsCreate(
+        data as Parameters<typeof client.expeditingRequestsCreate>[0]
+      );
     },
     onSuccess: () => {
       toast.success("Expedite request created successfully");
@@ -220,17 +231,18 @@ function ExpeditingPage() {
   // Create agency mutation
   const createAgencyMutation = useMutation({
     mutationFn: async (data: {
-      name: string;
-      code: string;
-      department?: string;
-      contactPerson?: string;
-      contactEmail?: string;
-      contactPhone?: string;
+      agency: string;
+      departmentName?: string;
+      contactName?: string;
+      email?: string;
+      phone?: string;
       address?: string;
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.agencies.create(data);
+      return client.expeditingAgencyContactsCreate(
+        data as Parameters<typeof client.expeditingAgencyContactsCreate>[0]
+      );
     },
     onSuccess: () => {
       toast.success("Agency created successfully");
@@ -246,10 +258,21 @@ function ExpeditingPage() {
   const updateStatusMutation = useMutation({
     mutationFn: async (data: {
       id: string;
-      status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "DELAYED" | "CANCELLED";
+      status:
+        | "PENDING"
+        | "ASSIGNED"
+        | "IN_QUEUE"
+        | "AT_AGENCY"
+        | "PROCESSING"
+        | "AWAITING_RESPONSE"
+        | "DOCUMENTS_READY"
+        | "COMPLETED"
+        | "FAILED"
+        | "CANCELLED"
+        | "ON_HOLD";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expediting.requests.update({
+      return client.expeditingRequestsUpdate({
         id: data.id,
         data: { status: data.status },
       });
@@ -269,12 +292,13 @@ function ExpeditingPage() {
     const formData = new FormData(e.currentTarget);
     createRequestMutation.mutate({
       clientId: formData.get("clientId") as string,
-      agencyId: formData.get("agencyId") as string,
-      serviceType: formData.get("serviceType") as (typeof serviceTypes)[number],
+      agency: formData.get("agency") as string,
+      requestType: formData.get("requestType") as (typeof serviceTypes)[number],
+      title: formData.get("title") as string,
       description: formData.get("description") as string,
       priority: formData.get("priority") as (typeof priorities)[number],
-      estimatedCompletionDate:
-        (formData.get("estimatedCompletionDate") as string) || undefined,
+      targetCompletionDate:
+        (formData.get("targetCompletionDate") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
   };
@@ -283,12 +307,11 @@ function ExpeditingPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     createAgencyMutation.mutate({
-      name: formData.get("name") as string,
-      code: formData.get("code") as string,
-      department: (formData.get("department") as string) || undefined,
-      contactPerson: (formData.get("contactPerson") as string) || undefined,
-      contactEmail: (formData.get("contactEmail") as string) || undefined,
-      contactPhone: (formData.get("contactPhone") as string) || undefined,
+      agency: formData.get("agency") as string,
+      departmentName: (formData.get("departmentName") as string) || undefined,
+      contactName: (formData.get("contactName") as string) || undefined,
+      email: (formData.get("email") as string) || undefined,
+      phone: (formData.get("phone") as string) || undefined,
       address: (formData.get("address") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
@@ -300,24 +323,30 @@ function ExpeditingPage() {
       "default" | "secondary" | "destructive" | "outline"
     > = {
       PENDING: "outline",
-      IN_PROGRESS: "default",
+      ASSIGNED: "default",
+      IN_QUEUE: "default",
+      AT_AGENCY: "default",
+      PROCESSING: "default",
+      AWAITING_RESPONSE: "default",
+      DOCUMENTS_READY: "default",
       COMPLETED: "secondary",
-      DELAYED: "destructive",
+      FAILED: "destructive",
       CANCELLED: "destructive",
+      ON_HOLD: "destructive",
     };
     return (
       <Badge variant={variants[status] || "secondary"}>
-        {status.replace("_", " ")}
+        {status.replace(/_/g, " ")}
       </Badge>
     );
   };
 
   const getPriorityBadge = (priority: string) => {
     const colors: Record<string, string> = {
-      LOW: "bg-gray-100 text-gray-800",
-      MEDIUM: "bg-blue-100 text-blue-800",
-      HIGH: "bg-orange-100 text-orange-800",
-      URGENT: "bg-red-100 text-red-800",
+      STANDARD: "bg-gray-100 text-gray-800",
+      PRIORITY: "bg-blue-100 text-blue-800",
+      URGENT: "bg-orange-100 text-orange-800",
+      RUSH: "bg-red-100 text-red-800",
     };
     return (
       <span
@@ -335,11 +364,11 @@ function ExpeditingPage() {
   // Calculate stats from the data
   const totalRequests = stats?.total || 0;
   const inProgressRequests =
-    stats?.byStatus?.find((s) => s.status === "IN_PROGRESS")?.count || 0;
+    stats?.byStatus?.find((s) => s.status === "PROCESSING")?.count || 0;
   const completedRequests =
     stats?.byStatus?.find((s) => s.status === "COMPLETED")?.count || 0;
   const delayedRequests =
-    stats?.byStatus?.find((s) => s.status === "DELAYED")?.count || 0;
+    stats?.byStatus?.find((s) => s.status === "ON_HOLD")?.count || 0;
 
   return (
     <TooltipProvider>
@@ -385,27 +414,44 @@ function ExpeditingPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="agencyId">Agency</Label>
-                      <Select name="agencyId" required>
+                      <Label htmlFor="agency">Agency</Label>
+                      <Select name="agency" required>
                         <SelectTrigger>
                           <SelectValue placeholder="Select agency" />
                         </SelectTrigger>
                         <SelectContent>
-                          {agencies.map((agency) => (
-                            <SelectItem key={agency.id} value={agency.id}>
-                              {agency.name} ({agency.code})
-                            </SelectItem>
-                          ))}
+                          {agencies.map(
+                            (agency: {
+                              id: string;
+                              agency: string;
+                              departmentName?: string | null;
+                            }) => (
+                              <SelectItem key={agency.id} value={agency.agency}>
+                                {agency.agency}{" "}
+                                {agency.departmentName &&
+                                  `(${agency.departmentName})`}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      placeholder="Request title"
+                      required
+                    />
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="serviceType">Service Type</Label>
+                      <Label htmlFor="requestType">Request Type</Label>
                       <Select
                         defaultValue="LICENSE_APPLICATION"
-                        name="serviceType"
+                        name="requestType"
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select type" />
@@ -421,7 +467,7 @@ function ExpeditingPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="priority">Priority</Label>
-                      <Select defaultValue="MEDIUM" name="priority">
+                      <Select defaultValue="PRIORITY" name="priority">
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
@@ -445,12 +491,12 @@ function ExpeditingPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="estimatedCompletionDate">
+                    <Label htmlFor="targetCompletionDate">
                       Expected Completion Date
                     </Label>
                     <Input
-                      id="estimatedCompletionDate"
-                      name="estimatedCompletionDate"
+                      id="targetCompletionDate"
+                      name="targetCompletionDate"
                       type="date"
                     />
                   </div>
@@ -694,11 +740,11 @@ function ExpeditingPage() {
                             {request.requestNumber}
                           </TableCell>
                           <TableCell>
-                            {request.serviceType.replace(/_/g, " ")}
+                            {request.requestType.replace(/_/g, " ")}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {request.agencyId?.substring(0, 8) || "N/A"}
+                              {request.agency || "N/A"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -708,14 +754,14 @@ function ExpeditingPage() {
                             {getPriorityBadge(request.priority)}
                           </TableCell>
                           <TableCell>
-                            {request.estimatedCompletionDate
+                            {request.targetCompletionDate
                               ? new Date(
-                                  request.estimatedCompletionDate
+                                  request.targetCompletionDate
                                 ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {request.assignedTo || "Unassigned"}
+                            {request.assignedToId || "Unassigned"}
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
@@ -732,7 +778,7 @@ function ExpeditingPage() {
                                   onClick={() =>
                                     updateStatusMutation.mutate({
                                       id: request.id,
-                                      status: "IN_PROGRESS",
+                                      status: "PROCESSING",
                                     })
                                   }
                                 >
@@ -752,11 +798,11 @@ function ExpeditingPage() {
                                   onClick={() =>
                                     updateStatusMutation.mutate({
                                       id: request.id,
-                                      status: "DELAYED",
+                                      status: "ON_HOLD",
                                     })
                                   }
                                 >
-                                  Mark Delayed
+                                  Mark On Hold
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Add Note</DropdownMenuItem>
                                 <DropdownMenuItem>
@@ -792,59 +838,69 @@ function ExpeditingPage() {
                         </DialogDescription>
                       </DialogHeader>
                       <form className="space-y-4" onSubmit={handleCreateAgency}>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="agency-name">Agency Name</Label>
-                            <Input
-                              id="agency-name"
-                              name="name"
-                              placeholder="e.g., Guyana Revenue Authority"
-                              required
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="agency-code">Code</Label>
-                            <Input
-                              id="agency-code"
-                              name="code"
-                              placeholder="e.g., GRA"
-                              required
-                            />
-                          </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="agency">Agency</Label>
+                          <Select name="agency" required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select agency" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="GRA">
+                                GRA - Guyana Revenue Authority
+                              </SelectItem>
+                              <SelectItem value="NIS">
+                                NIS - National Insurance Scheme
+                              </SelectItem>
+                              <SelectItem value="DEEDS_REGISTRY">
+                                Deeds Registry
+                              </SelectItem>
+                              <SelectItem value="LANDS_SURVEYS">
+                                Lands & Surveys
+                              </SelectItem>
+                              <SelectItem value="BUSINESS_REGISTRY">
+                                Business Registry
+                              </SelectItem>
+                              <SelectItem value="IMMIGRATION">
+                                Immigration
+                              </SelectItem>
+                              <SelectItem value="MINISTRY_OF_LABOUR">
+                                Ministry of Labour
+                              </SelectItem>
+                              <SelectItem value="OTHER">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="department">Department</Label>
+                          <Label htmlFor="departmentName">Department</Label>
                           <Input
-                            id="department"
-                            name="department"
+                            id="departmentName"
+                            name="departmentName"
                             placeholder="Department name"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="contactPerson">
-                              Contact Person
-                            </Label>
+                            <Label htmlFor="contactName">Contact Person</Label>
                             <Input
-                              id="contactPerson"
-                              name="contactPerson"
+                              id="contactName"
+                              name="contactName"
                               placeholder="Contact name"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="contactPhone">Phone</Label>
+                            <Label htmlFor="phone">Phone</Label>
                             <Input
-                              id="contactPhone"
-                              name="contactPhone"
+                              id="phone"
+                              name="phone"
                               placeholder="+592 xxx-xxxx"
                             />
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="contactEmail">Email</Label>
+                          <Label htmlFor="email">Email</Label>
                           <Input
-                            id="contactEmail"
-                            name="contactEmail"
+                            id="email"
+                            name="email"
                             placeholder="email@agency.gov.gy"
                             type="email"
                           />
@@ -911,37 +967,49 @@ function ExpeditingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {agencies.map((agency) => (
-                        <TableRow key={agency.id}>
-                          <TableCell className="font-medium">
-                            {agency.name}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{agency.code}</Badge>
-                          </TableCell>
-                          <TableCell>{agency.department || "N/A"}</TableCell>
-                          <TableCell>{agency.contactPerson || "N/A"}</TableCell>
-                          <TableCell>{agency.contactPhone || "N/A"}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  View Requests
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>Edit Agency</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {agencies.map(
+                        (agency: {
+                          id: string;
+                          agency: string;
+                          departmentName?: string | null;
+                          contactName?: string | null;
+                          phone?: string | null;
+                        }) => (
+                          <TableRow key={agency.id}>
+                            <TableCell className="font-medium">
+                              {agency.agency}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{agency.agency}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {agency.departmentName || "N/A"}
+                            </TableCell>
+                            <TableCell>{agency.contactName || "N/A"}</TableCell>
+                            <TableCell>{agency.phone || "N/A"}</TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    View Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    View Requests
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    Edit Agency
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 )}

@@ -69,16 +69,16 @@ export async function createContext({ context }: CreateContextOptions) {
           .select({ count: count() })
           .from(usersSchema.users);
 
-        const isFirstUser = userCount.count === 0;
+        const isFirstUser = userCount?.count === 0;
         const defaultRole: Role = isFirstUser ? "super_admin" : "admin";
 
         // Create user record synced from auth
         const newUserData = {
           id: session.user.id,
-          name: session.user.name || session.user.email.split("@")[0],
+          name: session.user.name ?? session.user.email.split("@")[0],
           email: session.user.email,
           emailVerified: session.user.emailVerified ?? false,
-          image: session.user.image || null,
+          image: session.user.image ?? null,
           role: defaultRole,
           status: "active" as const,
           permissions: null,

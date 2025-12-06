@@ -228,7 +228,14 @@ function AppointmentsPage() {
       description?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.appointmentCreate(data);
+      // Transform portal data to match API schema
+      return client.appointmentCreate({
+        clientId: data.staffId || "00000000-0000-0000-0000-000000000000", // Placeholder - portal user ID would come from auth
+        title: data.title,
+        scheduledDate: data.scheduledAt,
+        duration: data.duration,
+        notes: `${data.appointmentType} (${data.meetingType})${data.description ? `\n${data.description}` : ""}`,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });

@@ -147,32 +147,34 @@ function AppointmentDetailPage() {
         appointmentNumber: "APT-" + data.id.slice(0, 8).toUpperCase(),
         title: data.title || "Untitled Appointment",
         status: data.status || "SCHEDULED",
-        priority: data.priority || "MEDIUM",
+        priority: "MEDIUM",
         client: {
           id: data.clientId || "",
-          name: data.externalClientName || "Unknown Client",
+          name: "Unknown Client",
           type: "COMPANY",
-          email: data.externalClientEmail || "",
-          phone: data.externalClientPhone || "",
+          email: "",
+          phone: "",
           tin: "",
         },
         service: {
           id: "1",
-          name: (data.type || "CONSULTATION").replace(/_/g, " "),
+          name: "Consultation",
           department: "KAJ",
-          serviceType: data.type || "CONSULTATION",
-          duration: 60,
+          serviceType: "CONSULTATION",
+          duration: data.duration || 60,
           price: 150.0,
         },
         assignedTo: {
-          id: data.assignedTo || "",
+          id: data.staffId || "",
           name: "Staff Member",
           role: "Advisor",
           email: "",
         },
         scheduling: {
-          scheduledAt: data.startTime || new Date().toISOString(),
-          estimatedEndTime: data.endTime || new Date().toISOString(),
+          scheduledAt:
+            data.scheduledDate?.toString() || new Date().toISOString(),
+          estimatedEndTime:
+            data.scheduledDate?.toString() || new Date().toISOString(),
           location: data.location || "Office",
           meetingLink: data.meetingLink || null,
         },
@@ -184,8 +186,8 @@ function AppointmentDetailPage() {
         paymentStatus: "PENDING",
         requiresFollowUp: false,
         followUpDate: null,
-        createdAt: data.createdAt || new Date().toISOString(),
-        updatedAt: data.updatedAt || new Date().toISOString(),
+        createdAt: data.createdAt?.toString() || new Date().toISOString(),
+        updatedAt: data.updatedAt?.toString() || new Date().toISOString(),
       };
       setAppointment(mappedAppointment);
       setEditedNotes({
@@ -205,7 +207,8 @@ function AppointmentDetailPage() {
       const { client } = await import("@/utils/orpc");
       return client.appointmentUpdate({
         id,
-        ...data,
+        status: data.status as any,
+        notes: data.notes,
       });
     },
     onSuccess: () => {

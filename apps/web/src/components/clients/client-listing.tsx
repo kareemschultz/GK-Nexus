@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
-import { SmartSearch } from "@/components/ui/smart-search";
+import { type SearchResult, SmartSearch } from "@/components/ui/smart-search";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ClientStatus = "active" | "inactive" | "onboarding" | "suspended";
@@ -61,7 +61,7 @@ type ComplianceStatus =
   | "WARNING";
 type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
 
-interface Client {
+type Client = {
   id: string;
   clientNumber: string;
   name: string;
@@ -81,7 +81,7 @@ interface Client {
   clientSince: Date;
   lastActivity: Date | null;
   tags: string[];
-  customFields: Record<string, any> | null;
+  customFields: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -93,9 +93,9 @@ interface Client {
   totalRevenue: number;
   lastContactDate: Date | null;
   nextFollowUpDate: Date | null;
-}
+};
 
-interface FilterOptions {
+type FilterOptions = {
   search: string;
   status: ClientStatus[];
   entityType: EntityType[];
@@ -109,9 +109,9 @@ interface FilterOptions {
     from?: Date;
     to?: Date;
   };
-}
+};
 
-interface ClientListingProps {
+type ClientListingProps = {
   clients?: Client[];
   onClientSelect?: (client: Client) => void;
   onCreateClient?: () => void;
@@ -119,7 +119,7 @@ interface ClientListingProps {
   onDeleteClient?: (clientId: string) => void;
   onBulkAction?: (clientIds: string[], action: string) => void;
   loading?: boolean;
-}
+};
 
 const getStatusBadge = (status: ClientStatus) => {
   switch (status) {
@@ -368,8 +368,15 @@ export function ClientListing({
     });
   };
 
-  const searchSuggestions = useMemo(() => {
-    const suggestions = [
+  type SearchSuggestion = {
+    type: "client" | "tag";
+    value: string;
+    label: string;
+    description: string;
+  };
+
+  const searchSuggestions = useMemo((): SearchSuggestion[] => {
+    const suggestions: SearchSuggestion[] = [
       ...clients.map((c) => ({
         type: "client" as const,
         value: c.name,
@@ -505,27 +512,35 @@ export function ClientListing({
             <div className="flex gap-2">
               <div className="flex-1">
                 <SmartSearch
-                  onChange={(value) =>
-                    setFilters((prev) => ({ ...prev, search: value }))
-                  }
-                  onSuggestionSelect={(suggestion) => {
-                    if (suggestion.type === "client") {
-                      const client = clients.find(
-                        (c) => c.name === suggestion.value
-                      );
-                      if (client) {
-                        onClientSelect?.(client);
-                      }
-                    } else {
-                      setFilters((prev) => ({
-                        ...prev,
-                        search: suggestion.value,
+                  onSearch={(query) => {
+                    // Filter clients and return as SearchResult[]
+                    const searchLower = query.toLowerCase();
+                    return clients
+                      .filter(
+                        (client) =>
+                          client.name.toLowerCase().includes(searchLower) ||
+                          client.email.toLowerCase().includes(searchLower) ||
+                          client.clientNumber
+                            .toLowerCase()
+                            .includes(searchLower)
+                      )
+                      .map((client) => ({
+                        id: client.id,
+                        title: client.name,
+                        description: `${client.entityType} • ${client.status}`,
+                        type: "client" as const,
+                        url: `/clients/${client.id}`,
+                        metadata: { clientNumber: client.clientNumber },
                       }));
+                  }}
+                  onSelectResult={(result: SearchResult) => {
+                    // Find the matching client from our local data
+                    const client = clients.find((c) => c.name === result.title);
+                    if (client) {
+                      onClientSelect?.(client);
                     }
                   }}
                   placeholder="Search clients, contacts, or tags..."
-                  suggestions={searchSuggestions}
-                  value={filters.search}
                 />
               </div>
               <Button
@@ -817,7 +832,7 @@ export function ClientListing({
               {loading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
-                    <div className="animate-pulse" key={i}>
+                    <div className="animate-pulse" key={`skeleton-${i}`}>
                       <div className="flex items-center space-x-4">
                         <div className="h-10 w-10 rounded-full bg-muted" />
                         <div className="space-y-2">

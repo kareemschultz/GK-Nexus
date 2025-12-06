@@ -108,8 +108,20 @@ function RouteComponent() {
       const { client } = await import("@/utils/orpc");
       return client.userList({
         search: searchTerm || undefined,
-        role: roleFilter !== "all" ? roleFilter : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
+        role:
+          roleFilter !== "all"
+            ? (roleFilter as
+                | "super_admin"
+                | "admin"
+                | "manager"
+                | "accountant"
+                | "client_service"
+                | "read_only")
+            : undefined,
+        status:
+          statusFilter !== "all"
+            ? (statusFilter as "active" | "inactive" | "suspended" | "pending")
+            : undefined,
         page: 1,
         limit: 50,
       });

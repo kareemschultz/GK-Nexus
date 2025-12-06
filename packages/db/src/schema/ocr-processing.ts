@@ -483,7 +483,7 @@ export const ocrEngineConfigurations = pgTable(
 // Relations
 export const ocrProcessingQueueRelations = relations(
   ocrProcessingQueue,
-  ({ one, many }) => ({
+  ({ one }) => ({
     organization: one(organizations, {
       fields: [ocrProcessingQueue.organizationId],
       references: [organizations.id],

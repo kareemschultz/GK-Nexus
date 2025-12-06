@@ -164,7 +164,7 @@ function PartnerNetworkPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.partners.list({
+      return (client as any).partners.list({
         search: searchTerm || undefined,
         partnerType:
           typeFilter !== "all"
@@ -181,7 +181,7 @@ function PartnerNetworkPage() {
     queryKey: ["referrals"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.referrals.list({
+      return (client as any).referrals.list({
         page: 1,
         limit: 50,
       });
@@ -193,7 +193,7 @@ function PartnerNetworkPage() {
     queryKey: ["agreements"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.agreements.list({
+      return (client as any).agreements.list({
         page: 1,
         limit: 50,
       });
@@ -205,7 +205,7 @@ function PartnerNetworkPage() {
     queryKey: ["partnerStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.partners.stats();
+      return (client as any).partners.stats();
     },
   });
 
@@ -225,7 +225,7 @@ function PartnerNetworkPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.partners.create(data);
+      return (client as any).partners.create(data);
     },
     onSuccess: () => {
       toast.success("Partner created successfully");
@@ -245,7 +245,7 @@ function PartnerNetworkPage() {
       status: "PENDING" | "ACTIVE" | "INACTIVE" | "SUSPENDED" | "TERMINATED";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.partnerNetwork.partners.update({
+      return (client as any).partners.update({
         id: data.id,
         data: { status: data.status },
       });
@@ -386,14 +386,14 @@ function PartnerNetworkPage() {
 
   // Calculate stats from the data
   const totalActivePartners =
-    stats?.byStatus?.find((s) => s.status === "ACTIVE")?.count || 0;
+    stats?.byStatus?.find((s: any) => s.status === "ACTIVE")?.count || 0;
   const totalReferrals = referrals.length;
   const activeAgreements = agreements.filter(
-    (a) => a.status === "ACTIVE"
+    (a: any) => a.status === "ACTIVE"
   ).length;
   const totalCommissions = referrals
-    .filter((r) => r.commissionStatus === "PAID")
-    .reduce((sum, r) => sum + Number(r.commissionAmount || 0), 0);
+    .filter((r: any) => r.commissionStatus === "PAID")
+    .reduce((sum: any, r: any) => sum + Number(r.commissionAmount || 0), 0);
 
   return (
     <TooltipProvider>
@@ -754,25 +754,29 @@ function PartnerNetworkPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {partners.map((partner) => (
-                        <TableRow key={partner.id}>
+                      {partners.map((partner: Record<string, unknown>) => (
+                        <TableRow key={partner.id as string}>
                           <TableCell className="font-medium">
-                            {partner.partnerCode}
+                            {partner.partnerCode as string}
                           </TableCell>
-                          <TableCell>{partner.companyName}</TableCell>
+                          <TableCell>{partner.companyName as string}</TableCell>
                           <TableCell>
-                            {getTypeBadge(partner.partnerType)}
+                            {getTypeBadge(partner.partnerType as string)}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(partner.status)}
+                            {getStatusBadge(partner.status as string)}
                           </TableCell>
                           <TableCell>
                             {partner.rating && Number(partner.rating) > 0
-                              ? renderStars(partner.rating)
+                              ? renderStars(partner.rating as number)
                               : "-"}
                           </TableCell>
-                          <TableCell>{partner.totalReferrals || 0}</TableCell>
-                          <TableCell>{partner.city || "N/A"}</TableCell>
+                          <TableCell>
+                            {(partner.totalReferrals as number) || 0}
+                          </TableCell>
+                          <TableCell>
+                            {(partner.city as string) || "N/A"}
+                          </TableCell>
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -791,7 +795,7 @@ function PartnerNetworkPage() {
                                   <DropdownMenuItem
                                     onClick={() =>
                                       updatePartnerStatusMutation.mutate({
-                                        id: partner.id,
+                                        id: partner.id as string,
                                         status: "ACTIVE",
                                       })
                                     }
@@ -847,30 +851,36 @@ function PartnerNetworkPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {referrals.map((referral) => (
-                        <TableRow key={referral.id}>
+                      {referrals.map((referral: Record<string, unknown>) => (
+                        <TableRow key={referral.id as string}>
                           <TableCell className="font-medium">
-                            {referral.referralCode}
+                            {referral.referralCode as string}
                           </TableCell>
-                          <TableCell>{referral.partnerId}</TableCell>
-                          <TableCell>{referral.clientName || "N/A"}</TableCell>
-                          <TableCell>{referral.serviceType || "N/A"}</TableCell>
+                          <TableCell>{referral.partnerId as string}</TableCell>
                           <TableCell>
-                            {getStatusBadge(referral.status)}
+                            {(referral.clientName as string) || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {(referral.serviceType as string) || "N/A"}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(referral.status as string)}
                           </TableCell>
                           <TableCell>
                             {referral.referralDate
                               ? new Date(
-                                  referral.referralDate
+                                  referral.referralDate as string
                                 ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(referral.commissionAmount)}
+                            {formatCurrency(
+                              referral.commissionAmount as number
+                            )}
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(
-                              referral.commissionStatus || "PENDING"
+                              (referral.commissionStatus as string) || "PENDING"
                             )}
                           </TableCell>
                           <TableCell>
@@ -931,32 +941,34 @@ function PartnerNetworkPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {agreements.map((agreement) => (
-                        <TableRow key={agreement.id}>
+                      {agreements.map((agreement: Record<string, unknown>) => (
+                        <TableRow key={agreement.id as string}>
                           <TableCell className="font-medium">
-                            {agreement.agreementCode}
+                            {agreement.agreementCode as string}
                           </TableCell>
-                          <TableCell>{agreement.partnerId}</TableCell>
+                          <TableCell>{agreement.partnerId as string}</TableCell>
                           <TableCell>
-                            {getTypeBadge(agreement.agreementType)}
+                            {getTypeBadge(agreement.agreementType as string)}
                           </TableCell>
                           <TableCell>
-                            {getStatusBadge(agreement.status)}
+                            {getStatusBadge(agreement.status as string)}
                           </TableCell>
                           <TableCell>
                             {agreement.startDate
                               ? new Date(
-                                  agreement.startDate
+                                  agreement.startDate as string
                                 ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
                           <TableCell>
                             {agreement.endDate
-                              ? new Date(agreement.endDate).toLocaleDateString()
+                              ? new Date(
+                                  agreement.endDate as string
+                                ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {agreement.commissionRate || 0}%
+                            {(agreement.commissionRate as number) || 0}%
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>

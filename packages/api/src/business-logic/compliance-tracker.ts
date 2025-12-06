@@ -625,17 +625,24 @@ function generateNextActions(
       (record.dueDate.getTime() - currentDate.getTime()) /
       (1000 * 60 * 60 * 24);
 
+    const priority: "low" | "medium" | "high" | "urgent" =
+      daysUntilDue <= 7 ? "high" : daysUntilDue <= 14 ? "medium" : "low";
+
     nextActions.push({
       description: `Prepare ${getRequirementDescription(record.requirementId)}`,
       dueDate: record.dueDate,
-      priority:
-        daysUntilDue <= 7 ? "high" : daysUntilDue <= 14 ? "medium" : "low",
+      priority,
     });
   }
 
   return nextActions.sort((a, b) => {
-    const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-    return priorityOrder[b.priority] - priorityOrder[a.priority];
+    const priorityOrder: Record<string, number> = {
+      urgent: 4,
+      high: 3,
+      medium: 2,
+      low: 1,
+    };
+    return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
   });
 }
 
@@ -686,7 +693,7 @@ export function generateComplianceCalendar(
 
       // Check if this requirement is due on current date
       if (isDueOnDate(requirement, currentDate)) {
-        const priority =
+        const priority: "low" | "medium" | "high" =
           requirement.taxType === "corporate"
             ? "high"
             : requirement.taxType === "paye" || requirement.taxType === "vat"

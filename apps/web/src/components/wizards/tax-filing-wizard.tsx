@@ -12,7 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { type UseFormReturn, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -143,8 +143,8 @@ const step4Schema = z.object({
 
 const step5Schema = z.object({
   calculatedTax: z.number(),
-  penaltiesInterest: z.number().min(0).default(0),
-  previousCredits: z.number().min(0).default(0),
+  penaltiesInterest: z.number().min(0),
+  previousCredits: z.number().min(0),
   totalDue: z.number(),
 });
 
@@ -169,7 +169,7 @@ function FilingTypeStep({
   form,
   onNext,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onNext: () => void;
 }) {
   const selectedType = form.watch("filingType");
@@ -241,7 +241,7 @@ function ClientSelectionStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -332,7 +332,7 @@ function TaxPeriodStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -472,7 +472,7 @@ function DataEntryStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -634,7 +634,7 @@ function CalculationStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -795,7 +795,7 @@ function ReviewSubmitStep({
   onBack,
   isSubmitting,
 }: {
-  form: ReturnType<typeof useForm<TaxFilingFormData>>;
+  form: UseFormReturn<TaxFilingFormData>;
   onSubmit: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -952,14 +952,13 @@ export default function TaxFilingWizard({
   const form = useForm<TaxFilingFormData>({
     resolver: zodResolver(taxFilingSchema),
     defaultValues: {
-      filingType: undefined,
       clientId: "",
       clientTIN: "",
       taxYear: new Date().getFullYear(),
       penaltiesInterest: 0,
       previousCredits: 0,
       declarationConfirmed: false,
-    },
+    } as Partial<TaxFilingFormData>,
   });
 
   const steps = [

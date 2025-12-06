@@ -1,57 +1,42 @@
 import { z } from "zod";
 
 // Immigration status enums
-export const immigrationStatusSchema = z.enum(
-  [
-    "APPLICATION_SUBMITTED",
-    "UNDER_REVIEW",
-    "ADDITIONAL_DOCS_REQUESTED",
-    "INTERVIEW_SCHEDULED",
-    "APPROVED",
-    "REJECTED",
-    "APPEAL_IN_PROGRESS",
-    "VISA_ISSUED",
-    "RENEWAL_REQUIRED",
-    "EXPIRED",
-  ],
-  {
-    errorMap: () => ({ message: "Invalid immigration status" }),
-  }
-);
+export const immigrationStatusSchema = z.enum([
+  "APPLICATION_SUBMITTED",
+  "UNDER_REVIEW",
+  "ADDITIONAL_DOCS_REQUESTED",
+  "INTERVIEW_SCHEDULED",
+  "APPROVED",
+  "REJECTED",
+  "APPEAL_IN_PROGRESS",
+  "VISA_ISSUED",
+  "RENEWAL_REQUIRED",
+  "EXPIRED",
+]);
 
-export const visaTypeSchema = z.enum(
-  [
-    "WORK_PERMIT",
-    "STUDENT_VISA",
-    "BUSINESS_VISA",
-    "INVESTOR_VISA",
-    "FAMILY_REUNIFICATION",
-    "PERMANENT_RESIDENCE",
-    "CITIZENSHIP",
-    "OTHER",
-  ],
-  {
-    errorMap: () => ({ message: "Invalid visa type" }),
-  }
-);
+export const visaTypeSchema = z.enum([
+  "WORK_PERMIT",
+  "STUDENT_VISA",
+  "BUSINESS_VISA",
+  "INVESTOR_VISA",
+  "FAMILY_REUNIFICATION",
+  "PERMANENT_RESIDENCE",
+  "CITIZENSHIP",
+  "OTHER",
+]);
 
-export const documentTypeSchema = z.enum(
-  [
-    "PASSPORT",
-    "BIRTH_CERTIFICATE",
-    "MARRIAGE_CERTIFICATE",
-    "EDUCATIONAL_CREDENTIALS",
-    "EMPLOYMENT_LETTER",
-    "FINANCIAL_STATEMENTS",
-    "MEDICAL_EXAMINATION",
-    "POLICE_CLEARANCE",
-    "SPONSOR_DOCUMENTS",
-    "OTHER",
-  ],
-  {
-    errorMap: () => ({ message: "Invalid document type" }),
-  }
-);
+export const documentTypeSchema = z.enum([
+  "PASSPORT",
+  "BIRTH_CERTIFICATE",
+  "MARRIAGE_CERTIFICATE",
+  "EDUCATIONAL_CREDENTIALS",
+  "EMPLOYMENT_LETTER",
+  "FINANCIAL_STATEMENTS",
+  "MEDICAL_EXAMINATION",
+  "POLICE_CLEARANCE",
+  "SPONSOR_DOCUMENTS",
+  "OTHER",
+]);
 
 // Immigration status schemas
 export const getImmigrationStatusSchema = z.object({

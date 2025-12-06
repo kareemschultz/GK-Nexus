@@ -394,7 +394,9 @@ function DocumentUploadPage() {
                 <Checkbox
                   checked={isConfidential}
                   id="confidential"
-                  onCheckedChange={setIsConfidential}
+                  onCheckedChange={(checked) =>
+                    setIsConfidential(checked === true)
+                  }
                 />
                 <Label
                   className="flex items-center gap-2"

@@ -2,7 +2,7 @@
  * Test setup for API unit tests
  */
 
-import { afterAll, afterEach, beforeAll } from "vitest";
+import { afterAll, afterEach, beforeAll, expect, vi } from "vitest";
 import { cleanupTestData } from "./test-helpers";
 
 // Global test configuration
@@ -60,11 +60,13 @@ expect.extend({
 });
 
 // Declare custom matchers for TypeScript
-declare global {
-  namespace Vi {
-    interface JestAssertion<T = any> {
-      toBeValidGuyanaAmount(): T;
-      toMatchNISFormat(): T;
-    }
+declare module "vitest" {
+  interface Assertion {
+    toBeValidGuyanaAmount(): void;
+    toMatchNISFormat(): void;
+  }
+  interface AsymmetricMatchersContaining {
+    toBeValidGuyanaAmount(): unknown;
+    toMatchNISFormat(): unknown;
   }
 }

@@ -289,7 +289,7 @@ export function calculateMinimumTax(
 export function calculateCapitalGainsTax(
   salePrice: number,
   originalCost: number,
-  improvementCosts,
+  improvementCosts: number,
   holdingPeriodYears: number,
   businessType: BusinessType
 ): {

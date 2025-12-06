@@ -65,7 +65,13 @@ type InvoiceItem = {
 
 type CreateInvoiceData = {
   clientId: string;
-  items: Omit<InvoiceItem, "id" | "total">[];
+  items: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    vatRate: number;
+    total: number;
+  }[];
   dueDate: string;
   notes?: string;
   paymentTerms: string;
@@ -112,8 +118,10 @@ function RouteComponent() {
     },
   });
 
-  const clients = clientsQuery.data?.clients || [];
-  const selectedClient = clients.find((c) => c.id === selectedClientId);
+  const clients = clientsQuery.data?.data?.items || [];
+  const selectedClient = clients.find(
+    (c: { id: string }) => c.id === selectedClientId
+  );
 
   // Calculate totals
   const calculateItemTotal = (item: Omit<InvoiceItem, "id" | "total">) => {
@@ -180,7 +188,13 @@ function RouteComponent() {
 
     const invoiceData: CreateInvoiceData = {
       clientId: selectedClientId,
-      items: items.map(({ id, total, ...item }) => item),
+      items: items.map(({ id, ...item }) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        vatRate: item.vatRate,
+        total: item.total || calculateItemTotal(item),
+      })),
       dueDate:
         dueDate ||
         new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -281,16 +295,22 @@ function RouteComponent() {
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
                   <SelectContent>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        <div className="flex w-full items-center justify-between">
-                          <span>{client.name}</span>
-                          <Badge className="ml-2" variant="secondary">
-                            {client.type}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {clients.map(
+                      (client: {
+                        id: string;
+                        name: string;
+                        entityType: string;
+                      }) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          <div className="flex w-full items-center justify-between">
+                            <span>{client.name}</span>
+                            <Badge className="ml-2" variant="secondary">
+                              {client.entityType}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -299,13 +319,13 @@ function RouteComponent() {
                 <div className="space-y-2 rounded-lg bg-muted p-4">
                   <h4 className="font-medium">{selectedClient.name}</h4>
                   <p className="text-muted-foreground text-sm">
-                    {selectedClient.contactPerson}
+                    {selectedClient.entityType}
                   </p>
                   <p className="text-muted-foreground text-sm">
                     {selectedClient.email}
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    {selectedClient.address}
+                    Client #{selectedClient.clientNumber}
                   </p>
                 </div>
               )}

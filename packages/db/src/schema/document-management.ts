@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   decimal,
@@ -190,10 +191,12 @@ export const enhancedDocuments = pgTable(
     // Versioning and relationships
     version: text("version").default("1.0").notNull(),
     parentDocumentId: text("parent_document_id").references(
-      () => enhancedDocuments.id
+      (): AnyPgColumn => enhancedDocuments.id
     ),
     isLatestVersion: boolean("is_latest_version").default(true).notNull(),
-    supersededBy: text("superseded_by").references(() => enhancedDocuments.id),
+    supersededBy: text("superseded_by").references(
+      (): AnyPgColumn => enhancedDocuments.id
+    ),
 
     // Compliance and retention
     retentionPeriod: integer("retention_period"), // Years to retain

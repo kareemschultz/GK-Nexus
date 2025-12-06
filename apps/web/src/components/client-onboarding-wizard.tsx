@@ -15,7 +15,7 @@ import { type UseFormReturn, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  getDocumentStats,
+  countRequiredDocuments,
   getRequiredDocuments,
 } from "@/lib/document-requirements";
 import { cn } from "@/lib/utils";
@@ -92,7 +92,7 @@ const step1Schema = z
         { message: "NIS format: A-123456 (1 letter + 6 digits)" }
       ),
     passportNumber: z.string().optional(),
-    isLocalContentQualified: z.boolean().default(false),
+    isLocalContentQualified: z.boolean(),
   })
   .refine(
     (data) => {
@@ -144,10 +144,18 @@ const clientSchema = step1Schema
 type ClientFormData = z.infer<typeof clientSchema>;
 type ClientForm = UseFormReturn<ClientFormData>;
 
+type StepProps = {
+  form: ClientForm;
+  onNext: () => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+};
+
 type OnboardingStep = {
   title: string;
   description: string;
-  component: React.ComponentType<unknown>;
+  component: React.ComponentType<StepProps>;
 };
 
 // Helper function to format client display name
@@ -168,15 +176,7 @@ const formatClientName = (data: {
 };
 
 // Step 1: Entity Structure
-function EntityStructureStep({
-  form,
-  onNext,
-  isSubmitting,
-}: {
-  form: ClientForm;
-  onNext: () => void;
-  isSubmitting: boolean;
-}) {
+function EntityStructureStep({ form, onNext, isSubmitting }: StepProps) {
   const entityType = form.watch("entityType");
   const isLocalContentQualified = form.watch("isLocalContentQualified");
 
@@ -191,7 +191,16 @@ function EntityStructureStep({
             Select the type of entity you're registering
           </p>
           <Select
-            onValueChange={(value) => form.setValue("entityType", value)}
+            onValueChange={(value) =>
+              form.setValue(
+                "entityType",
+                value as
+                  | "INDIVIDUAL"
+                  | "COMPANY"
+                  | "PARTNERSHIP"
+                  | "SOLE_PROPRIETORSHIP"
+              )
+            }
             value={entityType}
           >
             <SelectTrigger>
@@ -357,7 +366,7 @@ function EntityStructureStep({
             checked={isLocalContentQualified}
             id="isLocalContentQualified"
             onCheckedChange={(checked) =>
-              form.setValue("isLocalContentQualified", checked)
+              form.setValue("isLocalContentQualified", Boolean(checked))
             }
           />
           <div className="space-y-1">
@@ -393,12 +402,7 @@ function ContactInformationStep({
   onNext,
   onBack,
   isSubmitting,
-}: {
-  form: ClientForm;
-  onNext: () => void;
-  onBack: () => void;
-  isSubmitting: boolean;
-}) {
+}: StepProps) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -541,33 +545,39 @@ function ContactInformationStep({
 }
 
 // Step 3: Document Upload - Dynamic based on entity type and selected services
-function DocumentUploadStep({
-  form,
-  onNext,
-  onBack,
-  isSubmitting,
-}: {
-  form: ClientForm;
-  onNext: () => void;
-  onBack: () => void;
-  isSubmitting: boolean;
-}) {
+function DocumentUploadStep({ form, onNext, onBack, isSubmitting }: StepProps) {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
   const entityType = form.watch("entityType");
   const selectedServices = form.watch("selectedServices") || [];
 
-  // Get dynamic document requirements based on entity type and selected services
-  const documentCategories = getRequiredDocuments(entityType, selectedServices);
-  const stats = getDocumentStats(documentCategories);
-
-  // Count uploaded required documents
-  const uploadedRequiredCount = documentCategories.reduce(
-    (count, category) =>
-      count +
-      category.documents.filter((doc) => doc.required && uploadedFiles[doc.id])
-        .length,
-    0
+  // Get dynamic document requirements GROUPED by entity type and selected services
+  const { entityDocuments, serviceDocuments } = getRequiredDocuments(
+    entityType,
+    selectedServices
   );
+  const stats = countRequiredDocuments(entityDocuments, serviceDocuments);
+
+  // Helper: count uploaded required docs for entity
+  const countEntityUploads = () => {
+    if (!entityDocuments) {
+      return 0;
+    }
+    return entityDocuments.documents.filter(
+      (doc) => doc.required && uploadedFiles[doc.id]
+    ).length;
+  };
+
+  // Helper: count uploaded required docs for services
+  const countServiceUploads = () =>
+    serviceDocuments.reduce((total, service) => {
+      const uploaded = service.documents.filter((doc) => {
+        const docKey = `${service.serviceId}-${doc.id}`;
+        return doc.required && uploadedFiles[docKey];
+      }).length;
+      return total + uploaded;
+    }, 0);
+
+  const uploadedRequiredCount = countEntityUploads() + countServiceUploads();
 
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -577,11 +587,6 @@ function DocumentUploadStep({
     if (file) {
       setUploadedFiles((prev) => ({ ...prev, [docId]: file }));
       form.setValue("hasUploadedDocs", true);
-      // Store uploaded document IDs for tracking
-      const currentUploads = form.getValues("uploadedDocumentIds") || [];
-      if (!currentUploads.includes(docId)) {
-        form.setValue("uploadedDocumentIds", [...currentUploads, docId]);
-      }
     }
   };
 
@@ -591,12 +596,10 @@ function DocumentUploadStep({
       delete updated[docId];
       return updated;
     });
-    // Remove from form tracking
-    const currentUploads = form.getValues("uploadedDocumentIds") || [];
-    form.setValue(
-      "uploadedDocumentIds",
-      currentUploads.filter((id: string) => id !== docId)
-    );
+    // Update hasUploadedDocs if no files remain
+    if (Object.keys(uploadedFiles).length <= 1) {
+      form.setValue("hasUploadedDocs", false);
+    }
   };
 
   // Helper function to get document border class
@@ -618,43 +621,47 @@ function DocumentUploadStep({
           <div>
             <h4 className="font-medium">Document Upload Progress</h4>
             <p className="text-muted-foreground text-sm">
-              {uploadedRequiredCount} of {stats.requiredCount} required
-              documents uploaded
+              {uploadedRequiredCount} of {stats.required} required documents
+              uploaded
             </p>
           </div>
           <div className="text-right">
             <div className="font-bold text-2xl text-primary">
-              {Math.round((uploadedRequiredCount / stats.requiredCount) * 100)}%
+              {stats.required > 0
+                ? Math.round((uploadedRequiredCount / stats.required) * 100)
+                : 0}
+              %
             </div>
             <p className="text-muted-foreground text-xs">
-              {stats.optionalCount} optional
+              {stats.optional} optional
             </p>
           </div>
         </div>
         <Progress
           className="mt-3 h-2"
-          value={(uploadedRequiredCount / stats.requiredCount) * 100}
+          value={
+            stats.required > 0
+              ? (uploadedRequiredCount / stats.required) * 100
+              : 0
+          }
         />
       </div>
 
-      {/* Document Categories */}
-      {documentCategories.map((category) => (
-        <div className="space-y-3" key={category.id}>
+      {/* Entity Documents Section */}
+      {entityDocuments && (
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                "h-1 w-4 rounded",
-                category.id === "base" ? "bg-blue-500" : "bg-green-500"
-              )}
-            />
-            <h3 className="font-semibold">{category.name}</h3>
+            <div className="h-1 w-4 rounded bg-blue-500" />
+            <h3 className="font-semibold">
+              {entityDocuments.entityName} Documents
+            </h3>
           </div>
           <p className="text-muted-foreground text-sm">
-            {category.description}
+            {entityDocuments.description}
           </p>
 
           <div className="grid gap-3">
-            {category.documents.map((doc) => (
+            {entityDocuments.documents.map((doc) => (
               <div
                 className={cn(
                   "rounded-lg border p-4 transition-all",
@@ -676,11 +683,6 @@ function DocumentUploadStep({
                           Optional
                         </Badge>
                       )}
-                      {doc.agency && (
-                        <Badge className="text-xs" variant="outline">
-                          {doc.agency}
-                        </Badge>
-                      )}
                     </div>
                     <p className="mb-2 text-muted-foreground text-sm">
                       {doc.description}
@@ -691,6 +693,7 @@ function DocumentUploadStep({
                       {doc.validityPeriod && (
                         <span>Valid: {doc.validityPeriod}</span>
                       )}
+                      {doc.source && <span>From: {doc.source}</span>}
                     </div>
                   </div>
 
@@ -744,6 +747,124 @@ function DocumentUploadStep({
             ))}
           </div>
         </div>
+      )}
+
+      {/* No services selected message */}
+      {serviceDocuments.length === 0 && (
+        <div className="rounded-lg border border-muted-foreground/25 border-dashed p-6 text-center">
+          <FileText className="mx-auto h-8 w-8 text-muted-foreground/50" />
+          <h4 className="mt-2 font-medium text-muted-foreground">
+            No service-specific documents
+          </h4>
+          <p className="mt-1 text-muted-foreground/75 text-sm">
+            Select services in the previous step to see additional required
+            documents.
+          </p>
+        </div>
+      )}
+
+      {/* Service-Specific Documents - Each service gets its own section */}
+      {serviceDocuments.map((service) => (
+        <div className="space-y-3" key={service.serviceId}>
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-4 rounded bg-green-500" />
+            <h3 className="font-semibold">{service.serviceName}</h3>
+            <Badge className="text-xs" variant="outline">
+              {service.documents.filter((d) => d.required).length} required
+            </Badge>
+          </div>
+          <p className="text-muted-foreground text-sm">{service.description}</p>
+
+          <div className="grid gap-3">
+            {service.documents.map((doc) => {
+              const docKey = `${service.serviceId}-${doc.id}`;
+              return (
+                <div
+                  className={cn(
+                    "rounded-lg border p-4 transition-all",
+                    getDocumentBorderClass(docKey, doc.required)
+                  )}
+                  key={docKey}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span className="font-medium">{doc.name}</span>
+                        {doc.required ? (
+                          <Badge className="text-xs" variant="destructive">
+                            Required
+                          </Badge>
+                        ) : (
+                          <Badge className="text-xs" variant="secondary">
+                            Optional
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mb-2 text-muted-foreground text-sm">
+                        {doc.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+                        <span>Formats: {doc.acceptedFormats.join(", ")}</span>
+                        <span>Max: {doc.maxSizeMB}MB</span>
+                        {doc.validityPeriod && (
+                          <span>Valid: {doc.validityPeriod}</span>
+                        )}
+                        {doc.source && <span>From: {doc.source}</span>}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {uploadedFiles[docKey] ? (
+                        <>
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          <Button
+                            onClick={() => removeFile(docKey)}
+                            size="icon"
+                            type="button"
+                            variant="ghost"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <AlertCircle
+                          className={cn(
+                            "h-5 w-5",
+                            doc.required
+                              ? "text-orange-500"
+                              : "text-muted-foreground"
+                          )}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  {uploadedFiles[docKey] ? (
+                    <div className="mt-3 flex items-center gap-2 rounded bg-green-100 p-2 text-green-700 text-sm dark:bg-green-900/30 dark:text-green-300">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="truncate">
+                        {uploadedFiles[docKey].name}
+                      </span>
+                      <span className="text-xs">
+                        ({(uploadedFiles[docKey].size / 1024 / 1024).toFixed(2)}
+                        MB)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-3">
+                      <Input
+                        accept={doc.acceptedFormats.join(",")}
+                        onChange={(e) => handleFileUpload(e, docKey)}
+                        type="file"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       ))}
 
       {/* OCR Notice */}
@@ -792,12 +913,7 @@ function ServiceSelectionStep({
   onNext,
   onBack,
   isSubmitting,
-}: {
-  form: ClientForm;
-  onNext: () => void;
-  onBack: () => void;
-  isSubmitting: boolean;
-}) {
+}: StepProps) {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
 
   const toggleService = (serviceValue: string) => {
@@ -971,17 +1087,7 @@ function ServiceSelectionStep({
 }
 
 // Step 5: Review & Confirmation
-function ReviewStep({
-  form,
-  onSubmit,
-  onBack,
-  isSubmitting,
-}: {
-  form: ClientForm;
-  onSubmit: () => void;
-  onBack: () => void;
-  isSubmitting: boolean;
-}) {
+function ReviewStep({ form, onSubmit, onBack, isSubmitting }: StepProps) {
   const formData = form.getValues();
 
   return (
@@ -1188,7 +1294,7 @@ export default function ClientOnboardingWizard({
       if (error instanceof z.ZodError) {
         // Set errors in the form
         for (const issue of error.issues) {
-          const field = issue.path[0] as string;
+          const field = issue.path[0] as keyof ClientFormData;
           form.setError(field, { type: "manual", message: issue.message });
         }
 
@@ -1234,7 +1340,7 @@ export default function ClientOnboardingWizard({
       const { client: orpcClient } = await import("@/utils/orpc");
       const { toast } = await import("sonner");
 
-      const result = await orpcClient.clients.create({
+      const result = await orpcClient.clientCreate({
         // Computed display name
         name: clientName,
         entityType: entityTypeMap[validatedData.entityType] as

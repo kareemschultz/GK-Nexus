@@ -1,8 +1,19 @@
 import { type RenderResult, render } from "@testing-library/react";
 import { axe, toHaveNoViolations } from "jest-axe";
 import type { ReactElement } from "react";
+import { expect } from "vitest";
 
-// Extend Jest matchers
+// Extend Vitest matchers with jest-axe
+declare module "vitest" {
+  interface Assertion {
+    toHaveNoViolations(): void;
+  }
+  interface AsymmetricMatchersContaining {
+    toHaveNoViolations(): unknown;
+  }
+}
+
+// Extend Vitest expect with jest-axe matchers
 expect.extend(toHaveNoViolations);
 
 /**
@@ -29,15 +40,24 @@ export const testA11yWithConfig = async (
 /**
  * Test keyboard navigation for a component
  */
-export const testKeyboardNavigation = (renderResult: RenderResult) => {
+export const testKeyboardNavigation = (
+  renderResult: RenderResult
+): {
+  focusableElements: NodeListOf<Element>;
+  getFirstFocusable: () => HTMLElement | undefined;
+  getLastFocusable: () => HTMLElement | undefined;
+} => {
   const focusableElements = renderResult.container.querySelectorAll(
     'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select, [tabindex]:not([tabindex="-1"])'
   );
 
   return {
     focusableElements,
-    getFirstFocusable: () => focusableElements[0] as HTMLElement,
-    getLastFocusable: () => focusableElements.at(-1) as HTMLElement,
+    getFirstFocusable: () => focusableElements[0] as HTMLElement | undefined,
+    getLastFocusable: () =>
+      focusableElements[focusableElements.length - 1] as
+        | HTMLElement
+        | undefined,
   };
 };
 
@@ -69,13 +89,19 @@ export const checkColorContrast = (element: HTMLElement): boolean => {
 export const testFocusTrap = async (
   _modalTrigger: HTMLElement,
   modalContainer: HTMLElement
-) => {
+): Promise<{
+  firstFocusable: HTMLElement | undefined;
+  lastFocusable: HTMLElement | undefined;
+  shouldTrapFocus: boolean;
+}> => {
   const focusableElements = modalContainer.querySelectorAll(
     'a[href], button, textarea, input[type="text"], input[type="radio"], input[type="checkbox"], select, [tabindex]:not([tabindex="-1"])'
   );
 
-  const firstFocusable = focusableElements[0] as HTMLElement;
-  const lastFocusable = focusableElements.at(-1) as HTMLElement;
+  const firstFocusable = focusableElements[0] as HTMLElement | undefined;
+  const lastFocusable = focusableElements[focusableElements.length - 1] as
+    | HTMLElement
+    | undefined;
 
   return {
     firstFocusable,

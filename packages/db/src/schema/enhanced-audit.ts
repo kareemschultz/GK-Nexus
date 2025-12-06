@@ -288,7 +288,7 @@ export const enhancedAuditLogs = pgTable(
     workflowStage: text("workflow_stage"), // Current stage in workflow
     businessImpact: text("business_impact"), // Description of business impact
     complianceFrameworks: jsonb("compliance_frameworks").$type<
-      complianceFrameworkEnum[]
+      Array<(typeof complianceFrameworkEnum.enumValues)[number]>
     >(),
 
     // Risk and security assessment
@@ -434,12 +434,12 @@ export const auditPatterns = pgTable(
 
     // Pattern configuration
     conditions: jsonb("conditions").$type<{
-      timeWindow: number; // minutes
-      threshold: number; // number of events
-      actions?: enhancedAuditActionEnum[];
-      entities?: enhancedAuditEntityEnum[];
+      timeWindow: number;
+      threshold: number;
+      actions?: Array<(typeof enhancedAuditActionEnum.enumValues)[number]>;
+      entities?: Array<(typeof enhancedAuditEntityEnum.enumValues)[number]>;
       userIds?: string[];
-      riskLevels?: auditRiskLevelEnum[];
+      riskLevels?: Array<(typeof auditRiskLevelEnum.enumValues)[number]>;
       customConditions?: Array<{
         field: string;
         operator: "equals" | "contains" | "greater_than" | "less_than" | "in";
@@ -589,9 +589,9 @@ export const auditRetentionPolicies = pgTable(
 
     // Policy scope
     appliesTo: jsonb("applies_to").$type<{
-      actions?: enhancedAuditActionEnum[];
-      entities?: enhancedAuditEntityEnum[];
-      riskLevels?: auditRiskLevelEnum[];
+      actions?: Array<(typeof enhancedAuditActionEnum.enumValues)[number]>;
+      entities?: Array<(typeof enhancedAuditEntityEnum.enumValues)[number]>;
+      riskLevels?: Array<(typeof auditRiskLevelEnum.enumValues)[number]>;
       dataClassifications?: string[];
       customConditions?: Array<{
         field: string;

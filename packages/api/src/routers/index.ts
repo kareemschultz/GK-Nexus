@@ -190,7 +190,7 @@ import {
 import {
   localContentChecklistsCreate,
   localContentChecklistsList,
-  localContentChecklistsUpdateItem,
+  localContentChecklistsUpdate,
   localContentPlansCreate,
   localContentPlansList,
   localContentPlansSubmit,
@@ -717,7 +717,7 @@ export const appRouter = {
   localContentVendorsUpdate,
   localContentChecklistsList,
   localContentChecklistsCreate,
-  localContentChecklistsUpdateItem,
+  localContentChecklistsUpdate,
 
   // Partner Network (FLAT procedures)
   partnerNetworkPartnersList,

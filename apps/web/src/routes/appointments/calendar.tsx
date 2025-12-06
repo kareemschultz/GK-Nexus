@@ -39,6 +39,40 @@ import {
 } from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
 
+// Extended appointment type with UI properties
+type AppointmentWithExtras = {
+  id: string;
+  clientId: string;
+  staffId: string;
+  title: string;
+  description: string | null;
+  scheduledDate: Date;
+  duration: number | null;
+  location: string | null;
+  meetingLink: string | null;
+  status:
+    | "SCHEDULED"
+    | "CONFIRMED"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "CANCELLED"
+    | "NO_SHOW";
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  // Extended properties
+  startTime?: string;
+  endTime?: string;
+  type?:
+    | "CONSULTATION"
+    | "DOCUMENT_REVIEW"
+    | "TAX_PREPARATION"
+    | "COMPLIANCE_MEETING"
+    | "OTHER";
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  externalClientName?: string;
+};
+
 export const Route = createFileRoute("/appointments/calendar")({
   component: CalendarPage,
   beforeLoad: async () => {
@@ -146,20 +180,12 @@ function CalendarPage() {
                 | "CANCELLED"
                 | "NO_SHOW")
             : undefined,
-        type:
-          filterType !== "all"
-            ? (filterType as
-                | "CONSULTATION"
-                | "DOCUMENT_REVIEW"
-                | "TAX_PREPARATION"
-                | "COMPLIANCE_MEETING"
-                | "OTHER")
-            : undefined,
       });
     },
   });
 
-  const appointments = appointmentsData?.data?.items || [];
+  const appointments = (appointmentsData?.data?.items ||
+    []) as AppointmentWithExtras[];
 
   const monthNames = [
     "January",
@@ -193,7 +219,9 @@ function CalendarPage() {
   // Get appointments for today
   const today = new Date().toISOString().split("T")[0];
   const todaysAppointments = appointments.filter((apt) => {
-    const aptDate = new Date(apt.startTime).toISOString().split("T")[0];
+    const aptDate = new Date(apt.startTime || apt.scheduledDate)
+      .toISOString()
+      .split("T")[0];
     return aptDate === today;
   });
 
@@ -366,7 +394,9 @@ function CalendarPage() {
                     {calendarDays.map((day, index) => {
                       const dateStr = day.date.toISOString().split("T")[0];
                       const dayAppointments = appointments.filter((apt) => {
-                        const aptDate = new Date(apt.startTime)
+                        const aptDate = new Date(
+                          apt.startTime || apt.scheduledDate
+                        )
                           .toISOString()
                           .split("T")[0];
                         return aptDate === dateStr;
@@ -393,7 +423,7 @@ function CalendarPage() {
                                 .slice(0, 3)
                                 .map((appointment) => (
                                   <div
-                                    className={`cursor-pointer rounded border-l-2 p-1 text-xs ${typeColors[appointment.type] || typeColors.OTHER}
+                                    className={`cursor-pointer rounded border-l-2 p-1 text-xs ${typeColors[appointment.type || "OTHER"]}
                                     ${statusColors[appointment.status]}hover:opacity-80`}
                                     key={appointment.id}
                                     onClick={(e) => {
@@ -405,7 +435,9 @@ function CalendarPage() {
                                     }}
                                   >
                                     <div className="truncate font-medium">
-                                      {formatTime(appointment.startTime)}{" "}
+                                      {appointment.startTime
+                                        ? formatTime(appointment.startTime)
+                                        : ""}{" "}
                                       {appointment.title}
                                     </div>
                                     <div className="truncate text-xs opacity-75">
@@ -440,10 +472,14 @@ function CalendarPage() {
                       const selectedDateStr =
                         selectedDate?.toISOString().split("T")[0] || today;
                       const appointment = appointments.find((apt) => {
-                        const aptDate = new Date(apt.startTime)
+                        const aptDate = new Date(
+                          apt.startTime || apt.scheduledDate
+                        )
                           .toISOString()
                           .split("T")[0];
-                        const aptTime = formatTime(apt.startTime);
+                        const aptTime = apt.startTime
+                          ? formatTime(apt.startTime)
+                          : "";
                         return aptDate === selectedDateStr && aptTime === time;
                       });
 
@@ -458,9 +494,9 @@ function CalendarPage() {
                           <div className="flex-1">
                             {appointment ? (
                               <div
-                                className={`cursor-pointer rounded-lg border border-r-4 border-l-4 p-3 transition-all hover:shadow-md ${typeColors[appointment.type] || typeColors.OTHER}
+                                className={`cursor-pointer rounded-lg border border-r-4 border-l-4 p-3 transition-all hover:shadow-md ${typeColors[appointment.type || "OTHER"]}
                                     ${statusColors[appointment.status]}
-                                    ${priorityColors[appointment.priority]}
+                                    ${appointment.priority ? priorityColors[appointment.priority] : ""}
                                   `}
                                 onClick={() =>
                                   navigate({
@@ -481,10 +517,13 @@ function CalendarPage() {
                                     <div className="flex items-center gap-4 text-muted-foreground text-xs">
                                       <span className="flex items-center gap-1">
                                         <Clock className="h-3 w-3" />
-                                        {getDuration(
-                                          appointment.startTime,
-                                          appointment.endTime
-                                        )}
+                                        {appointment.startTime &&
+                                        appointment.endTime
+                                          ? getDuration(
+                                              appointment.startTime,
+                                              appointment.endTime
+                                            )
+                                          : appointment.duration || 0}
                                         min
                                       </span>
                                       {appointment.location && (
@@ -504,14 +543,16 @@ function CalendarPage() {
                                     >
                                       {appointment.status}
                                     </Badge>
-                                    <Badge
-                                      className="text-xs"
-                                      variant={getPriorityBadgeVariant(
-                                        appointment.priority
-                                      )}
-                                    >
-                                      {appointment.priority}
-                                    </Badge>
+                                    {appointment.priority && (
+                                      <Badge
+                                        className="text-xs"
+                                        variant={getPriorityBadgeVariant(
+                                          appointment.priority
+                                        )}
+                                      >
+                                        {appointment.priority}
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -647,7 +688,7 @@ function CalendarPage() {
               {todaysAppointments.length === 0 ? (
                 <EmptyState
                   description="No appointments scheduled for today"
-                  icon={<CalendarIcon className="h-8 w-8" />}
+                  icon={CalendarIcon}
                   title="Free day"
                 />
               ) : (
@@ -668,12 +709,14 @@ function CalendarPage() {
                           {appointment.title}
                         </div>
                         <div className="flex gap-1">
-                          <Badge
-                            className="text-xs"
-                            variant={getTypeBadgeVariant(appointment.type)}
-                          >
-                            {appointment.type}
-                          </Badge>
+                          {appointment.type && (
+                            <Badge
+                              className="text-xs"
+                              variant={getTypeBadgeVariant(appointment.type)}
+                            >
+                              {appointment.type}
+                            </Badge>
+                          )}
                           <Badge
                             className="text-xs"
                             variant={getStatusBadgeVariant(appointment.status)}
@@ -685,11 +728,16 @@ function CalendarPage() {
                       <div className="space-y-1 text-muted-foreground text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {formatTime(appointment.startTime)} (
-                          {getDuration(
-                            appointment.startTime,
-                            appointment.endTime
-                          )}
+                          {appointment.startTime
+                            ? formatTime(appointment.startTime)
+                            : ""}{" "}
+                          (
+                          {appointment.startTime && appointment.endTime
+                            ? getDuration(
+                                appointment.startTime,
+                                appointment.endTime
+                              )
+                            : appointment.duration || 0}
                           min)
                         </div>
                         <div className="flex items-center gap-1">

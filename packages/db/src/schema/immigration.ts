@@ -140,9 +140,7 @@ export const immigrationCases = pgTable(
     caseNumber: text("case_number").unique().notNull(),
     internalReference: text("internal_reference"),
     governmentFileNumber: text("government_file_number"),
-    previousCaseId: text("previous_case_id").references(
-      () => immigrationCases.id
-    ),
+    previousCaseId: text("previous_case_id"),
 
     // Case details
     caseType: immigrationCaseTypeEnum("case_type").notNull(),
@@ -229,7 +227,7 @@ export const immigrationCases = pgTable(
     isAppealable: boolean("is_appealable").default(false).notNull(),
     appealDeadline: date("appeal_deadline"),
     appealFiled: boolean("appeal_filed").default(false).notNull(),
-    appealCaseId: text("appeal_case_id").references(() => immigrationCases.id),
+    appealCaseId: text("appeal_case_id"),
 
     // Fees and payments
     applicationFee: text("application_fee"), // Using text for high precision
@@ -559,12 +557,8 @@ export const immigrationInterviews = pgTable(
     // Status tracking
     status: text("status").default("scheduled").notNull(), // scheduled, confirmed, completed, cancelled, rescheduled
     cancellationReason: text("cancellation_reason"),
-    rescheduledFromId: text("rescheduled_from_id").references(
-      () => immigrationInterviews.id
-    ),
-    rescheduledToId: text("rescheduled_to_id").references(
-      () => immigrationInterviews.id
-    ),
+    rescheduledFromId: text("rescheduled_from_id"),
+    rescheduledToId: text("rescheduled_to_id"),
 
     // Notifications
     reminderSent: boolean("reminder_sent").default(false).notNull(),
@@ -646,12 +640,8 @@ export const immigrationCorrespondence = pgTable(
     requiresResponse: boolean("requires_response").default(false).notNull(),
     responseDeadline: date("response_deadline"),
     hasBeenResponded: boolean("has_been_responded").default(false).notNull(),
-    responseId: text("response_id").references(
-      () => immigrationCorrespondence.id
-    ),
-    inResponseToId: text("in_response_to_id").references(
-      () => immigrationCorrespondence.id
-    ),
+    responseId: text("response_id"),
+    inResponseToId: text("in_response_to_id"),
 
     // Priority and urgency
     isUrgent: boolean("is_urgent").default(false).notNull(),

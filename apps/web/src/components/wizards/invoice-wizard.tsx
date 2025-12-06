@@ -12,7 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { type UseFormReturn, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -129,7 +129,7 @@ const lineItemSchema = z.object({
   quantity: z.number().min(1, "Quantity must be at least 1"),
   rate: z.number().min(0, "Rate must be positive"),
   amount: z.number(),
-  isFromCatalog: z.boolean().default(false),
+  isFromCatalog: z.boolean(),
 });
 
 // Validation schemas for each step
@@ -191,7 +191,7 @@ function ClientSelectionStep({
   form,
   onNext,
 }: {
-  form: ReturnType<typeof useForm<InvoiceFormData>>;
+  form: UseFormReturn<InvoiceFormData, any, any>;
   onNext: () => void;
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -271,7 +271,7 @@ function LineItemsStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<InvoiceFormData>>;
+  form: UseFormReturn<InvoiceFormData, any, any>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -471,7 +471,7 @@ function TaxDiscountStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<InvoiceFormData>>;
+  form: UseFormReturn<InvoiceFormData, any, any>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -626,7 +626,7 @@ function PaymentTermsStep({
   onNext,
   onBack,
 }: {
-  form: ReturnType<typeof useForm<InvoiceFormData>>;
+  form: UseFormReturn<InvoiceFormData, any, any>;
   onNext: () => void;
   onBack: () => void;
 }) {
@@ -757,7 +757,7 @@ function ReviewGenerateStep({
   onBack,
   isSubmitting,
 }: {
-  form: ReturnType<typeof useForm<InvoiceFormData>>;
+  form: UseFormReturn<InvoiceFormData, any, any>;
   onSubmit: () => void;
   onBack: () => void;
   isSubmitting: boolean;
@@ -939,10 +939,12 @@ export default function InvoiceWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<InvoiceFormData>({
-    resolver: zodResolver(invoiceSchema),
+    resolver: zodResolver(invoiceSchema) as any,
     defaultValues: {
       clientId: "",
       clientName: "",
+      clientEmail: "",
+      clientAddress: "",
       lineItems: [],
       applyVAT: true,
       vatRate: GUYANA_TAX_CONFIG_2025.VAT.STANDARD_RATE,
@@ -953,6 +955,7 @@ export default function InvoiceWizard({
       invoiceNumber: generateInvoiceNumber(),
       issueDate: new Date().toISOString().split("T")[0],
       dueDate: "",
+      notes: "",
     },
   });
 

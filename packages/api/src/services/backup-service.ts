@@ -1,9 +1,9 @@
-import { exec } from "child_process";
-import crypto from "crypto";
-import fs from "fs/promises";
-import path from "path";
-import { promisify } from "util";
-import zlib from "zlib";
+import { exec } from "node:child_process";
+import * as crypto from "node:crypto";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import { promisify } from "node:util";
+import * as zlib from "node:zlib";
 
 const execAsync = promisify(exec);
 const gzip = promisify(zlib.gzip);
@@ -124,8 +124,7 @@ export class BackupService {
         level: this.config.compressionLevel,
       });
 
-      // Encrypt if key provided
-      let finalContent = compressed;
+      let finalContent: Buffer = compressed;
       if (this.config.encryptionKey) {
         finalContent = this.encrypt(compressed, this.config.encryptionKey);
       }
@@ -226,7 +225,7 @@ export class BackupService {
         level: this.config.compressionLevel,
       });
 
-      let finalContent = compressed;
+      let finalContent: Buffer = compressed;
       if (this.config.encryptionKey) {
         finalContent = this.encrypt(compressed, this.config.encryptionKey);
       }
@@ -305,7 +304,7 @@ export class BackupService {
         level: this.config.compressionLevel,
       });
 
-      let finalContent = compressed;
+      let finalContent: Buffer = compressed;
       if (this.config.encryptionKey) {
         finalContent = this.encrypt(compressed, this.config.encryptionKey);
       }
@@ -401,8 +400,7 @@ export class BackupService {
         }
       }
 
-      // Decrypt if encrypted
-      let compressedContent = encryptedContent;
+      let compressedContent: Buffer = encryptedContent;
       if (metadata?.isEncrypted && this.config.encryptionKey) {
         compressedContent = this.decrypt(
           encryptedContent,
@@ -526,8 +524,7 @@ export class BackupService {
         };
       }
 
-      // Try to decompress to verify
-      let compressedContent = content;
+      let compressedContent: Buffer = content;
       if (metadata.isEncrypted && this.config.encryptionKey) {
         compressedContent = this.decrypt(content, this.config.encryptionKey);
       }

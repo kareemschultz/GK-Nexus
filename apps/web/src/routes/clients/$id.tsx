@@ -32,7 +32,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -181,9 +180,8 @@ function RouteComponent() {
             : "mid-market") as Client["type"],
         status: (clientResponse.data.status?.toLowerCase() ||
           "active") as Client["status"],
-        industry: clientResponse.data.industry || "General",
-        contactPerson:
-          clientResponse.data.contactPerson || clientResponse.data.name || "",
+        industry: "General",
+        contactPerson: clientResponse.data.name || "",
         email: clientResponse.data.email || "",
         phone: clientResponse.data.phoneNumber || "",
         address: clientResponse.data.address || "",
@@ -195,9 +193,9 @@ function RouteComponent() {
         lastActivity:
           clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
         complianceScore:
-          clientResponse.data.complianceStatus === "compliant"
+          clientResponse.data.complianceStatus === "GOOD"
             ? 98
-            : clientResponse.data.complianceStatus === "pending"
+            : clientResponse.data.complianceStatus === "PENDING_REVIEW"
               ? 75
               : 50,
         documents: 0,
@@ -231,7 +229,7 @@ function RouteComponent() {
         clientSince:
           clientResponse.data.clientSince?.toString() ||
           new Date().toISOString(),
-        referralSource: clientResponse.data.referralSource || "Direct",
+        referralSource: "Direct",
         lifetimeValue: 0,
       }
     : null;
@@ -629,13 +627,12 @@ function RouteComponent() {
                   >
                     {client.complianceScore}%
                   </p>
-                  <Progress
-                    className="mt-1 h-2"
-                    indicatorClassName={getProgressColor(
-                      client.complianceScore
-                    )}
-                    value={client.complianceScore}
-                  />
+                  <div className="relative mt-1 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full transition-all ${getProgressColor(client.complianceScore)}`}
+                      style={{ width: `${client.complianceScore}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -45,8 +46,8 @@ export const users = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
-    createdBy: text("created_by").references(() => users.id),
-    updatedBy: text("updated_by").references(() => users.id),
+    createdBy: text("created_by").references((): AnyPgColumn => users.id),
+    updatedBy: text("updated_by").references((): AnyPgColumn => users.id),
   },
   (table) => [
     index("users_email_idx").on(table.email),

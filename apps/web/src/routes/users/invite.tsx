@@ -91,10 +91,16 @@ function RouteComponent() {
     mutationFn: async (data: {
       name: string;
       email: string;
-      role: string;
+      role:
+        | "super_admin"
+        | "admin"
+        | "manager"
+        | "accountant"
+        | "client_service"
+        | "read_only";
       department?: string;
       phoneNumber?: string;
-      status: string;
+      status: "active" | "inactive" | "suspended" | "pending";
     }) => {
       const { client } = await import("@/utils/orpc");
       return client.userCreate(data);

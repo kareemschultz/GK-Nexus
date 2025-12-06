@@ -60,17 +60,17 @@ export function TimeEntriesManager() {
     },
   ];
 
-  const groupedEntries = entries.reduce(
-    (groups: { [key: string]: typeof entries }, entry) => {
-      const date = entry.date;
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(entry);
-      return groups;
-    },
-    {}
-  );
+  type TimeEntry = (typeof entries)[number];
+  type GroupedEntries = Record<string, TimeEntry[]>;
+
+  const groupedEntries = entries.reduce<GroupedEntries>((groups, entry) => {
+    const date = entry.date;
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(entry);
+    return groups;
+  }, {});
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,7 +82,7 @@ export function TimeEntriesManager() {
     });
   };
 
-  const getDayTotal = (entries: typeof entries) =>
+  const getDayTotal = (entries: TimeEntry[]): number =>
     entries.reduce((total, entry) => {
       const [hours, minutes] = entry.duration.replace(/[hm]/g, "").split(" ");
       return (

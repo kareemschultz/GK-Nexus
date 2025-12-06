@@ -251,6 +251,8 @@ export const DocumentList = ({
     const aValue = a[sortConfig.key as keyof Document];
     const bValue = b[sortConfig.key as keyof Document];
 
+    if (aValue === undefined || bValue === undefined) return 0;
+
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
     }

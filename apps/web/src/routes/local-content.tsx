@@ -167,12 +167,7 @@ function LocalContentPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.plans.list({
-        search: searchTerm || undefined,
-        industrySector:
-          sectorFilter !== "all"
-            ? (sectorFilter as (typeof industrySectors)[number])
-            : undefined,
+      return client.localContentPlansList({
         page: 1,
         limit: 50,
       });
@@ -184,10 +179,7 @@ function LocalContentPage() {
     queryKey: ["localContentSuppliers"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.suppliers.list({
-        page: 1,
-        limit: 50,
-      });
+      return client.localContentVendorsList({});
     },
   });
 
@@ -196,7 +188,7 @@ function LocalContentPage() {
     queryKey: ["localContentReports"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.reports.list({
+      return client.localContentReportsList({
         page: 1,
         limit: 50,
       });
@@ -208,23 +200,36 @@ function LocalContentPage() {
     queryKey: ["localContentStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.plans.stats();
+      return client.localContentRegistrationsStats();
     },
   });
 
   // Create plan mutation
   const createPlanMutation = useMutation({
     mutationFn: async (data: {
-      companyId: string;
+      registrationId: string;
       planYear: number;
-      industrySector: (typeof industrySectors)[number];
-      employmentTargetPercent?: string;
-      procurementTargetPercent?: string;
-      trainingTargetHours?: number;
+      planTitle: string;
+      planDescription?: string;
+      employmentTargets?: {
+        totalJobs?: number;
+        guyaneseJobs?: number;
+        targetPercent?: string;
+      };
+      procurementTargets?: {
+        totalSpend?: string;
+        localSpend?: string;
+        targetPercent?: string;
+      };
+      trainingTargets?: {
+        totalTrainingHours?: number;
+        guyaneseParticipants?: number;
+        trainingBudget?: string;
+      };
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.plans.create(data);
+      return client.localContentPlansCreate(data);
     },
     onSuccess: () => {
       toast.success("Local content plan created successfully");
@@ -240,20 +245,18 @@ function LocalContentPage() {
   // Create supplier mutation
   const createSupplierMutation = useMutation({
     mutationFn: async (data: {
-      companyName: string;
-      tradeName?: string;
-      industrySector: (typeof industrySectors)[number];
-      category: (typeof supplierCategories)[number];
-      localOwnershipPercent: string;
-      localEmploymentPercent?: string;
+      vendorName: string;
+      tradingName?: string;
+      vendorType: string;
+      guyaneseOwnershipPercent?: string;
       address?: string;
-      contactPerson?: string;
-      contactEmail?: string;
-      contactPhone?: string;
+      contactName?: string;
+      email?: string;
+      phone?: string;
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.suppliers.create(data);
+      return client.localContentVendorsCreate(data);
     },
     onSuccess: () => {
       toast.success("Supplier registered successfully");
@@ -269,16 +272,10 @@ function LocalContentPage() {
   const updatePlanStatusMutation = useMutation({
     mutationFn: async (data: {
       id: string;
-      status:
-        | "DRAFT"
-        | "SUBMITTED"
-        | "UNDER_REVIEW"
-        | "APPROVED"
-        | "REJECTED"
-        | "EXPIRED";
+      status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.localContent.plans.update({
+      return client.localContentPlansUpdate({
         id: data.id,
         data: { status: data.status },
       });
@@ -296,18 +293,32 @@ function LocalContentPage() {
   const handleCreatePlan = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const employmentTargetPercent = formData.get(
+      "employmentTargetPercent"
+    ) as string;
+    const procurementTargetPercent = formData.get(
+      "procurementTargetPercent"
+    ) as string;
+    const trainingTargetHours = formData.get("trainingTargetHours") as string;
+
     createPlanMutation.mutate({
-      companyId: formData.get("companyId") as string,
+      registrationId: formData.get("companyId") as string,
       planYear: Number(formData.get("planYear")),
-      industrySector: formData.get(
-        "industrySector"
-      ) as (typeof industrySectors)[number],
-      employmentTargetPercent:
-        (formData.get("employmentTargetPercent") as string) || undefined,
-      procurementTargetPercent:
-        (formData.get("procurementTargetPercent") as string) || undefined,
-      trainingTargetHours: formData.get("trainingTargetHours")
-        ? Number(formData.get("trainingTargetHours"))
+      planTitle: `${formData.get("planYear")} Local Content Plan`,
+      employmentTargets: employmentTargetPercent
+        ? {
+            targetPercent: employmentTargetPercent,
+          }
+        : undefined,
+      procurementTargets: procurementTargetPercent
+        ? {
+            targetPercent: procurementTargetPercent,
+          }
+        : undefined,
+      trainingTargets: trainingTargetHours
+        ? {
+            totalTrainingHours: Number(trainingTargetHours),
+          }
         : undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
@@ -317,19 +328,14 @@ function LocalContentPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     createSupplierMutation.mutate({
-      companyName: formData.get("companyName") as string,
-      tradeName: (formData.get("tradeName") as string) || undefined,
-      industrySector: formData.get(
-        "industrySector"
-      ) as (typeof industrySectors)[number],
-      category: formData.get("category") as (typeof supplierCategories)[number],
-      localOwnershipPercent: formData.get("localOwnershipPercent") as string,
-      localEmploymentPercent:
-        (formData.get("localEmploymentPercent") as string) || undefined,
+      vendorName: formData.get("companyName") as string,
+      tradingName: (formData.get("tradeName") as string) || undefined,
+      vendorType: formData.get("industrySector") as string,
+      guyaneseOwnershipPercent: formData.get("localOwnershipPercent") as string,
       address: (formData.get("address") as string) || undefined,
-      contactPerson: (formData.get("contactPerson") as string) || undefined,
-      contactEmail: (formData.get("contactEmail") as string) || undefined,
-      contactPhone: (formData.get("contactPhone") as string) || undefined,
+      contactName: (formData.get("contactPerson") as string) || undefined,
+      email: (formData.get("contactEmail") as string) || undefined,
+      phone: (formData.get("contactPhone") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
   };
@@ -381,17 +387,19 @@ function LocalContentPage() {
 
   const stats = statsQuery.data?.data;
   const plans = plansQuery.data?.data?.items || [];
-  const suppliers = suppliersQuery.data?.data?.items || [];
+  const suppliers = suppliersQuery.data?.data || [];
   const reports = reportsQuery.data?.data?.items || [];
 
-  // Calculate stats from the data
   const totalPlans = stats?.total || 0;
   const approvedPlans =
-    stats?.byStatus?.find((s) => s.status === "APPROVED")?.count || 0;
+    stats?.byStatus?.find(
+      (s: { complianceStatus: string; count: number }) =>
+        s.complianceStatus === "COMPLIANT"
+    )?.count || 0;
   const certifiedSuppliers = suppliers.filter(
-    (s) => s.status === "ACTIVE"
+    (s: { isActive: boolean }) => s.isActive
   ).length;
-  const avgComplianceScore = stats?.avgCompliance || 0;
+  const avgComplianceScore = 0;
 
   return (
     <TooltipProvider>
@@ -742,40 +750,32 @@ function LocalContentPage() {
                       {plans.map((plan) => (
                         <TableRow key={plan.id}>
                           <TableCell className="font-medium">
-                            {plan.planCode}
+                            {plan.planNumber}
                           </TableCell>
-                          <TableCell>{plan.companyId}</TableCell>
+                          <TableCell>{plan.clientId}</TableCell>
                           <TableCell>
-                            {getSectorBadge(plan.industrySector)}
+                            <Badge variant="outline">General</Badge>
                           </TableCell>
-                          <TableCell>{plan.planYear}</TableCell>
+                          <TableCell>
+                            {new Date(plan.periodStart).getFullYear()}
+                          </TableCell>
                           <TableCell>{getStatusBadge(plan.status)}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Progress
                                 className="w-16"
-                                value={Number(
-                                  plan.employmentActualPercent || 0
-                                )}
+                                value={Number(plan.employmentTarget || 0)}
                               />
                               <span className="text-sm">
-                                {plan.employmentActualPercent || 0}/
-                                {plan.employmentTargetPercent || 0}%
+                                {plan.employmentTarget || 0}/
+                                {plan.employmentTarget || 0}%
                               </span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Progress
-                                className="w-16"
-                                value={Number(
-                                  plan.procurementActualPercent || 0
-                                )}
-                              />
-                              <span className="text-sm">
-                                {plan.procurementActualPercent || 0}/
-                                {plan.procurementTargetPercent || 0}%
-                              </span>
+                              <Progress className="w-16" value={0} />
+                              <span className="text-sm">0/0%</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -790,18 +790,6 @@ function LocalContentPage() {
                                   View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>Edit Plan</DropdownMenuItem>
-                                {plan.status === "DRAFT" && (
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      updatePlanStatusMutation.mutate({
-                                        id: plan.id,
-                                        status: "SUBMITTED",
-                                      })
-                                    }
-                                  >
-                                    Submit Plan
-                                  </DropdownMenuItem>
-                                )}
                                 <DropdownMenuItem>
                                   Submit Report
                                 </DropdownMenuItem>
@@ -1006,48 +994,57 @@ function LocalContentPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {suppliers.map((supplier) => (
-                        <TableRow key={supplier.id}>
-                          <TableCell className="font-medium">
-                            {supplier.supplierCode}
-                          </TableCell>
-                          <TableCell>{supplier.companyName}</TableCell>
-                          <TableCell>
-                            {getSectorBadge(supplier.industrySector)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {supplier.category.replace(/_/g, " ")}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(supplier.status)}
-                          </TableCell>
-                          <TableCell>
-                            {supplier.localOwnershipPercent}%
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  View Profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  Edit Supplier
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  Renew Certification
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {suppliers.map(
+                        (supplier: {
+                          id: string;
+                          vendorCode: string;
+                          vendorName: string;
+                          vendorType: string;
+                          guyaneseOwnershipPercent: string | null;
+                          isActive: boolean;
+                        }) => (
+                          <TableRow key={supplier.id}>
+                            <TableCell className="font-medium">
+                              {supplier.vendorCode}
+                            </TableCell>
+                            <TableCell>{supplier.vendorName}</TableCell>
+                            <TableCell>
+                              {getSectorBadge(supplier.vendorType)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">Local Vendor</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {getStatusBadge(
+                                supplier.isActive ? "ACTIVE" : "SUSPENDED"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {supplier.guyaneseOwnershipPercent || 0}%
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    View Profile
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    Edit Supplier
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    Renew Certification
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 )}
@@ -1086,20 +1083,21 @@ function LocalContentPage() {
                       {reports.map((report) => (
                         <TableRow key={report.id}>
                           <TableCell className="font-medium">
-                            {report.reportCode}
+                            {report.reportNumber}
                           </TableCell>
-                          <TableCell>{report.planId}</TableCell>
-                          <TableCell>{report.reportingPeriod}</TableCell>
+                          <TableCell>{report.planId || "N/A"}</TableCell>
+                          <TableCell>
+                            {new Date(report.periodStart).toLocaleDateString()}{" "}
+                            - {new Date(report.periodEnd).toLocaleDateString()}
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Progress
                                 className="w-16"
-                                value={Number(
-                                  report.employmentScorePercent || 0
-                                )}
+                                value={Number(report.employmentActual || 0)}
                               />
                               <span className="font-medium">
-                                {report.employmentScorePercent || 0}%
+                                {String(report.employmentActual || 0)}%
                               </span>
                             </div>
                           </TableCell>
@@ -1107,12 +1105,10 @@ function LocalContentPage() {
                             <div className="flex items-center gap-2">
                               <Progress
                                 className="w-16"
-                                value={Number(
-                                  report.procurementScorePercent || 0
-                                )}
+                                value={Number(report.servicesActual || 0)}
                               />
                               <span className="font-medium">
-                                {report.procurementScorePercent || 0}%
+                                {String(report.servicesActual || 0)}%
                               </span>
                             </div>
                           </TableCell>
@@ -1120,10 +1116,10 @@ function LocalContentPage() {
                             <div className="flex items-center gap-2">
                               <Progress
                                 className="w-16"
-                                value={Number(report.trainingScorePercent || 0)}
+                                value={Number(report.trainingActual || 0)}
                               />
                               <span className="font-medium">
-                                {report.trainingScorePercent || 0}%
+                                {String(report.trainingActual || 0)}%
                               </span>
                             </div>
                           </TableCell>

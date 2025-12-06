@@ -18,7 +18,36 @@ import {
   createTestEmployee,
   createTestEmployees,
   TAX_TEST_SCENARIOS,
-} from "../../packages/api/src/test/test-helpers";
+} from "../../../../packages/api/src/test/test-helpers";
+
+// Add custom Vitest matchers for Guyana currency validation
+declare module "vitest" {
+  interface Assertion<T = unknown> {
+    toBeValidGuyanaAmount(): T;
+  }
+  interface AsymmetricMatchersContaining {
+    toBeValidGuyanaAmount(): unknown;
+  }
+}
+
+// Custom matcher for validating Guyana currency amounts
+expect.extend({
+  toBeValidGuyanaAmount(received: number) {
+    const pass =
+      typeof received === "number" &&
+      Number.isFinite(received) &&
+      received >= 0 &&
+      Number.isInteger(received * 100); // Validates to 2 decimal places
+
+    return {
+      pass,
+      message: () =>
+        pass
+          ? `Expected ${received} not to be a valid Guyana currency amount`
+          : `Expected ${received} to be a valid Guyana currency amount (non-negative number with max 2 decimal places)`,
+    };
+  },
+});
 
 describe("Guyana Tax Calculations", () => {
   describe("PAYE Tax Calculation", () => {

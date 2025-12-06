@@ -281,7 +281,7 @@ function RouteComponent() {
                     </div>
                     <div className="text-center">
                       <p className="font-medium text-sm">
-                        {rolePermissions[role]?.length || 0}
+                        {(rolePermissions as any)[role]?.length || 0}
                       </p>
                       <p className="text-muted-foreground text-xs">
                         permissions
@@ -324,22 +324,23 @@ function RouteComponent() {
                 </TableHeader>
                 <TableBody>
                   {roles.map((role) => {
-                    const permissions = rolePermissions[role] || [];
+                    const permissions = (rolePermissions as any)[role] || [];
                     const permissionsByCategory = {
-                      users: permissions.filter((p) => p.startsWith("users."))
-                        .length,
-                      clients: permissions.filter((p) =>
+                      users: permissions.filter((p: any) =>
+                        p.startsWith("users.")
+                      ).length,
+                      clients: permissions.filter((p: any) =>
                         p.startsWith("clients.")
                       ).length,
-                      documents: permissions.filter((p) =>
+                      documents: permissions.filter((p: any) =>
                         p.startsWith("documents.")
                       ).length,
-                      tax: permissions.filter((p) => p.startsWith("tax."))
+                      tax: permissions.filter((p: any) => p.startsWith("tax."))
                         .length,
-                      appointments: permissions.filter((p) =>
+                      appointments: permissions.filter((p: any) =>
                         p.startsWith("appointments.")
                       ).length,
-                      dashboard: permissions.filter((p) =>
+                      dashboard: permissions.filter((p: any) =>
                         p.startsWith("dashboard.")
                       ).length,
                     };
@@ -517,7 +518,7 @@ function RouteComponent() {
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-2xl">
-                        {rolePermissions[selectedRole]?.length || 0}
+                        {(rolePermissions as any)[selectedRole]?.length || 0}
                       </p>
                       <p className="text-muted-foreground text-sm">
                         Total Permissions
@@ -529,33 +530,33 @@ function RouteComponent() {
 
               {/* Permissions by Category */}
               <div className="space-y-4">
-                {organizePermissions(rolePermissions[selectedRole] || []).map(
-                  (category) => (
-                    <Card key={category.category}>
-                      <CardHeader className="pb-4">
-                        <CardTitle className="text-lg">
-                          {category.category} Permissions
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                          {category.permissions.map((permission) => (
-                            <Badge
-                              className="capitalize"
-                              key={permission}
-                              variant={getPermissionBadgeVariant(permission)}
-                            >
-                              {permission.replace("_", " ")}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                )}
+                {organizePermissions(
+                  (rolePermissions as any)[selectedRole] || []
+                ).map((category) => (
+                  <Card key={category.category}>
+                    <CardHeader className="pb-4">
+                      <CardTitle className="text-lg">
+                        {category.category} Permissions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {category.permissions.map((permission) => (
+                          <Badge
+                            className="capitalize"
+                            key={permission}
+                            variant={getPermissionBadgeVariant(permission)}
+                          >
+                            {permission.replace("_", " ")}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
-              {rolePermissions[selectedRole]?.length === 0 && (
+              {(rolePermissions as any)[selectedRole]?.length === 0 && (
                 <Card>
                   <CardContent className="py-8 text-center">
                     <Lock className="mx-auto h-12 w-12 text-muted-foreground" />

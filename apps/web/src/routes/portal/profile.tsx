@@ -144,7 +144,7 @@ function ProfilePage() {
           phone: defaultUserData.personal.phone,
           dateOfBirth: defaultUserData.personal.dateOfBirth,
           nationality: defaultUserData.personal.nationality,
-          avatar: userData.image || "",
+          avatar: (userData as { image?: string }).image || "",
         },
         business: defaultUserData.business,
         address: defaultUserData.address,
@@ -152,7 +152,8 @@ function ProfilePage() {
         account: {
           accountType: userData.role || "Client",
           memberSince:
-            userData.createdAt || defaultUserData.account.memberSince,
+            (userData as { createdAt?: string }).createdAt ||
+            defaultUserData.account.memberSince,
           lastLogin: new Date().toISOString(),
           status: "Active",
         },

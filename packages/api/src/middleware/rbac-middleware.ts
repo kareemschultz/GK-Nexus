@@ -57,8 +57,8 @@ function getClientIpAddress(req: HonoRequest): string {
   for (const header of headers) {
     const value = req.header(header);
     if (value) {
-      // Take first IP if comma-separated list
-      return value.split(",")[0].trim();
+      const firstIp = value.split(",")[0];
+      return firstIp ? firstIp.trim() : "unknown";
     }
   }
 
@@ -364,13 +364,7 @@ export function auditLogger(
       // Log request
       if (logRequests) {
         const requestBody = await c.req.text();
-        c.req = new Request(c.req.url, {
-          method: c.req.method,
-          headers: c.req.headers,
-          body: requestBody || undefined,
-        });
 
-        // Sanitize sensitive fields from request body
         const sanitizedBody = sanitizeObject(
           requestBody ? JSON.parse(requestBody) : {},
           sensitiveFields
@@ -387,7 +381,7 @@ export function auditLogger(
           },
           metadata: {
             requestBody: sanitizedBody,
-            headers: Object.fromEntries(c.req.headers.entries()),
+            headers: Object.fromEntries(c.req.raw.headers.entries()),
           },
           correlationId,
           severity: "info",
@@ -490,12 +484,9 @@ export function trackDataChanges(entityType: string) {
   return async (c: Context, next: Next) => {
     const userContext = extractUserContext(c);
 
-    // Store original handler
     const originalJson = c.json.bind(c);
 
-    // Override json method to capture response data
-    c.json = (object: any, init?: ResponseInit) => {
-      // Track data changes if this was a create/update/delete operation
+    c.json = ((object: any, init?: ResponseInit) => {
       if (
         userContext.userId &&
         ["POST", "PUT", "PATCH", "DELETE"].includes(c.req.method)
@@ -507,20 +498,17 @@ export function trackDataChanges(entityType: string) {
               ? "delete"
               : "update";
 
-        // Extract entity ID from response or URL
         const entityId =
           object?.id || object?.data?.id || c.req.url.split("/").pop();
 
         if (entityId) {
-          // This is a simplified implementation - in practice, you'd want to
-          // capture the actual before/after values from your business logic
           AuditService.logDataChange(
             userContext.userId,
             entityType,
             entityId,
             operation,
-            null, // oldValues - should be captured from business logic
-            object, // newValues
+            null,
+            object,
             {
               ipAddress: userContext.ipAddress,
               userAgent: userContext.userAgent,
@@ -533,8 +521,8 @@ export function trackDataChanges(entityType: string) {
         }
       }
 
-      return originalJson(object, init);
-    };
+      return originalJson(object, init as any);
+    }) as typeof c.json;
 
     await next();
   };
@@ -554,7 +542,6 @@ export function rateLimit(options: {
     const userContext = extractUserContext(c);
     const key = options.keyGenerator?.(c) || userContext.ipAddress || "unknown";
     const now = Date.now();
-    const windowStart = now - options.windowMs;
 
     // Clean old entries
     for (const [k, v] of requests.entries()) {

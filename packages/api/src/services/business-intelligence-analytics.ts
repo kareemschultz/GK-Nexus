@@ -452,15 +452,15 @@ export class BusinessIntelligenceAnalyticsService {
   }): Promise<OperationalIntelligence> {
     const { analysisScope, optimizationGoals, benchmarking } = params;
 
-    let processEfficiency = [];
-    let resourceUtilization = [];
-    let qualityMetrics = {
+    let processEfficiency: any[] = [];
+    let resourceUtilization: any[] = [];
+    let qualityMetrics: any = {
       errorRates: [],
       clientSatisfaction: 0,
       serviceQuality: 0,
       improvementAreas: [],
     };
-    let costAnalysis = {
+    let costAnalysis: any = {
       operationalCosts: [],
       revenuePerEmployee: 0,
       profitMargins: [],
@@ -513,10 +513,10 @@ export class BusinessIntelligenceAnalyticsService {
       includeScenarios,
     } = params;
 
-    let revenueForecasting = [];
-    let clientChurnPrediction = [];
-    let demandForecasting = [];
-    let marketOpportunities = [];
+    let revenueForecasting: any[] = [];
+    let clientChurnPrediction: any[] = [];
+    let demandForecasting: any[] = [];
+    let marketOpportunities: any[] = [];
 
     // Revenue forecasting using ML
     if (predictionTypes.includes("revenue")) {
@@ -569,7 +569,7 @@ export class BusinessIntelligenceAnalyticsService {
   }): Promise<AIInsights> {
     const { insightTypes, optimizationFocus } = params;
 
-    let documentProcessing = {
+    let documentProcessing: any = {
       accuracyTrends: [],
       efficiencyGains: [],
       learningProgress: {
@@ -578,8 +578,8 @@ export class BusinessIntelligenceAnalyticsService {
         predictionAccuracy: 0,
       },
     };
-    let automationOpportunities = [];
-    let intelligentRecommendations = [];
+    let automationOpportunities: any[] = [];
+    let intelligentRecommendations: any[] = [];
 
     // Document processing insights
     if (insightTypes.includes("document_processing")) {
@@ -741,9 +741,10 @@ export class BusinessIntelligenceAnalyticsService {
       },
     };
 
+    const period = periods[taxSeason.type as keyof typeof periods];
     return {
-      start: periods[taxSeason.type]?.start || periods.VAT.start,
-      end: periods[taxSeason.type]?.end || periods.VAT.end,
+      start: period?.start || periods.VAT.start,
+      end: period?.end || periods.VAT.end,
       type: taxSeason.type,
     };
   }

@@ -100,15 +100,30 @@ async function cleanupAllTables() {
  * Create test organization for multi-tenancy tests
  */
 export async function createTestOrganization(name = "Test Organization") {
+  const timestamp = Date.now();
+  const slug = `test-${timestamp}`;
+  const ownerId = `owner-${timestamp}`;
+
+  // First create the owner user
+  await testDatabase.insert(schema.users).values({
+    id: ownerId,
+    name: "Organization Owner",
+    email: `owner-${timestamp}@example.com`,
+  });
+
   const [organization] = await testDatabase
     .insert(schema.organizations)
     .values({
+      id: `org-${timestamp}`,
       name,
-      subdomain: `test-${Date.now()}`,
-      settings: {},
-      metadata: {},
+      slug,
+      ownerId,
     })
     .returning();
+
+  if (!organization) {
+    throw new Error("Failed to create test organization");
+  }
 
   return organization;
 }
@@ -117,31 +132,31 @@ export async function createTestOrganization(name = "Test Organization") {
  * Create test user with organization
  */
 export async function createTestUser(
-  organizationId: string,
-  role = "STAFF",
-  overrides = {}
+  _organizationId: string,
+  role = "read_only",
+  overrides: Record<string, unknown> = {}
 ) {
-  const userData = {
-    email: `test-${Date.now()}@example.com`,
-    firstName: "Test",
-    lastName: "User",
-    role,
-    isActive: true,
-    emailVerified: true,
-    ...overrides,
-  };
-
+  const timestamp = Date.now();
   const [user] = await testDatabase
     .insert(schema.users)
-    .values(userData)
+    .values({
+      id: `user-${timestamp}`,
+      name: "Test User",
+      email: `test-${timestamp}@example.com`,
+      role: role as
+        | "super_admin"
+        | "admin"
+        | "manager"
+        | "accountant"
+        | "client_service"
+        | "read_only",
+      ...overrides,
+    })
     .returning();
 
-  // Link user to organization
-  await testDatabase.insert(schema.userOrganizations).values({
-    userId: user.id,
-    organizationId,
-    role,
-  });
+  if (!user) {
+    throw new Error("Failed to create test user");
+  }
 
   return user;
 }

@@ -127,23 +127,31 @@ const EmptyState = ({
 );
 
 const serviceCategories = [
+  "TRAINING",
+  "CONSULTANCY",
+  "PARALEGAL",
+  "IMMIGRATION",
+  "BUSINESS_PROPOSALS",
+  "NETWORKING",
   "TAX_RETURNS",
   "COMPLIANCE",
-  "CONSULTANCY",
-  "TRAINING",
-  "IMMIGRATION",
-  "ACCOUNTING",
-  "PAYROLL",
-  "LEGAL",
-  "OTHER",
+  "PAYE_SERVICES",
+  "FINANCIAL_STATEMENTS",
+  "AUDIT_SERVICES",
+  "NIS_SERVICES",
+  "DOCUMENT_PREPARATION",
+  "CLIENT_PORTAL",
 ] as const;
 
 const pricingModels = [
   "FIXED",
   "HOURLY",
-  "PROJECT_BASED",
-  "RETAINER",
-  "SUBSCRIPTION",
+  "PERCENTAGE",
+  "MONTHLY",
+  "QUARTERLY",
+  "ANNUAL",
+  "CUSTOM",
+  "FREE",
 ] as const;
 
 function ServiceCatalogPage() {
@@ -165,7 +173,7 @@ function ServiceCatalogPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.servicesList({
+      return client.servicesList({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -182,7 +190,7 @@ function ServiceCatalogPage() {
     queryKey: ["serviceProjects"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.projectsList({
+      return client.projectsList({
         page: 1,
         pageSize: 50,
       });
@@ -194,7 +202,7 @@ function ServiceCatalogPage() {
     queryKey: ["servicePackages"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.packagesList({
+      return client.packagesList({
         page: 1,
         pageSize: 50,
       });
@@ -206,7 +214,7 @@ function ServiceCatalogPage() {
     queryKey: ["serviceStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.servicesStats();
+      return client.servicesStats();
     },
   });
 
@@ -218,11 +226,20 @@ function ServiceCatalogPage() {
       category: (typeof serviceCategories)[number];
       pricingModel: (typeof pricingModels)[number];
       basePrice?: string;
-      estimatedDurationHours?: number;
+      estimatedDurationDays?: number;
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.servicesCreate(data);
+      return client.servicesCreate({
+        name: data.name,
+        shortDescription: data.description,
+        fullDescription: data.notes,
+        businessEntity: "BOTH",
+        category: data.category,
+        feeStructure: data.pricingModel,
+        basePrice: data.basePrice,
+        estimatedDurationDays: data.estimatedDurationDays,
+      });
     },
     onSuccess: () => {
       toast.success("Service created successfully");
@@ -247,7 +264,16 @@ function ServiceCatalogPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.packagesCreate(data);
+      return client.packagesCreate({
+        name: data.name,
+        description: data.description,
+        businessEntity: "BOTH",
+        includedServiceIds: [],
+        packagePrice: data.price || "0",
+        savingsPercent: data.discountPercent,
+        validFrom: data.validFrom,
+        validUntil: data.validUntil,
+      });
     },
     onSuccess: () => {
       toast.success("Package created successfully");
@@ -263,7 +289,7 @@ function ServiceCatalogPage() {
   const publishServiceMutation = useMutation({
     mutationFn: async (id: string) => {
       const { client } = await import("@/utils/orpc");
-      return client.serviceCatalog.servicesPublish({ id });
+      return client.servicesUpdate({ id, status: "ACTIVE" });
     },
     onSuccess: () => {
       toast.success("Service published successfully");
@@ -286,8 +312,8 @@ function ServiceCatalogPage() {
         "pricingModel"
       ) as (typeof pricingModels)[number],
       basePrice: (formData.get("basePrice") as string) || undefined,
-      estimatedDurationHours: formData.get("estimatedDurationHours")
-        ? Number(formData.get("estimatedDurationHours"))
+      estimatedDurationDays: formData.get("estimatedDurationDays")
+        ? Number(formData.get("estimatedDurationDays"))
         : undefined,
       notes: (formData.get("notes") as string) || undefined,
     });
@@ -383,14 +409,16 @@ function ServiceCatalogPage() {
 
   // Calculate stats from the data
   const totalActiveServices =
-    stats?.byStatus?.find((s) => s.status === "ACTIVE")?.count || 0;
+    stats?.byStatus?.find((s: any) => s.status === "ACTIVE")?.count || 0;
   const activeProjects = projects.filter(
-    (p) => p.status === "IN_PROGRESS"
+    (p: any) => p.status === "IN_PROGRESS"
   ).length;
-  const activePackages = packages.filter((p) => p.status === "ACTIVE").length;
+  const activePackages = packages.filter(
+    (p: any) => p.status === "ACTIVE"
+  ).length;
   const projectValue = projects
-    .filter((p) => p.status === "IN_PROGRESS")
-    .reduce((sum, p) => sum + Number(p.totalValue || 0), 0);
+    .filter((p: any) => p.status === "IN_PROGRESS")
+    .reduce((sum: any, p: any) => sum + Number(p.agreedPrice || 0), 0);
 
   return (
     <TooltipProvider>
@@ -474,15 +502,15 @@ function ServiceCatalogPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="estimatedDurationHours">
-                        Est. Duration (Hours)
+                      <Label htmlFor="estimatedDurationDays">
+                        Est. Duration (Days)
                       </Label>
                       <Input
-                        id="estimatedDurationHours"
-                        min="0.5"
-                        name="estimatedDurationHours"
-                        placeholder="e.g., 8"
-                        step="0.5"
+                        id="estimatedDurationDays"
+                        min="1"
+                        name="estimatedDurationDays"
+                        placeholder="e.g., 5"
+                        step="1"
                         type="number"
                       />
                     </div>
@@ -736,21 +764,21 @@ function ServiceCatalogPage() {
                       {services.map((service) => (
                         <TableRow key={service.id}>
                           <TableCell className="font-medium">
-                            {service.serviceCode}
+                            {service.code}
                           </TableCell>
                           <TableCell>{service.name}</TableCell>
                           <TableCell>
                             {getCategoryBadge(service.category)}
                           </TableCell>
                           <TableCell>
-                            {getPricingBadge(service.pricingModel)}
+                            {getPricingBadge(service.feeStructure)}
                           </TableCell>
                           <TableCell>
                             {formatCurrency(service.basePrice)}
                           </TableCell>
                           <TableCell>
-                            {service.estimatedDurationHours
-                              ? `${service.estimatedDurationHours} hours`
+                            {service.estimatedDurationDays
+                              ? `${service.estimatedDurationDays} days`
                               : "N/A"}
                           </TableCell>
                           <TableCell>
@@ -770,7 +798,7 @@ function ServiceCatalogPage() {
                                 <DropdownMenuItem>
                                   Edit Service
                                 </DropdownMenuItem>
-                                {service.status === "DRAFT" && (
+                                {service.status === "INACTIVE" && (
                                   <DropdownMenuItem
                                     onClick={() =>
                                       publishServiceMutation.mutate(service.id)
@@ -822,10 +850,10 @@ function ServiceCatalogPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {projects.map((project) => (
+                      {projects.map((project: any) => (
                         <TableRow key={project.id}>
                           <TableCell className="font-medium">
-                            {project.projectCode}
+                            {project.projectNumber}
                           </TableCell>
                           <TableCell>{project.name}</TableCell>
                           <TableCell>{project.clientId || "N/A"}</TableCell>
@@ -844,12 +872,14 @@ function ServiceCatalogPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {project.dueDate
-                              ? new Date(project.dueDate).toLocaleDateString()
+                            {project.targetEndDate
+                              ? new Date(
+                                  project.targetEndDate
+                                ).toLocaleDateString()
                               : "N/A"}
                           </TableCell>
                           <TableCell>
-                            {formatCurrency(project.totalValue)}
+                            {formatCurrency(project.agreedPrice)}
                           </TableCell>
                           <TableCell>
                             <DropdownMenu>
@@ -1015,20 +1045,22 @@ function ServiceCatalogPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {packages.map((pkg) => (
+                      {packages.map((pkg: any) => (
                         <TableRow key={pkg.id}>
                           <TableCell className="font-medium">
-                            {pkg.packageCode}
+                            {pkg.code}
                           </TableCell>
                           <TableCell>{pkg.name}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
                             {pkg.description || "N/A"}
                           </TableCell>
-                          <TableCell>{formatCurrency(pkg.price)}</TableCell>
                           <TableCell>
-                            {pkg.discountPercent ? (
+                            {formatCurrency(pkg.packagePrice)}
+                          </TableCell>
+                          <TableCell>
+                            {pkg.savingsPercent ? (
                               <Badge variant="outline">
-                                {pkg.discountPercent}% OFF
+                                {pkg.savingsPercent}% OFF
                               </Badge>
                             ) : (
                               "-"

@@ -1,5 +1,5 @@
-import type { Context } from "@GK-Nexus/api/context";
-import crypto from "node:crypto";
+import * as crypto from "node:crypto";
+import type { Context } from "../context";
 import { AIDocumentIntelligenceService } from "./ai-document-intelligence";
 import { BusinessIntelligenceAnalyticsService } from "./business-intelligence-analytics";
 import { EnhancedGRAIntegrationService } from "./enhanced-gra-integration";
@@ -471,7 +471,8 @@ export class AIIntegrationOrchestratorService {
 
     if (
       optimization.autoCorrect &&
-      validationResults?.detectedErrors.length > 0
+      validationResults?.detectedErrors &&
+      validationResults.detectedErrors.length > 0
     ) {
       optimizedFilingData = await this.applyAutoCorrections(
         filingData,
@@ -745,7 +746,7 @@ export class AIIntegrationOrchestratorService {
       metadata: {
         startTime: new Date(),
         userId: this.ctx.user?.id,
-        organizationId: this.ctx.organizationId,
+        organizationId: undefined,
       },
     };
   }
@@ -996,7 +997,7 @@ export class AIIntegrationOrchestratorService {
   private async canExecuteStep(
     step: any,
     execution: WorkflowExecution
-  ): boolean {
+  ): Promise<boolean> {
     // Check if all dependencies are completed
     for (const depId of step.dependencies) {
       const depStep = execution.steps.find((s) => s.stepId === depId);

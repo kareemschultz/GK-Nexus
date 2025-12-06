@@ -204,8 +204,8 @@ export function calculateVat(input: VatCalculationInput): VatCalculationResult {
   } = input;
 
   const isZeroRated =
-    isExport || VAT_CONFIG.ZERO_RATED_CATEGORIES.includes(category);
-  const isExempt = VAT_CONFIG.EXEMPT_CATEGORIES.includes(category);
+    isExport || VAT_CONFIG.ZERO_RATED_CATEGORIES.includes(category as any);
+  const isExempt = VAT_CONFIG.EXEMPT_CATEGORIES.includes(category as any);
 
   let vatRate = 0;
   if (!(isZeroRated || isExempt)) {

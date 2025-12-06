@@ -77,39 +77,39 @@ const vatCalculationSchema = z
 
     // Sales and Output VAT
     standardRatedSales: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Standard rated sales cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
     zeroRatedSales: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Zero-rated sales cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
     exemptSales: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Exempt sales cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
 
     // Purchases and Input VAT
     standardRatedPurchases: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Standard rated purchases cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
     zeroRatedPurchases: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Zero-rated purchases cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
     exemptPurchases: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Exempt purchases cannot be negative")
       .max(999_999_999_999, "Amount is too large"),
 
     // Adjustments
     adjustments: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(-999_999_999, "Adjustment amount is too large")
       .max(999_999_999, "Adjustment amount is too large"),
     previousVatCredit: z
-      .number({ invalid_type_error: "Must be a valid number" })
+      .number({ message: "Must be a valid number" })
       .min(0, "Previous VAT credit cannot be negative")
       .max(999_999_999, "Amount is too large"),
 
@@ -133,7 +133,7 @@ const vatCalculationSchema = z
 
 const singleVatCalculationSchema = z.object({
   netAmount: z
-    .number({ invalid_type_error: "Must be a valid number" })
+    .number({ message: "Must be a valid number" })
     .min(0.01, "Net amount must be greater than 0")
     .max(999_999_999, "Amount is too large"),
   category: z.enum([

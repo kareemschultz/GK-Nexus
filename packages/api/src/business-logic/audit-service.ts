@@ -152,6 +152,10 @@ export class AuditService {
       .values(auditLogData)
       .returning();
 
+    if (!auditLog) {
+      throw new Error("Failed to create audit log");
+    }
+
     return auditLog;
   }
 
@@ -287,6 +291,10 @@ export class AuditService {
       .values(systemEventData)
       .returning();
 
+    if (!systemEvent) {
+      throw new Error("Failed to create system event");
+    }
+
     return systemEvent;
   }
 
@@ -312,6 +320,10 @@ export class AuditService {
       .insert(loginAttempts)
       .values(loginAttemptData)
       .returning();
+
+    if (!loginAttempt) {
+      throw new Error("Failed to create login attempt record");
+    }
 
     // If login failed, also log as security event
     if (!data.success) {
@@ -533,14 +545,14 @@ export class AuditService {
       .update(auditLogs)
       .set({
         isArchived: true,
-        updatedAt: new Date(),
       })
       .where(
         and(
           lte(auditLogs.createdAt, cutoffDate),
           eq(auditLogs.isArchived, false)
         )
-      );
+      )
+      .returning();
 
     return result.length;
   }

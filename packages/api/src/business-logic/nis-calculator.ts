@@ -1,6 +1,5 @@
 import {
   convertToAnnual,
-  convertToMonthly,
   NIS_CONSTANTS,
   type PaymentFrequency,
 } from "./tax-constants";
@@ -52,14 +51,12 @@ export function calculateNis(input: NisInput): NisCalculation {
   const {
     grossIncome,
     frequency,
-    isEmployer = false,
+    isEmployer: _isEmployer = false,
     includeEmployerContribution = true,
   } = input;
 
   // Convert to all frequencies for comprehensive calculation
   const weeklyGrossIncome = convertToWeekly(grossIncome, frequency);
-  const _monthlyGrossIncome = convertToMonthly(grossIncome, frequency);
-  const _annualGrossIncome = convertToAnnual(grossIncome, frequency);
 
   // Apply weekly ceiling (NIS is calculated weekly)
   const weeklyContributoryIncome = Math.min(

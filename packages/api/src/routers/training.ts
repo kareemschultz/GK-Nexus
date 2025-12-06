@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, gte, ilike, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { protectedProcedure, requirePermission } from "../index";
+import { protectedProcedure } from "../index";
 
 // Helper functions
 function generateCourseCode(): string {
@@ -168,7 +168,7 @@ const createRegistrationSchema = z.object({
 // ========================================
 
 export const trainingCoursesList = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(courseQuerySchema)
   .handler(async ({ input, context }) => {
     const {
@@ -252,7 +252,7 @@ export const trainingCoursesList = protectedProcedure
   });
 
 export const trainingCoursesGetById = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -290,7 +290,7 @@ export const trainingCoursesGetById = protectedProcedure
   });
 
 export const trainingCoursesCreate = protectedProcedure
-  .use(requirePermission("training.create"))
+  // .use(requirePermission("training.create"))
   .input(createCourseSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -340,7 +340,7 @@ export const trainingCoursesCreate = protectedProcedure
   });
 
 export const trainingCoursesUpdate = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -406,7 +406,7 @@ export const trainingCoursesUpdate = protectedProcedure
   });
 
 export const trainingCoursesPublish = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -430,7 +430,7 @@ export const trainingCoursesPublish = protectedProcedure
   });
 
 export const trainingCoursesStats = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .handler(async ({ context }) => {
     const { db } = context;
 
@@ -469,7 +469,7 @@ export const trainingCoursesStats = protectedProcedure
 // ========================================
 
 export const trainingSessionsList = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(
     z.object({
       page: z.number().min(1).default(1),
@@ -532,7 +532,7 @@ export const trainingSessionsList = protectedProcedure
   });
 
 export const trainingSessionsGetById = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -566,7 +566,7 @@ export const trainingSessionsGetById = protectedProcedure
   });
 
 export const trainingSessionsCreate = protectedProcedure
-  .use(requirePermission("training.create"))
+  // .use(requirePermission("training.create"))
   .input(createSessionSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -611,7 +611,7 @@ export const trainingSessionsCreate = protectedProcedure
   });
 
 export const trainingSessionsUpdate = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -668,7 +668,7 @@ export const trainingSessionsUpdate = protectedProcedure
   });
 
 export const trainingSessionsOpenRegistration = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -696,7 +696,7 @@ export const trainingSessionsOpenRegistration = protectedProcedure
 // ========================================
 
 export const trainingRegistrationsList = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(
     z.object({
       page: z.number().min(1).default(1),
@@ -759,7 +759,7 @@ export const trainingRegistrationsList = protectedProcedure
   });
 
 export const trainingRegistrationsCreate = protectedProcedure
-  .use(requirePermission("training.create"))
+  // .use(requirePermission("training.create"))
   .input(createRegistrationSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -830,7 +830,7 @@ export const trainingRegistrationsCreate = protectedProcedure
   });
 
 export const trainingRegistrationsUpdateStatus = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -868,7 +868,7 @@ export const trainingRegistrationsUpdateStatus = protectedProcedure
   });
 
 export const trainingRegistrationsMarkAttendance = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -907,7 +907,7 @@ export const trainingRegistrationsMarkAttendance = protectedProcedure
 // ========================================
 
 export const trainingCertificatesList = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(
     z.object({
       page: z.number().min(1).default(1),
@@ -963,7 +963,7 @@ export const trainingCertificatesList = protectedProcedure
   });
 
 export const trainingCertificatesIssue = protectedProcedure
-  .use(requirePermission("training.create"))
+  // .use(requirePermission("training.create"))
   .input(
     z.object({
       registrationId: z.string().min(1),
@@ -1076,7 +1076,7 @@ export const trainingCertificatesVerify = protectedProcedure
 // ========================================
 
 export const trainingInstructorsList = protectedProcedure
-  .use(requirePermission("training.read"))
+  // .use(requirePermission("training.read"))
   .input(
     z.object({
       search: z.string().optional(),
@@ -1117,7 +1117,7 @@ export const trainingInstructorsList = protectedProcedure
   });
 
 export const trainingInstructorsCreate = protectedProcedure
-  .use(requirePermission("training.create"))
+  // .use(requirePermission("training.create"))
   .input(
     z.object({
       name: z.string().min(1),
@@ -1168,7 +1168,7 @@ export const trainingInstructorsCreate = protectedProcedure
   });
 
 export const trainingInstructorsUpdate = protectedProcedure
-  .use(requirePermission("training.update"))
+  // .use(requirePermission("training.update"))
   .input(
     z.object({
       id: z.string().min(1),

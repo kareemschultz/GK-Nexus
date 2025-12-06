@@ -818,7 +818,10 @@ export function ImmigrationWorkflow({
               </CardHeader>
               <CardContent>
                 <div className="font-bold text-2xl text-amber-500">
-                  {cases.filter((c) => c.status === "IN_PROGRESS").length}
+                  {
+                    cases.filter((c) => c.currentStatus === "UNDER_REVIEW")
+                      .length
+                  }
                 </div>
                 <p className="text-muted-foreground text-xs">Active cases</p>
               </CardContent>
@@ -829,7 +832,7 @@ export function ImmigrationWorkflow({
               </CardHeader>
               <CardContent>
                 <div className="font-bold text-2xl text-green-600">
-                  {cases.filter((c) => c.status === "APPROVED").length}
+                  {cases.filter((c) => c.currentStatus === "APPROVED").length}
                 </div>
                 <p className="text-muted-foreground text-xs">Successful</p>
               </CardContent>
@@ -842,7 +845,13 @@ export function ImmigrationWorkflow({
               </CardHeader>
               <CardContent>
                 <div className="font-bold text-2xl text-blue-500">
-                  {cases.filter((c) => c.status === "PENDING_REVIEW").length}
+                  {
+                    cases.filter(
+                      (c) =>
+                        c.currentStatus === "UNDER_REVIEW" ||
+                        c.currentStatus === "APPLICATION_SUBMITTED"
+                    ).length
+                  }
                 </div>
                 <p className="text-muted-foreground text-xs">Awaiting action</p>
               </CardContent>
@@ -858,13 +867,18 @@ export function ImmigrationWorkflow({
             <CardContent>
               <div className="space-y-4">
                 {[
-                  "Work Permit",
-                  "Visitor Visa",
-                  "Residency",
-                  "Business Visa",
-                  "Student Visa",
-                ].map((type) => {
-                  const count = cases.filter((c) => c.type === type).length;
+                  { label: "Work Permit", value: "WORK_PERMIT" },
+                  { label: "Investor Visa", value: "INVESTOR_VISA" },
+                  {
+                    label: "Permanent Residence",
+                    value: "PERMANENT_RESIDENCE",
+                  },
+                  { label: "Business Visa", value: "BUSINESS_VISA" },
+                  { label: "Student Visa", value: "STUDENT_VISA" },
+                ].map(({ label: type, value }) => {
+                  const count = cases.filter(
+                    (c) => c.visaType === value
+                  ).length;
                   const percentage =
                     cases.length > 0 ? (count / cases.length) * 100 : 0;
                   return (

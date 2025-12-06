@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -87,7 +88,9 @@ export const documents = pgTable(
 
     // Versioning
     version: text("version").default("1.0").notNull(),
-    parentDocumentId: text("parent_document_id").references(() => documents.id),
+    parentDocumentId: text("parent_document_id").references(
+      (): AnyPgColumn => documents.id
+    ),
     isLatestVersion: boolean("is_latest_version").default(true).notNull(),
 
     // Review and approval

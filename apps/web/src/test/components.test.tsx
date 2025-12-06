@@ -149,8 +149,6 @@ describe("React Components", () => {
   });
 
   describe("PayeCalculator Component", () => {
-    const user = userEvent.setup();
-
     beforeEach(() => {
       vi.clearAllMocks();
     });
@@ -180,6 +178,7 @@ describe("React Components", () => {
     });
 
     it("should validate required fields", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const calculateButton = screen.getByText("Calculate PAYE & NIS");
@@ -193,6 +192,7 @@ describe("React Components", () => {
     });
 
     it("should validate NIS number format", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const nisInput = screen.getByLabelText("NIS Number");
@@ -209,6 +209,7 @@ describe("React Components", () => {
     });
 
     it("should validate numeric fields are non-negative", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const salaryInput = screen.getByLabelText("Basic Salary (GYD)");
@@ -226,6 +227,7 @@ describe("React Components", () => {
     });
 
     it("should calculate PAYE successfully with valid input", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       // Fill in valid employee data
@@ -257,6 +259,7 @@ describe("React Components", () => {
     });
 
     it("should display calculation results correctly", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       // Fill form and calculate
@@ -291,6 +294,7 @@ describe("React Components", () => {
     });
 
     it("should call onSave callback when save button is clicked", async () => {
+      const user = userEvent.setup();
       const onSaveMock = vi.fn();
       render(<PayeCalculator onSave={onSaveMock} />);
 
@@ -330,6 +334,7 @@ describe("React Components", () => {
     });
 
     it("should handle print functionality", async () => {
+      const user = userEvent.setup();
       // Mock window.print
       const printMock = vi.fn();
       Object.defineProperty(window, "print", {
@@ -374,6 +379,7 @@ describe("React Components", () => {
     });
 
     it("should handle maximum children limit", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const childrenInput = screen.getByLabelText("Number of Children");
@@ -495,11 +501,10 @@ describe("React Components", () => {
   });
 
   describe("Component Integration", () => {
-    it("should handle error boundary with calculator", () => {
+    it("should handle error boundary with calculator", async () => {
       // Mock calculatePAYE to throw an error
-      const { calculatePAYE } = vi.mocked(
-        await import("@/lib/tax-calculations")
-      );
+      const taxCalculations = await import("@/lib/tax-calculations");
+      const { calculatePAYE } = vi.mocked(taxCalculations);
       calculatePAYE.mockImplementation(() => {
         throw new Error("Calculation error");
       });
@@ -514,6 +519,7 @@ describe("React Components", () => {
     });
 
     it("should maintain component state across re-renders", async () => {
+      const user = userEvent.setup();
       const { rerender } = render(<PayeCalculator />);
 
       const firstNameInput = screen.getByLabelText("First Name");
@@ -536,6 +542,7 @@ describe("React Components", () => {
     });
 
     it("should have proper form validation messages", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const calculateButton = screen.getByText("Calculate PAYE & NIS");
@@ -561,6 +568,7 @@ describe("React Components", () => {
     });
 
     it("should support keyboard navigation", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const firstNameInput = screen.getByLabelText("First Name");
@@ -593,6 +601,7 @@ describe("React Components", () => {
     });
 
     it("should handle large form inputs efficiently", async () => {
+      const user = userEvent.setup();
       render(<PayeCalculator />);
 
       const salaryInput = screen.getByLabelText("Basic Salary (GYD)");

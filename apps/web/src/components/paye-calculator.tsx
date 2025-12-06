@@ -36,10 +36,10 @@ const employeeSchema = z.object({
     .min(1, "NIS number is required")
     .refine(validateNISNumber, "Invalid NIS number format"),
   basicSalary: z.number().min(0, "Basic salary must be positive"),
-  overtime: z.number().min(0).default(0),
-  allowances: z.number().min(0).default(0),
-  bonuses: z.number().min(0).default(0),
-  dependents: z.number().min(0).max(10).default(0),
+  overtime: z.number().min(0),
+  allowances: z.number().min(0),
+  bonuses: z.number().min(0),
+  dependents: z.number().min(0).max(10),
 });
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;

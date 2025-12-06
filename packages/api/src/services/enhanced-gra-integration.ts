@@ -1,5 +1,5 @@
-import type { Context } from "@GK-Nexus/api/context";
-import crypto from "node:crypto";
+import * as crypto from "node:crypto";
+import type { Context } from "../context";
 
 export interface SmartSubmissionRequest {
   filingType: string;
@@ -157,7 +157,14 @@ export interface GRAComplianceMonitor {
 }
 
 export class EnhancedGRAIntegrationService {
-  constructor(private _ctx: Context) {}
+  private _ctx: Context;
+  constructor(ctx: Context) {
+    this._ctx = ctx;
+  }
+
+  get context(): Context {
+    return this._ctx;
+  }
 
   /**
    * AI-powered smart submission with validation and orchestration
@@ -743,8 +750,10 @@ export class EnhancedGRAIntegrationService {
     );
 
     for (const regulation of regulations) {
-      const complianceCheck = await this.checkRegulatory;
-      Compliance(regulation, request);
+      const complianceCheck = await this.checkRegulatoryCompliance(
+        regulation,
+        request
+      );
       checks.push({
         rule: regulation.code,
         status: complianceCheck.isCompliant ? "pass" : "fail",
@@ -855,7 +864,7 @@ export class EnhancedGRAIntegrationService {
     // Retrieve current orchestration status from database
     return {
       submissionId,
-      status: "completed",
+      status: "submitted",
       orchestrationSteps: [],
       dependencies: [],
       timeline: {
@@ -958,7 +967,8 @@ export class EnhancedGRAIntegrationService {
     };
 
     const totalDuration = steps.reduce(
-      (sum, step) => sum + (stepDurations[step] || 60),
+      (sum, step) =>
+        sum + (stepDurations[step as keyof typeof stepDurations] || 60),
       0
     );
     const bufferTime = totalDuration * 0.2; // 20% buffer

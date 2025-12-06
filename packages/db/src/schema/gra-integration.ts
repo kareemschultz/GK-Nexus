@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -205,7 +206,7 @@ export const graSubmissions = pgTable(
     // Amendment tracking
     isAmendment: boolean("is_amendment").default(false).notNull(),
     originalSubmissionId: text("original_submission_id").references(
-      () => graSubmissions.id
+      (): AnyPgColumn => graSubmissions.id
     ),
     amendmentReason: text("amendment_reason"),
     amendmentNotes: text("amendment_notes"),

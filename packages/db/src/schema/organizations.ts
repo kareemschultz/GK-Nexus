@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -144,7 +145,7 @@ export const organizations = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
     parentOrganizationId: text("parent_organization_id").references(
-      () => organizations.id
+      (): AnyPgColumn => organizations.id
     ),
 
     // Additional settings

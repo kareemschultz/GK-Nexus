@@ -63,6 +63,8 @@ export async function exportToExcel<T extends Record<string, unknown>>(
   }
 
   try {
+    // TODO: Install xlsx package - currently commented out to avoid build errors
+    // Run: bun add xlsx
     // Dynamic import of xlsx library
     const XLSX = await import("xlsx");
 
@@ -139,6 +141,8 @@ export async function exportToPDF<T extends Record<string, unknown>>(
   } = options;
 
   try {
+    // TODO: Install jspdf packages - currently commented out to avoid build errors
+    // Run: bun add jspdf jspdf-autotable
     // Dynamic imports
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;

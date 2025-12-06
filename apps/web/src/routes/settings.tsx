@@ -83,7 +83,10 @@ function RouteComponent() {
                       Automatically save changes as you type
                     </p>
                   </div>
-                  <Checkbox checked={autoSave} onCheckedChange={setAutoSave} />
+                  <Checkbox
+                    checked={autoSave}
+                    onCheckedChange={(checked) => setAutoSave(checked === true)}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -94,7 +97,9 @@ function RouteComponent() {
                   </div>
                   <Checkbox
                     checked={autoBackup}
-                    onCheckedChange={setAutoBackup}
+                    onCheckedChange={(checked) =>
+                      setAutoBackup(checked === true)
+                    }
                   />
                 </div>
               </div>

@@ -6,7 +6,15 @@ import {
   userPermissions,
   userRoles,
 } from "@GK-Nexus/db/schema/rbac";
-import { type InferSelectModel, and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  type InferSelectModel,
+  inArray,
+  isNull,
+  or,
+} from "drizzle-orm";
 
 // Infer types from schema
 type Permission = InferSelectModel<typeof permissions>;
@@ -46,7 +54,13 @@ export class RbacService {
   static async checkPermission(
     context: PermissionContext
   ): Promise<PermissionResult> {
-    const { userId, resource, action, scope = "global", conditions: _conditions } = context;
+    const {
+      userId,
+      resource,
+      action,
+      scope = "global",
+      conditions: _conditions,
+    } = context;
 
     try {
       // Get user's direct permission overrides first (highest priority)
@@ -379,6 +393,10 @@ export class RbacService {
       .values(userRoleData)
       .returning();
 
+    if (!newUserRole) {
+      throw new Error("Failed to assign role to user");
+    }
+
     return newUserRole;
   }
 
@@ -442,6 +460,10 @@ export class RbacService {
       .values(userPermissionData)
       .returning();
 
+    if (!newUserPermission) {
+      throw new Error("Failed to grant custom permission");
+    }
+
     return newUserPermission;
   }
 
@@ -477,6 +499,10 @@ export class RbacService {
       .insert(userPermissions)
       .values(userPermissionData)
       .returning();
+
+    if (!newUserPermission) {
+      throw new Error("Failed to grant temporary permission");
+    }
 
     return newUserPermission;
   }
@@ -525,6 +551,10 @@ export class RbacService {
 
     const [newRole] = await db.insert(roles).values(newRoleData).returning();
 
+    if (!newRole) {
+      throw new Error("Failed to create role");
+    }
+
     return newRole;
   }
 
@@ -561,6 +591,10 @@ export class RbacService {
       .insert(permissions)
       .values(newPermissionData)
       .returning();
+
+    if (!newPermission) {
+      throw new Error("Failed to create permission");
+    }
 
     return newPermission;
   }

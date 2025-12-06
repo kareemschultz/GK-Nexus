@@ -88,7 +88,7 @@ export const clientSchema = z.object({
   // Additional information
   notes: z.string().nullable().optional(),
   tags: z.array(z.string()).nullable().optional(),
-  customFields: z.record(z.any()).nullable().optional(),
+  customFields: z.record(z.string(), z.any()).nullable().optional(),
 
   // Audit fields
   isActive: z.boolean().default(true),
@@ -179,7 +179,7 @@ export const createClientSchema = z.object({
   // Additional
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.any()).optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   // Status (for direct creation)
   status: clientStatusSchema.optional(),
   complianceStatus: complianceStatusSchema.optional(),

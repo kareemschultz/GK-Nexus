@@ -529,25 +529,34 @@ function generateDocumentActions(
       const renewalDue = new Date(document.expiryDate);
       renewalDue.setDate(renewalDue.getDate() - document.renewalPeriodDays);
 
+      const renewPriority: "low" | "medium" | "high" | "critical" =
+        daysUntilExpiry <= 14 ? "high" : "medium";
       actions.push({
         documentName: document.documentName,
         action: "renew" as const,
         dueDate: renewalDue,
-        priority: daysUntilExpiry <= 14 ? "high" : "medium",
+        priority: renewPriority,
       });
     } else if (daysUntilExpiry <= document.warningPeriodDays) {
+      const reviewPriority: "low" | "medium" | "high" | "critical" =
+        daysUntilExpiry <= 7 ? "high" : "low";
       actions.push({
         documentName: document.documentName,
         action: "review" as const,
         dueDate: document.expiryDate,
-        priority: daysUntilExpiry <= 7 ? "high" : "low",
+        priority: reviewPriority,
       });
     }
   }
 
   return actions.sort((a, b) => {
-    const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
-    return priorityOrder[b.priority] - priorityOrder[a.priority];
+    const priorityOrder: Record<string, number> = {
+      critical: 4,
+      high: 3,
+      medium: 2,
+      low: 1,
+    };
+    return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
   });
 }
 

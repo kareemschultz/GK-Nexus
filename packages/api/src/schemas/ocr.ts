@@ -1,35 +1,30 @@
 import { z } from "zod";
 
 // Document processing schemas
-export const documentTypeSchema = z.enum(
-  [
-    "INVOICE",
-    "RECEIPT",
-    "BANK_STATEMENT",
-    "TAX_FORM",
-    "PASSPORT",
-    "BIRTH_CERTIFICATE",
-    "DRIVER_LICENSE",
-    "UTILITY_BILL",
-    "FINANCIAL_STATEMENT",
-    "CONTRACT",
-    "OTHER",
-  ],
-  {
-    errorMap: () => ({ message: "Invalid document type" }),
-  }
-);
+export const documentTypeSchema = z.enum([
+  "INVOICE",
+  "RECEIPT",
+  "BANK_STATEMENT",
+  "TAX_FORM",
+  "PASSPORT",
+  "BIRTH_CERTIFICATE",
+  "DRIVER_LICENSE",
+  "UTILITY_BILL",
+  "FINANCIAL_STATEMENT",
+  "CONTRACT",
+  "OTHER",
+]);
 
-export const prioritySchema = z.enum(["LOW", "NORMAL", "HIGH", "URGENT"], {
-  errorMap: () => ({ message: "Invalid priority level" }),
-});
+export const prioritySchema = z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]);
 
-export const processingStatusSchema = z.enum(
-  ["QUEUED", "PROCESSING", "COMPLETED", "FAILED", "VALIDATED", "CANCELLED"],
-  {
-    errorMap: () => ({ message: "Invalid processing status" }),
-  }
-);
+export const processingStatusSchema = z.enum([
+  "QUEUED",
+  "PROCESSING",
+  "COMPLETED",
+  "FAILED",
+  "VALIDATED",
+  "CANCELLED",
+]);
 
 // OCR Processing schemas
 export const ocrExtractionOptionsSchema = z.object({
@@ -92,12 +87,13 @@ export const ocrStatusResponseSchema = z.object({
 });
 
 // OCR Data extraction schemas
-export const dataTypeSchema = z.enum(
-  ["ALL", "TEXT", "STRUCTURED", "TABLES", "METADATA"],
-  {
-    errorMap: () => ({ message: "Invalid data type" }),
-  }
-);
+export const dataTypeSchema = z.enum([
+  "ALL",
+  "TEXT",
+  "STRUCTURED",
+  "TABLES",
+  "METADATA",
+]);
 
 export const ocrDataRequestSchema = z.object({
   processingId: z.string().min(1, "Processing ID is required"),
@@ -106,10 +102,10 @@ export const ocrDataRequestSchema = z.object({
 
 export const ocrExtractedDataSchema = z.object({
   text: z.string().optional(),
-  structured: z.record(z.any()).optional(),
+  structured: z.record(z.string(), z.any()).optional(),
   tables: z.array(z.any()).optional(),
   entities: z.array(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   overallConfidence: z.number().optional(),
 });
 
@@ -118,7 +114,7 @@ export const ocrValidationSchema = z.object({
   processingId: z.string().min(1, "Processing ID is required"),
   corrections: z.object({
     text: z.string().optional(),
-    structuredData: z.record(z.any()).optional(),
+    structuredData: z.record(z.string(), z.any()).optional(),
     confidence: z.number().min(0).max(1).optional(),
   }),
   validatedBy: z.string().uuid().optional(),

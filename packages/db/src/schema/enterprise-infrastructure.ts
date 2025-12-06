@@ -181,7 +181,7 @@ export const alertRules = pgTable(
 );
 
 // Active alerts and incidents
-export const activeAlerts = pgTable(
+export const activeAlerts: any = pgTable(
   "active_alerts",
   {
     id: text("id").primaryKey(),
@@ -245,9 +245,11 @@ export const activeAlerts = pgTable(
       >(),
 
     // Alert correlation and grouping
-    parentAlertId: text("parent_alert_id").references(() => activeAlerts.id),
+    parentAlertId: text("parent_alert_id").references(
+      (): any => activeAlerts.id
+    ),
     correlationKey: text("correlation_key"), // For grouping related alerts
-    suppressedBy: text("suppressed_by").references(() => activeAlerts.id),
+    suppressedBy: text("suppressed_by").references((): any => activeAlerts.id),
 
     // Audit fields
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -336,7 +338,7 @@ export const performanceBaselines = pgTable(
 );
 
 // Security monitoring and incident tracking
-export const securityEvents = pgTable(
+export const securityEvents: any = pgTable(
   "security_events",
   {
     id: text("id").primaryKey(),
@@ -397,7 +399,9 @@ export const securityEvents = pgTable(
 
     // Correlation with other events
     correlationId: text("correlation_id"), // For grouping related events
-    parentEventId: text("parent_event_id").references(() => securityEvents.id),
+    parentEventId: text("parent_event_id").references(
+      (): any => securityEvents.id
+    ),
 
     // Audit fields
     eventTimestamp: timestamp("event_timestamp").notNull(),

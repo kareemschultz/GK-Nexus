@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -63,7 +64,9 @@ export const roles = pgTable(
     description: text("description"),
 
     // Hierarchy and inheritance
-    parentRoleId: text("parent_role_id").references(() => roles.id),
+    parentRoleId: text("parent_role_id").references(
+      (): AnyPgColumn => roles.id
+    ),
     level: text("level").notNull().default("0"), // For role hierarchy ordering
     isSystemRole: boolean("is_system_role").default(false).notNull(),
     isCustomRole: boolean("is_custom_role").default(true).notNull(),

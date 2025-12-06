@@ -242,9 +242,15 @@ export const propertyManagementPropertiesList = protectedProcedure
     const sortColumn =
       propertyManagementSchema.properties[
         sortBy as keyof typeof propertyManagementSchema.properties
-      ] || propertyManagementSchema.properties.createdAt;
+      ] ?? propertyManagementSchema.properties.createdAt;
     const orderClause =
-      sortOrder === "asc" ? asc(sortColumn) : desc(sortColumn);
+      sortOrder === "asc"
+        ? asc(
+            sortColumn as typeof propertyManagementSchema.properties.createdAt
+          )
+        : desc(
+            sortColumn as typeof propertyManagementSchema.properties.createdAt
+          );
 
     const properties = await db
       .select()
@@ -1264,7 +1270,7 @@ export const propertyManagementInspectionsComplete = protectedProcedure
     z.object({
       id: z.string().min(1),
       overallCondition: z.enum(["excellent", "good", "fair", "poor"]),
-      checklist: z.record(z.boolean()).optional(),
+      checklist: z.record(z.string(), z.boolean()).optional(),
       findings: z.array(z.string()).optional(),
       followUpRequired: z.boolean().default(false),
       followUpNotes: z.string().optional(),

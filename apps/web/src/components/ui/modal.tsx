@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useEscapeKey, useFocusTrap } from "@/hooks/use-focus-trap";
@@ -72,7 +72,7 @@ export function Modal({
           sizeClasses[size],
           className
         )}
-        ref={modalRef}
+        ref={modalRef as RefObject<HTMLDivElement>}
         tabIndex={-1}
       >
         {/* Header */}

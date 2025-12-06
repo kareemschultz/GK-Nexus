@@ -94,9 +94,18 @@ function PropertyManagementPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagement.propertiesList({
+      return client.propertyManagementPropertiesList({
         search: searchTerm || undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
+        status:
+          statusFilter !== "all"
+            ? (statusFilter as
+                | "AVAILABLE"
+                | "OCCUPIED"
+                | "UNDER_MAINTENANCE"
+                | "PENDING_LEASE"
+                | "SOLD"
+                | "INACTIVE")
+            : undefined,
         page: 1,
         limit: 50,
       });
@@ -107,7 +116,7 @@ function PropertyManagementPage() {
     queryKey: ["tenants"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagement.tenantsList({
+      return client.propertyManagementTenantsList({
         page: 1,
         limit: 50,
       });
@@ -118,22 +127,27 @@ function PropertyManagementPage() {
     queryKey: ["propertyStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagement.propertiesStats({});
+      return client.propertyManagementPropertiesStats({});
     },
   });
 
-  // Mutations
   const createPropertyMutation = useMutation({
     mutationFn: async (data: {
       name: string;
-      propertyType: string;
+      propertyType:
+        | "RESIDENTIAL"
+        | "COMMERCIAL"
+        | "INDUSTRIAL"
+        | "LAND"
+        | "MIXED_USE"
+        | "AGRICULTURAL";
       addressLine1: string;
       city: string;
       region: string;
-      monthlyRent?: number;
+      monthlyRent?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagement.propertiesCreate(data);
+      return client.propertyManagementPropertiesCreate(data);
     },
     onSuccess: () => {
       toast.success("Property created successfully");
@@ -148,7 +162,23 @@ function PropertyManagementPage() {
 
   const properties = propertiesQuery.data?.data?.items || [];
   const tenants = tenantsQuery.data?.data?.items || [];
-  const stats = statsQuery.data?.data;
+  const rawStats = statsQuery.data?.data;
+
+  const stats = rawStats
+    ? {
+        totalProperties: rawStats.total,
+        activeTenants: tenants.length,
+        occupiedProperties:
+          rawStats.byStatus.find(
+            (s: { status: string }) => s.status === "OCCUPIED"
+          )?.count || 0,
+        monthlyRevenue: properties.reduce(
+          (sum: number, p: { monthlyRent: string | null }) =>
+            sum + (p.monthlyRent ? Number(p.monthlyRent) : 0),
+          0
+        ),
+      }
+    : undefined;
 
   const getStatusBadge = (status: string) => {
     const variants: Record<
@@ -240,12 +270,18 @@ function PropertyManagementPage() {
                     const formData = new FormData(e.currentTarget);
                     createPropertyMutation.mutate({
                       name: formData.get("name") as string,
-                      propertyType: formData.get("propertyType") as string,
+                      propertyType: formData.get("propertyType") as
+                        | "RESIDENTIAL"
+                        | "COMMERCIAL"
+                        | "INDUSTRIAL"
+                        | "LAND"
+                        | "MIXED_USE"
+                        | "AGRICULTURAL",
                       addressLine1: formData.get("address") as string,
                       city: formData.get("city") as string,
                       region: formData.get("region") as string,
                       monthlyRent: formData.get("rent")
-                        ? Number(formData.get("rent"))
+                        ? (formData.get("rent") as string)
                         : undefined,
                     });
                   }}
@@ -630,7 +666,15 @@ function PropertyManagementPage() {
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell>{getStatusBadge(tenant.status)}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                tenant.isActive ? "default" : "secondary"
+                              }
+                            >
+                              {tenant.isActive ? "ACTIVE" : "INACTIVE"}
+                            </Badge>
+                          </TableCell>
                           <TableCell>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>

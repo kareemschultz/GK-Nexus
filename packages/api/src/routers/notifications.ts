@@ -10,12 +10,8 @@ function generateId(): string {
   return nanoid();
 }
 
-const {
-  notifications,
-  notificationPreferences,
-  notificationDeliveries,
-  notificationTemplates,
-} = notificationsSchema;
+const { notifications, notificationPreferences, notificationTemplates } =
+  notificationsSchema;
 
 // Input validation schemas
 const createNotificationSchema = z.object({
@@ -41,23 +37,11 @@ const createNotificationSchema = z.object({
   title: z.string().min(1, "Title is required"),
   message: z.string().min(1, "Message is required"),
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   actionUrl: z.string().optional(),
   actionText: z.string().optional(),
   relatedEntityType: z.string().optional(),
   relatedEntityId: z.string().optional(),
-  scheduledFor: z.string().datetime().optional(),
-  expiresAt: z.string().datetime().optional(),
-});
-
-const updateNotificationSchema = z.object({
-  id: z.string(),
-  title: z.string().optional(),
-  message: z.string().optional(),
-  priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
-  metadata: z.record(z.any()).optional(),
-  actionUrl: z.string().optional(),
-  actionText: z.string().optional(),
   scheduledFor: z.string().datetime().optional(),
   expiresAt: z.string().datetime().optional(),
 });
@@ -87,7 +71,7 @@ const notificationPreferencesSchema = z.object({
   enableInAppNotifications: z.boolean().default(true),
   enablePushNotifications: z.boolean().default(true),
   enableSmsNotifications: z.boolean().default(false),
-  typePreferences: z.record(z.array(z.string())).optional(),
+  typePreferences: z.record(z.string(), z.array(z.string())).optional(),
   quietHoursEnabled: z.boolean().default(false),
   quietHoursStart: z.string().optional(),
   quietHoursEnd: z.string().optional(),
@@ -121,8 +105,8 @@ const createTemplateSchema = z.object({
   subject: z.string().optional(),
   htmlContent: z.string().optional(),
   textContent: z.string().optional(),
-  variables: z.record(z.any()).optional(),
-  metadata: z.record(z.any()).optional(),
+  variables: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 // ============================================================================
@@ -206,23 +190,24 @@ export const notificationGetMine = protectedProcedure
       // Add condition to exclude archived notifications unless explicitly requested
       conditions.push(eq(notifications.isArchived, false));
 
-      // Add condition to exclude expired notifications
-      conditions.push(
-        or(
-          isNull(notifications.expiresAt),
-          gte(notifications.expiresAt, new Date())
-        )
+      const expiryCondition = or(
+        isNull(notifications.expiresAt),
+        gte(notifications.expiresAt, new Date())
       );
+      if (expiryCondition) {
+        conditions.push(expiryCondition);
+      }
 
       const whereClause = and(...conditions);
 
-      // Get total count
-      const [{ count: totalCount }] = await db
+      const totalCountResult = await db
         .select({ count: count() })
         .from(notifications)
         .where(whereClause);
 
-      // Get notifications
+      const totalCount =
+        totalCountResult && totalCountResult[0] ? totalCountResult[0].count : 0;
+
       const notificationList = await db
         .select()
         .from(notifications)

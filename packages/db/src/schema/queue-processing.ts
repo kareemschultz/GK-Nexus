@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -109,7 +110,9 @@ export const jobQueue = pgTable(
     progressData: jsonb("progress_data"), // Detailed progress information
 
     // Job dependencies and workflow
-    parentJobId: text("parent_job_id").references(() => jobQueue.id),
+    parentJobId: text("parent_job_id").references(
+      (): AnyPgColumn => jobQueue.id
+    ),
     childJobIds: jsonb("child_job_ids").$type<string[]>(), // Jobs created by this job
     dependencyJobIds: jsonb("dependency_job_ids").$type<string[]>(), // Jobs this depends on
     workflowId: text("workflow_id"), // For grouping related jobs

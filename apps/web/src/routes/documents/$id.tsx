@@ -12,6 +12,7 @@ import {
   FileText,
   Maximize,
   MessageCircle,
+  Printer,
   RotateCw,
   Send,
   Share2,
@@ -57,26 +58,26 @@ export const Route = createFileRoute("/documents/$id")({
   component: DocumentViewerPage,
 });
 
-interface DocumentComment {
+type DocumentComment = {
   id: string;
   author: string;
   content: string;
   createdAt: string;
   isResolved: boolean;
-}
+};
 
-interface DocumentVersion {
+type DocumentVersion = {
   id: string;
   version: number;
   uploadDate: string;
   uploadedBy: string;
   changes: string;
   fileSize: number;
-}
+};
 
 function DocumentViewerPage() {
   const { id } = useParams({ from: "/documents/$id" });
-  const { getDocument, updateDocument, deleteDocument } = useDocuments();
+  const { getDocument, updateDocument } = useDocuments();
 
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,7 +97,7 @@ function DocumentViewerPage() {
     let unitIndex = 0;
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
-      unitIndex++;
+      unitIndex += 1;
     }
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
@@ -186,7 +187,9 @@ function DocumentViewerPage() {
   }, [id, getDocument]);
 
   const handleSaveEdit = async () => {
-    if (!(document && editForm)) return;
+    if (!(document && editForm)) {
+      return;
+    }
 
     try {
       const updatedDoc = await updateDocument(document.id, editForm);
@@ -198,7 +201,9 @@ function DocumentViewerPage() {
   };
 
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim()) {
+      return;
+    }
 
     const comment: DocumentComment = {
       id: Date.now().toString(),
@@ -223,10 +228,13 @@ function DocumentViewerPage() {
   };
 
   const handleDownload = () => {
+    if (!document) {
+      return;
+    }
     // Simulate file download
-    const link = document.createElement("a");
-    link.href = document?.downloadUrl || "#";
-    link.download = document?.name || "document";
+    const link = window.document.createElement("a");
+    link.href = document.downloadUrl || "#";
+    link.download = document.name || "document";
     link.click();
   };
 
@@ -434,7 +442,7 @@ function DocumentViewerPage() {
               <CardTitle className="text-base">Document Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {isEditing ? (
+              {isEditing && document ? (
                 <div className="space-y-4">
                   <div>
                     <Label>Document Type</Label>
@@ -442,7 +450,7 @@ function DocumentViewerPage() {
                       onValueChange={(value) =>
                         setEditForm({ ...editForm, type: value })
                       }
-                      value={editForm.type}
+                      value={editForm.type || document.type}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue />
@@ -481,7 +489,9 @@ function DocumentViewerPage() {
 
                   <div className="flex items-center space-x-2">
                     <Checkbox
-                      checked={editForm.isConfidential}
+                      checked={
+                        editForm.isConfidential ?? document.isConfidential
+                      }
                       id="edit-confidential"
                       onCheckedChange={(checked) =>
                         setEditForm({ ...editForm, isConfidential: !!checked })

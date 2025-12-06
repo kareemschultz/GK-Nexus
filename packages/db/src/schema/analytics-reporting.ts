@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
   boolean,
   index,
@@ -622,7 +623,7 @@ export const analyticsMetrics = pgTable(
 
     // Aggregation hierarchy (for drill-down capabilities)
     parentMetricId: text("parent_metric_id").references(
-      () => analyticsMetrics.id
+      (): AnyPgColumn => analyticsMetrics.id
     ),
     hierarchyLevel: integer("hierarchy_level").default(0).notNull(),
 

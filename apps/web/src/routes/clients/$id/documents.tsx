@@ -155,8 +155,8 @@ function RouteComponent() {
             : "mid-market") as Client["type"],
         status: (clientResponse.data.status?.toLowerCase() ||
           "active") as Client["status"],
-        industry: clientResponse.data.industry || "General",
-        contactPerson: clientResponse.data.contactPerson || "",
+        industry: "General",
+        contactPerson: clientResponse.data.primaryContact || "",
         email: clientResponse.data.email || "",
         phone: clientResponse.data.phoneNumber || "",
         address: clientResponse.data.address || "",
@@ -173,7 +173,9 @@ function RouteComponent() {
     : null;
 
   // Map documents API response
-  const documents: Document[] = (documentsResponse?.data?.items || []).map(
+  const documents: Document[] = (
+    (documentsResponse?.data?.items || []) as unknown[]
+  ).map(
     (doc: {
       id: string;
       clientId: string;
@@ -254,11 +256,11 @@ function RouteComponent() {
     );
   }
 
-  const filteredDocuments = clientDocuments.filter((document) => {
+  const filteredDocuments = documents.filter((document: any) => {
     const matchesSearch =
       document.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       document.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      document.tags.some((tag) =>
+      document.tags.some((tag: any) =>
         tag.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
@@ -391,7 +393,7 @@ function RouteComponent() {
                   <p className="font-medium text-muted-foreground text-sm">
                     Total Documents
                   </p>
-                  <p className="font-bold text-2xl">{clientDocuments.length}</p>
+                  <p className="font-bold text-2xl">{documents.length}</p>
                 </div>
                 <FileText className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -406,7 +408,7 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {
-                      clientDocuments.filter((d) => d.status === "approved")
+                      documents.filter((d: any) => d.status === "approved")
                         .length
                     }
                   </p>
@@ -424,7 +426,7 @@ function RouteComponent() {
                   </p>
                   <p className="font-bold text-2xl">
                     {
-                      clientDocuments.filter((d) => d.status === "processing")
+                      documents.filter((d: any) => d.status === "processing")
                         .length
                     }
                   </p>
@@ -441,7 +443,7 @@ function RouteComponent() {
                     Confidential
                   </p>
                   <p className="font-bold text-2xl">
-                    {clientDocuments.filter((d) => d.confidential).length}
+                    {documents.filter((d: any) => d.confidential).length}
                   </p>
                 </div>
                 <FileText className="h-8 w-8 text-red-500" />
@@ -528,7 +530,7 @@ function RouteComponent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((document) => (
+                {filteredDocuments.map((document: any) => (
                   <TableRow className="hover:bg-muted/50" key={document.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">

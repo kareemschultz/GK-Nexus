@@ -29,17 +29,17 @@ type SearchResultType =
   | "user"
   | "setting";
 
-interface SearchResult {
+export type SearchResult = {
   id: string;
   title: string;
   description: string;
   type: SearchResultType;
   url: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   score?: number;
   lastAccessed?: Date;
   featured?: boolean;
-}
+};
 
 interface SearchCategory {
   id: string;
@@ -349,7 +349,7 @@ export function SmartSearch({
                           className={`flex items-center gap-2 whitespace-nowrap ${
                             !hasResults && query ? "opacity-50" : ""
                           }`}
-                          disabled={!hasResults && query}
+                          disabled={!hasResults && !!query}
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
                           size="sm"

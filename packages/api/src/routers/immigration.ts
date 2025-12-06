@@ -183,7 +183,6 @@ export const immigrationListCases = protectedProcedure
     const {
       page,
       limit,
-      search,
       clientId,
       caseType,
       status,
@@ -347,6 +346,12 @@ export const immigrationUpdateCase = protectedProcedure
         clientNotified: true,
         publicNote: `Your case status has been updated to: ${updateData.status}`,
         createdBy: user.id,
+      });
+    }
+
+    if (!updatedCase) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Failed to update case",
       });
     }
 
@@ -692,13 +697,19 @@ export const immigrationGetUpcomingDeadlines = protectedProcedure
     const { daysAhead, clientId } = input;
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
-    const todayStr = new Date().toISOString().split("T")[0];
-    const futureStr = futureDate.toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0] as string;
+    const futureStr = futureDate.toISOString().split("T")[0] as string;
 
     const conditions = [
       eq(immigrationSchema.immigrationCases.isActive, true),
-      gte(immigrationSchema.immigrationCases.targetDecisionDate, todayStr),
-      lte(immigrationSchema.immigrationCases.targetDecisionDate, futureStr),
+      gte(
+        immigrationSchema.immigrationCases.targetDecisionDate,
+        todayStr as any
+      ),
+      lte(
+        immigrationSchema.immigrationCases.targetDecisionDate,
+        futureStr as any
+      ),
     ];
 
     if (clientId) {

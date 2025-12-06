@@ -2,7 +2,22 @@
  * Test utilities and helper functions
  */
 
-import type { PayrollEmployee } from "../../web/src/lib/tax-calculations";
+import { vi } from "vitest";
+
+/**
+ * Payroll Employee type for testing
+ */
+export type PayrollEmployee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  nisNumber: string;
+  basicSalary: number;
+  overtime: number;
+  allowances: number;
+  bonuses: number;
+  dependents: number;
+};
 
 /**
  * Clean up test data (implementation varies based on test type)
@@ -52,7 +67,9 @@ export function createTestEmployees(
 /**
  * Test data factory for organizations
  */
-export function createTestOrganizationData(overrides = {}) {
+export function createTestOrganizationData(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     name: `Test Organization ${Date.now()}`,
     subdomain: `test-${Date.now()}`,
@@ -69,7 +86,9 @@ export function createTestOrganizationData(overrides = {}) {
 /**
  * Test data factory for users
  */
-export function createTestUserData(overrides = {}) {
+export function createTestUserData(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   const timestamp = Date.now();
   return {
     email: `test-${timestamp}@example.com`,
@@ -85,7 +104,9 @@ export function createTestUserData(overrides = {}) {
 /**
  * Test data factory for clients
  */
-export function createTestClientData(overrides = {}) {
+export function createTestClientData(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   const timestamp = Date.now();
   return {
     firstName: "Test",
@@ -110,7 +131,9 @@ export function createTestClientData(overrides = {}) {
 /**
  * Test data factory for documents
  */
-export function createTestDocumentData(overrides = {}) {
+export function createTestDocumentData(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     title: "Test Document",
     description: "A test document for testing purposes",
@@ -263,7 +286,9 @@ export async function waitForCondition(
 /**
  * Generate realistic test file data
  */
-export function createTestFileData(overrides = {}) {
+export function createTestFileData(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     filename: "test-document.pdf",
     mimetype: "application/pdf",
@@ -276,7 +301,9 @@ export function createTestFileData(overrides = {}) {
 /**
  * Mock HTTP request object for testing
  */
-export function createMockRequest(overrides = {}) {
+export function createMockRequest(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
   return {
     method: "GET",
     url: "/api/test",
@@ -293,7 +320,13 @@ export function createMockRequest(overrides = {}) {
 /**
  * Mock HTTP response object for testing
  */
-export function createMockResponse() {
+export function createMockResponse(): {
+  status: ReturnType<typeof vi.fn>;
+  json: ReturnType<typeof vi.fn>;
+  send: ReturnType<typeof vi.fn>;
+  setHeader: ReturnType<typeof vi.fn>;
+  end: ReturnType<typeof vi.fn>;
+} {
   const response = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn().mockReturnThis(),

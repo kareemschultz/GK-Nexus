@@ -69,8 +69,8 @@ export const payeCalculationSchema = z.object({
   paymentDate: z.date().nullable().optional(),
   dueDate: z.date(),
   notes: z.string().nullable().optional(),
-  calculationDetails: z.record(z.any()).nullable().optional(),
-  amendments: z.array(z.record(z.any())).nullable().optional(),
+  calculationDetails: z.record(z.string(), z.any()).nullable().optional(),
+  amendments: z.array(z.record(z.string(), z.any())).nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable().optional(),
@@ -99,8 +99,8 @@ export const updatePayeCalculationSchema = createPayeCalculationSchema
     status: calculationStatusSchema.optional(),
     submissionDate: z.date().optional(),
     paymentDate: z.date().optional(),
-    calculationDetails: z.record(z.any()).optional(),
-    amendments: z.array(z.record(z.any())).optional(),
+    calculationDetails: z.record(z.string(), z.any()).optional(),
+    amendments: z.array(z.record(z.string(), z.any())).optional(),
   });
 
 // NIS (National Insurance Scheme) Calculation schemas
@@ -125,7 +125,7 @@ export const nisCalculationSchema = z.object({
   dueDate: z.date(),
   employeeCount: z.number().int().min(0).nullable().optional(),
   notes: z.string().nullable().optional(),
-  calculationDetails: z.record(z.any()).nullable().optional(),
+  calculationDetails: z.record(z.string(), z.any()).nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable().optional(),
@@ -151,7 +151,7 @@ export const updateNisCalculationSchema = createNisCalculationSchema
     status: calculationStatusSchema.optional(),
     submissionDate: z.date().optional(),
     paymentDate: z.date().optional(),
-    calculationDetails: z.record(z.any()).optional(),
+    calculationDetails: z.record(z.string(), z.any()).optional(),
   });
 
 // VAT (Value Added Tax) Calculation schemas
@@ -185,7 +185,7 @@ export const vatCalculationSchema = z.object({
   vatRegistrationNumber: z.string().nullable().optional(),
   returnType: z.enum(["standard", "cash_basis", "annual"]).default("standard"),
   notes: z.string().nullable().optional(),
-  calculationDetails: z.record(z.any()).nullable().optional(),
+  calculationDetails: z.record(z.string(), z.any()).nullable().optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   createdBy: z.string().nullable().optional(),
@@ -222,7 +222,7 @@ export const updateVatCalculationSchema = createVatCalculationSchema
     status: calculationStatusSchema.optional(),
     submissionDate: z.date().optional(),
     paymentDate: z.date().optional(),
-    calculationDetails: z.record(z.any()).optional(),
+    calculationDetails: z.record(z.string(), z.any()).optional(),
   });
 
 // Tax rates configuration schema

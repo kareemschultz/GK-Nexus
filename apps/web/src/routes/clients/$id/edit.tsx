@@ -52,7 +52,7 @@ type Client = {
   id: string;
   name: string;
   type: "enterprise" | "mid-market" | "smb";
-  status: "active" | "inactive" | "onboarding" | "suspended";
+  status: "active" | "inactive" | "suspended" | "pending_approval" | "archived";
   industry: string;
   contactPerson: string;
   email: string;
@@ -73,12 +73,14 @@ type Client = {
 
 const clientSchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
-  type: z.enum(["enterprise", "mid-market", "smb"], {
-    required_error: "Please select a client type",
-  }),
-  status: z.enum(["active", "inactive", "onboarding", "suspended"], {
-    required_error: "Please select a status",
-  }),
+  type: z.enum(["enterprise", "mid-market", "smb"]),
+  status: z.enum([
+    "active",
+    "inactive",
+    "suspended",
+    "pending_approval",
+    "archived",
+  ]),
   industry: z.string().min(2, "Industry must be at least 2 characters"),
   contactPerson: z
     .string()
@@ -88,9 +90,7 @@ const clientSchema = z.object({
   address: z.string().min(5, "Address must be at least 5 characters"),
   revenue: z.number().min(0, "Revenue must be a positive number"),
   employees: z.number().min(1, "Employee count must be at least 1"),
-  riskLevel: z.enum(["low", "medium", "high"], {
-    required_error: "Please select a risk level",
-  }),
+  riskLevel: z.enum(["low", "medium", "high"]),
   accountManager: z
     .string()
     .min(2, "Account manager must be at least 2 characters"),
@@ -122,13 +122,17 @@ function RouteComponent() {
         data: {
           name: data.name,
           status: data.status,
-          industry: data.industry,
-          contactPerson: data.contactPerson,
           email: data.email,
           phoneNumber: data.phone,
           address: data.address,
           riskLevel: data.riskLevel,
           assignedManager: data.accountManager,
+          estimatedAnnualRevenue: data.revenue > 0 ? data.revenue : undefined,
+          employeeCount: data.employees > 0 ? data.employees : undefined,
+          notes:
+            data.industry && data.contactPerson
+              ? `Industry: ${data.industry}\nContact Person: ${data.contactPerson}`
+              : undefined,
         },
       });
     },
@@ -148,40 +152,44 @@ function RouteComponent() {
     },
   });
 
-  // Map API response to Client type for display
-  const client: Client | null = clientResponse?.data
-    ? {
-        id: clientResponse.data.id,
-        name: clientResponse.data.name || "",
-        type: (clientResponse.data.entityType?.toLowerCase() === "individual"
-          ? "smb"
-          : clientResponse.data.entityType?.toLowerCase() === "corporation"
-            ? "enterprise"
-            : "mid-market") as Client["type"],
-        status: (clientResponse.data.status?.toLowerCase() ||
-          "active") as Client["status"],
-        industry: clientResponse.data.industry || "",
-        contactPerson: clientResponse.data.contactPerson || "",
-        email: clientResponse.data.email || "",
-        phone: clientResponse.data.phoneNumber || "",
-        address: clientResponse.data.address || "",
-        revenue: 0,
-        employees: 0,
-        joinDate:
-          clientResponse.data.clientSince?.toString() ||
-          new Date().toISOString(),
-        lastActivity:
-          clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
-        complianceScore: 0,
-        documents: 0,
-        taxYear: "",
-        filingStatus: "",
-        nextDeadline: "",
-        riskLevel: (clientResponse.data.riskLevel?.toLowerCase() ||
-          "medium") as Client["riskLevel"],
-        accountManager: clientResponse.data.assignedManager || "",
-      }
-    : null;
+  let client: Client | null = null;
+
+  if (clientResponse?.data) {
+    const notes = clientResponse.data.notes || "";
+    const industryMatch = notes.match(/Industry:\s*(.+?)(?:\n|$)/);
+    const contactPersonMatch = notes.match(/Contact Person:\s*(.+?)(?:\n|$)/);
+
+    client = {
+      id: clientResponse.data.id,
+      name: clientResponse.data.name || "",
+      type: (clientResponse.data.entityType?.toLowerCase() === "individual"
+        ? "smb"
+        : clientResponse.data.entityType?.toLowerCase() === "corporation"
+          ? "enterprise"
+          : "mid-market") as Client["type"],
+      status: (clientResponse.data.status?.toLowerCase() ||
+        "active") as Client["status"],
+      industry: industryMatch ? industryMatch[1].trim() : "",
+      contactPerson: contactPersonMatch ? contactPersonMatch[1].trim() : "",
+      email: clientResponse.data.email || "",
+      phone: clientResponse.data.phoneNumber || "",
+      address: clientResponse.data.address || "",
+      revenue: Number(clientResponse.data.estimatedAnnualRevenue || 0),
+      employees: Number(clientResponse.data.employeeCount || 0),
+      joinDate:
+        clientResponse.data.clientSince?.toString() || new Date().toISOString(),
+      lastActivity:
+        clientResponse.data.updatedAt?.toString() || new Date().toISOString(),
+      complianceScore: 0,
+      documents: 0,
+      taxYear: "",
+      filingStatus: "",
+      nextDeadline: "",
+      riskLevel: (clientResponse.data.riskLevel?.toLowerCase() ||
+        "medium") as Client["riskLevel"],
+      accountManager: clientResponse.data.assignedManager || "",
+    };
+  }
 
   const form = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
@@ -203,7 +211,7 @@ function RouteComponent() {
       : {
           name: "",
           type: "smb",
-          status: "onboarding",
+          status: "pending_approval",
           industry: "",
           contactPerson: "",
           email: "",
@@ -259,10 +267,12 @@ function RouteComponent() {
         return <Badge variant="default">Active</Badge>;
       case "inactive":
         return <Badge variant="secondary">Inactive</Badge>;
-      case "onboarding":
-        return <Badge variant="outline">Onboarding</Badge>;
+      case "pending_approval":
+        return <Badge variant="outline">Pending Approval</Badge>;
       case "suspended":
         return <Badge variant="destructive">Suspended</Badge>;
+      case "archived":
+        return <Badge variant="secondary">Archived</Badge>;
       default:
         return <Badge variant="secondary">Unknown</Badge>;
     }
@@ -396,9 +406,12 @@ function RouteComponent() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="onboarding">Onboarding</SelectItem>
+                          <SelectItem value="pending_approval">
+                            Pending Approval
+                          </SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
                           <SelectItem value="suspended">Suspended</SelectItem>
+                          <SelectItem value="archived">Archived</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

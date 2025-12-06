@@ -163,7 +163,7 @@ function TrainingPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.training.courses.list({
+      return client.trainingCoursesList({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -180,7 +180,7 @@ function TrainingPage() {
     queryKey: ["trainingSessions"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.training.sessions.list({
+      return client.trainingSessionsList({
         page: 1,
         limit: 50,
         upcoming: true,
@@ -193,7 +193,7 @@ function TrainingPage() {
     queryKey: ["trainingRegistrations"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.training.registrations.list({
+      return client.trainingRegistrationsList({
         page: 1,
         limit: 50,
       });
@@ -205,7 +205,7 @@ function TrainingPage() {
     queryKey: ["trainingCertificates"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.training.certificates.list({
+      return client.trainingCertificatesList({
         page: 1,
         limit: 50,
       });
@@ -217,7 +217,7 @@ function TrainingPage() {
     queryKey: ["trainingStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.training.courses.stats();
+      return client.trainingCoursesStats();
     },
   });
 
@@ -235,7 +235,7 @@ function TrainingPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.training.courses.create(data);
+      return client.trainingCoursesCreate(data);
     },
     onSuccess: () => {
       toast.success("Course created successfully");
@@ -252,7 +252,7 @@ function TrainingPage() {
   const publishCourseMutation = useMutation({
     mutationFn: async (id: string) => {
       const { client } = await import("@/utils/orpc");
-      return client.training.courses.publish({ id });
+      return client.trainingCoursesPublish({ id });
     },
     onSuccess: () => {
       toast.success("Course published successfully");
@@ -340,13 +340,13 @@ function TrainingPage() {
 
   // Calculate stats from the data
   const totalPublished =
-    stats?.byStatus?.find((s) => s.status === "PUBLISHED")?.count || 0;
+    stats?.byStatus?.find((s: any) => s.status === "PUBLISHED")?.count || 0;
   const totalRegistrations = registrations.length;
   const completedRegistrations = registrations.filter(
-    (r) => r.status === "COMPLETED"
+    (r: any) => r.status === "COMPLETED"
   ).length;
   const activeCertificates = certificates.filter(
-    (c) => c.status === "ISSUED"
+    (c: any) => c.status === "ISSUED"
   ).length;
 
   return (
@@ -715,7 +715,7 @@ function TrainingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {courses.map((course) => (
+                      {courses.map((course: any) => (
                         <TableRow key={course.id}>
                           <TableCell className="font-medium">
                             {course.courseCode}
@@ -798,7 +798,7 @@ function TrainingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sessions.map((session) => (
+                      {sessions.map((session: any) => (
                         <TableRow key={session.id}>
                           <TableCell className="font-medium">
                             {session.sessionCode}
@@ -877,7 +877,7 @@ function TrainingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {registrations.map((reg) => (
+                      {registrations.map((reg: any) => (
                         <TableRow key={reg.id}>
                           <TableCell className="font-medium">
                             {reg.registrationNumber}
@@ -950,7 +950,7 @@ function TrainingPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {certificates.map((cert) => (
+                      {certificates.map((cert: any) => (
                         <TableRow key={cert.id}>
                           <TableCell className="font-medium">
                             {cert.certificateNumber}
