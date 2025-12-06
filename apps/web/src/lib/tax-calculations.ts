@@ -23,9 +23,9 @@ export const GUYANA_TAX_CONFIG_2025 = {
     MAX_EMPLOYEE_CONTRIBUTION: 15_680, // 5.6% of $280k
     MAX_EMPLOYER_CONTRIBUTION: 23_520, // 8.4% of $280k
   },
-  // VAT Configuration
+  // VAT Configuration (Updated Dec 2025 - verified against GRA)
   VAT: {
-    STANDARD_RATE: 0.125, // 12.5% VAT rate for Guyana
+    STANDARD_RATE: 0.14, // 14% VAT rate for Guyana (official GRA rate)
   },
 } as const;
 
@@ -320,7 +320,7 @@ export function generateNISCS3Schedule(
 }
 
 /**
- * Calculate VAT for Guyana (12.5% standard rate)
+ * Calculate VAT for Guyana (14% standard rate per GRA)
  */
 export interface VATCalculation {
   totalSales: number;

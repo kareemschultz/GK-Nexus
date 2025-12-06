@@ -354,17 +354,18 @@ export function SmartBreadcrumbs({
             <Copy className="h-4 w-4" />
           </Button>
 
-          {typeof navigator !== "undefined" && typeof navigator.share === "function" && (
-            <Button
-              className="h-8 w-8 p-0"
-              onClick={sharePath}
-              size="sm"
-              title="Share"
-              variant="ghost"
-            >
-              <Share className="h-4 w-4" />
-            </Button>
-          )}
+          {typeof navigator !== "undefined" &&
+            typeof navigator.share === "function" && (
+              <Button
+                className="h-8 w-8 p-0"
+                onClick={sharePath}
+                size="sm"
+                title="Share"
+                variant="ghost"
+              >
+                <Share className="h-4 w-4" />
+              </Button>
+            )}
         </div>
       )}
     </div>

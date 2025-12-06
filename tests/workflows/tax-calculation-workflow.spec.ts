@@ -99,11 +99,11 @@ test.describe("Tax Calculation Workflow", () => {
     await expect(page.locator("text=VAT Amount")).toBeVisible();
     await expect(page.locator("text=Gross Amount")).toBeVisible();
 
-    // Verify VAT amount is 12.5% (Guyana rate)
+    // Verify VAT amount is 14% (Guyana GRA rate)
     const vatAmountText = await page
       .locator("[data-testid='vat-amount']")
       .textContent();
-    expect(vatAmountText).toContain("12,500"); // 12.5% of 100,000
+    expect(vatAmountText).toContain("14,000"); // 14% of 100,000
 
     // Test quarterly VAT return submission
     await page.click('button:has-text("Submit to GRA")');

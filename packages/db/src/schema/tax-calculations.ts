@@ -58,7 +58,7 @@ export const nisClassEnum = pgEnum("nis_class", [
 ]);
 
 export const vatRateTypeEnum = pgEnum("vat_rate_type", [
-  "standard", // 12.5% in Guyana (updated from Barbados 17.5%)
+  "standard", // 14% in Guyana per GRA
   "zero_rated",
   "exempt",
 ]);
@@ -321,7 +321,7 @@ export const vatCalculations = pgTable(
 
     // VAT calculation
     netVat: decimal("net_vat", { precision: 15, scale: 2 }).notNull(), // Output VAT - Input VAT
-    vatRate: decimal("vat_rate", { precision: 5, scale: 4 }).default("0.125"), // 12.5% Guyana standard rate
+    vatRate: decimal("vat_rate", { precision: 5, scale: 4 }).default("0.14"), // 14% Guyana standard rate per GRA
     adjustments: decimal("adjustments", { precision: 15, scale: 2 }).default(
       "0"
     ),

@@ -290,7 +290,9 @@ export function EnhancedDashboard() {
             upcomingDeadlines: [],
             clientCompliance: [],
           },
-        } as unknown as Awaited<ReturnType<typeof client.dashboardComplianceReport>>
+        } as unknown as Awaited<
+          ReturnType<typeof client.dashboardComplianceReport>
+        >
       ),
     refetchInterval: 60_000,
     retry: 1,

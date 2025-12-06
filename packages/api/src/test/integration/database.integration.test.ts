@@ -582,11 +582,11 @@ describe("Database Integration Tests", () => {
           calculationType: "VAT" as const,
           inputData: {
             salesAmount: 500_000,
-            vatRate: 0.125,
+            vatRate: 0.14,
           },
           resultData: {
-            vatAmount: 62_500,
-            totalAmount: 562_500,
+            vatAmount: 70_000,
+            totalAmount: 570_000,
           },
           period: "2025-Q1",
           calculatedBy: user.id,

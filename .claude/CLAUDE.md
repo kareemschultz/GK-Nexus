@@ -27,14 +27,14 @@
 
 ### ⚠️ Current Priority
 - `client-onboarding-wizard.tsx:1216` - `handleSubmit` complexity 18 (max 15)
-- ~24 remaining web TS errors (mostly test files and edge cases)
 - API TS7056 warnings (type serialization limits) - code runs correctly
 
 ### 📊 System Stats (Dec 2025)
 - **Route files:** 75 (all working)
 - **API endpoints:** 313 (flat pattern)
-- **TypeScript errors:** Reduced from 1,217 → 24 (98% reduction)
+- **TypeScript errors:** 0 (reduced from 1,217 → 0, 100% fixed)
 - **Server status:** Both web (3001) and API (3000) verified working
+- **Tax rates:** Verified against official GRA sources Dec 2025
 
 ---
 
@@ -280,14 +280,16 @@ if (!user) {
 
 ## Part 5: Guyana-Specific Requirements
 
-### 2025 GRA Tax Rates
+### 2025 GRA Tax Rates (Verified Dec 2025)
 
 | Tax | Rate | Notes |
 |-----|------|-------|
-| PAYE | 25% / 35% | 25% up to GYD 130,000/month, 35% above. First GYD 85,000 exempt |
-| NIS Employee | 5.6% | Capped at GYD 294,840/year |
-| NIS Employer | 8.4% | Capped at GYD 442,260/year |
-| VAT | 14% | Standard rate |
+| PAYE | 0% / 25% / 35% | First GYD 130,000/month exempt, 25% from 130,001-260,000, 35% above 260,000 |
+| NIS Employee | 5.6% | Monthly ceiling GYD 280,000 |
+| NIS Employer | 8.4% | Monthly ceiling GYD 280,000 |
+| VAT | 14% | Standard rate (registration threshold: GYD 15M/year) |
+| Child Allowance | GYD 120,000/year per child | Max 3 children |
+| Overtime Exemption | First GYD 50,000 | From overtime/second job is tax-free |
 
 ### Filing Deadlines
 

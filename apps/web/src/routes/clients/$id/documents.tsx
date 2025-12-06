@@ -190,36 +190,33 @@ function RouteComponent() {
       createdAt: string | Date | null;
       updatedAt: string | Date | null;
     }>
-  ).map(
-    (doc) => ({
-      id: doc.id,
-      clientId: doc.clientId,
-      name: doc.name || doc.fileName,
-      type: (doc.category?.toLowerCase().includes("tax")
-        ? "tax-return"
-        : doc.category?.toLowerCase().includes("financial")
-          ? "financial-statement"
-          : doc.category?.toLowerCase().includes("audit")
-            ? "audit-report"
-            : doc.category?.toLowerCase().includes("contract")
-              ? "contract"
-              : "other") as Document["type"],
-      category: (doc.category?.toLowerCase() ||
-        "other") as Document["category"],
-      uploadDate:
-        doc.createdAt?.toString().split("T")[0] ||
-        new Date().toISOString().split("T")[0],
-      lastModified:
-        doc.updatedAt?.toString().split("T")[0] ||
-        new Date().toISOString().split("T")[0],
-      size: doc.fileSize || 0,
-      status: (doc.status?.toLowerCase() || "uploaded") as Document["status"],
-      uploadedBy: doc.uploadedBy || "Unknown",
-      description: doc.description || "",
-      tags: doc.tags || [],
-      confidential: doc.isConfidential,
-    })
-  );
+  ).map((doc) => ({
+    id: doc.id,
+    clientId: doc.clientId,
+    name: doc.name || doc.fileName,
+    type: (doc.category?.toLowerCase().includes("tax")
+      ? "tax-return"
+      : doc.category?.toLowerCase().includes("financial")
+        ? "financial-statement"
+        : doc.category?.toLowerCase().includes("audit")
+          ? "audit-report"
+          : doc.category?.toLowerCase().includes("contract")
+            ? "contract"
+            : "other") as Document["type"],
+    category: (doc.category?.toLowerCase() || "other") as Document["category"],
+    uploadDate:
+      doc.createdAt?.toString().split("T")[0] ||
+      new Date().toISOString().split("T")[0],
+    lastModified:
+      doc.updatedAt?.toString().split("T")[0] ||
+      new Date().toISOString().split("T")[0],
+    size: doc.fileSize || 0,
+    status: (doc.status?.toLowerCase() || "uploaded") as Document["status"],
+    uploadedBy: doc.uploadedBy || "Unknown",
+    description: doc.description || "",
+    tags: doc.tags || [],
+    confidential: doc.isConfidential,
+  }));
 
   const isLoading = clientLoading || docsLoading;
 

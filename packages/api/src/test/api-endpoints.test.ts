@@ -83,9 +83,9 @@ vi.mock("../lib/tax-calculations", () => ({
   })),
   calculateVat: vi.fn(() => ({
     netAmount: 100_000,
-    vatAmount: 12_500,
-    grossAmount: 112_500,
-    vatRate: 0.125,
+    vatAmount: 14_000,
+    grossAmount: 114_000,
+    vatRate: 0.14,
     category: "STANDARD",
     isExempt: false,
     isZeroRated: false,
@@ -143,7 +143,7 @@ vi.mock("../lib/tax-calculations", () => ({
     ceiling: 280_000,
   },
   VAT_CONFIG: {
-    standardRate: 0.125,
+    standardRate: 0.14,
     threshold: 15_000_000,
   },
 }));

@@ -195,7 +195,8 @@ function RouteComponent() {
   const immigrationCases: ImmigrationCase[] = useMemo(() => {
     if (!casesQuery.data?.data?.items) return [];
 
-    return (casesQuery.data.data.items as unknown as Array<{
+    return (
+      casesQuery.data.data.items as unknown as Array<{
         id: string;
         caseNumber: string;
         caseType: string;
@@ -208,50 +209,48 @@ function RouteComponent() {
         targetCompletionDate: string | Date | null;
         currentStage: string | null;
         updatedAt: string | Date | null;
-      }>).map(
-      (apiCase) => ({
-        id: apiCase.id,
-        caseNumber: apiCase.caseNumber || "N/A",
-        petitionType:
-          apiCase.caseType?.replace(/_/g, " ").toUpperCase() || "N/A",
-        visaCategory: apiCase.caseType?.replace(/_/g, " ") || "N/A",
-        beneficiaryName: apiCase.title || "Unnamed Case",
-        beneficiaryEmail: "",
-        clientId: apiCase.clientId || "",
-        clientName: "Client",
-        status: (apiCase.status?.toLowerCase() ||
-          "pending") as ImmigrationCase["status"],
-        priority: (apiCase.priority?.toLowerCase() ||
-          "normal") as ImmigrationCase["priority"],
-        filingDate: apiCase.applicationDate
-          ? new Date(apiCase.applicationDate).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
-        currentStep: apiCase.currentStage || "Processing",
-        nextAction: "Review case",
-        nextActionDate: apiCase.targetCompletionDate
-          ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
-        attorney: apiCase.assignedTo || "Unassigned",
-        estimatedCompletion: apiCase.targetCompletionDate
-          ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
-          : "TBD",
-        progressPercentage: 50,
-        documents: [],
-        timeline: [],
-        fees: {
-          governmentFee: 0,
-          attorneyFee: 0,
-          total: 0,
-          paid: 0,
-          outstanding: 0,
-        },
-        tags: [],
-        riskLevel: "medium" as const,
-        lastUpdated: apiCase.updatedAt
-          ? new Date(apiCase.updatedAt).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
-      })
-    );
+      }>
+    ).map((apiCase) => ({
+      id: apiCase.id,
+      caseNumber: apiCase.caseNumber || "N/A",
+      petitionType: apiCase.caseType?.replace(/_/g, " ").toUpperCase() || "N/A",
+      visaCategory: apiCase.caseType?.replace(/_/g, " ") || "N/A",
+      beneficiaryName: apiCase.title || "Unnamed Case",
+      beneficiaryEmail: "",
+      clientId: apiCase.clientId || "",
+      clientName: "Client",
+      status: (apiCase.status?.toLowerCase() ||
+        "pending") as ImmigrationCase["status"],
+      priority: (apiCase.priority?.toLowerCase() ||
+        "normal") as ImmigrationCase["priority"],
+      filingDate: apiCase.applicationDate
+        ? new Date(apiCase.applicationDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      currentStep: apiCase.currentStage || "Processing",
+      nextAction: "Review case",
+      nextActionDate: apiCase.targetCompletionDate
+        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+      attorney: apiCase.assignedTo || "Unassigned",
+      estimatedCompletion: apiCase.targetCompletionDate
+        ? new Date(apiCase.targetCompletionDate).toISOString().split("T")[0]
+        : "TBD",
+      progressPercentage: 50,
+      documents: [],
+      timeline: [],
+      fees: {
+        governmentFee: 0,
+        attorneyFee: 0,
+        total: 0,
+        paid: 0,
+        outstanding: 0,
+      },
+      tags: [],
+      riskLevel: "medium" as const,
+      lastUpdated: apiCase.updatedAt
+        ? new Date(apiCase.updatedAt).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
+    }));
   }, [casesQuery.data]);
 
   const filteredCases = useMemo(

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 **v1.2.2 - Tax Rate Verification & Bug Fixes** (2025-12-06)
+
+#### **Critical Bug Fixes**
+- 🔴 **Fixed VAT Rate** - Corrected VAT rate from 12.5% to 14% (official GRA rate)
+  - Updated `apps/web/src/lib/tax-calculations.ts`
+  - Updated `packages/db/src/schema/tax-calculations.ts`
+  - Updated `packages/db/src/utils.ts`
+  - Updated all test files with correct VAT calculations
+
+#### **Documentation Fixes**
+- 📝 **Fixed CLAUDE.md** - Corrected tax-free threshold from GYD 85,000 to GYD 130,000
+- 📝 **Updated tax rate table** - Added complete 2025 GRA rates with child allowance and overtime exemption
+
+#### **Tax Rate Verification (Verified against GRA Dec 2025)**
+| Tax | Rate | Notes |
+|-----|------|-------|
+| PAYE | 0% / 25% / 35% | First GYD 130,000/month exempt, 25% from 130,001-260,000, 35% above |
+| NIS Employee | 5.6% | Monthly ceiling GYD 280,000 |
+| NIS Employer | 8.4% | Monthly ceiling GYD 280,000 |
+| VAT | 14% | Standard rate (registration threshold: GYD 15M/year) |
+| Child Allowance | GYD 120,000/year per child | Max 3 children |
+| Overtime Exemption | First GYD 50,000 tax-free | From overtime/second job |
+
+#### **Build Verification**
+- ✅ TypeScript compilation: 0 errors
+- ✅ All 75 route files working
+- ✅ All 313 API endpoints verified
+
+---
+
 ### 🏗️ **v1.2.1 - Schema Fixes & Production Polish** (2025-12-02)
 
 #### **Database Schema Additions**

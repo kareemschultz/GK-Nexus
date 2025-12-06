@@ -419,8 +419,8 @@ describe("Guyana Tax Calculations", () => {
       );
 
       expect(result.totalSales).toBe(130_000);
-      expect(result.outputVAT).toBe(100_000 * 0.125); // 12.5%
-      expect(result.inputVAT).toBe(60_000 * 0.125);
+      expect(result.outputVAT).toBe(100_000 * 0.14); // 14% per GRA
+      expect(result.inputVAT).toBe(60_000 * 0.14);
       expect(result.netVAT).toBe(result.outputVAT - result.inputVAT);
       expect(result.totalVATDue).toBe(result.netVAT);
     });

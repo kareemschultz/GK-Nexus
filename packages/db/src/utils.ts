@@ -453,11 +453,11 @@ export const taxUtils = {
   },
 
   /**
-   * Calculate VAT for Guyana
+   * Calculate VAT for Guyana (14% per GRA)
    */
   calculateVAT(
     amount: number,
-    rate = 0.125
+    rate = 0.14
   ): {
     netAmount: number;
     vatAmount: number;

@@ -336,7 +336,11 @@ export function SmartTooltip({
                               if (!persistent) handleHide();
                             }}
                             size="sm"
-                            variant={action.variant === "primary" ? "default" : (action.variant || "secondary")}
+                            variant={
+                              action.variant === "primary"
+                                ? "default"
+                                : action.variant || "secondary"
+                            }
                           >
                             {action.label}
                           </Button>
