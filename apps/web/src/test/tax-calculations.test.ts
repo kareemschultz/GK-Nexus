@@ -22,7 +22,8 @@ import {
 
 // Add custom Vitest matchers for Guyana currency validation
 declare module "vitest" {
-  interface Assertion<T = unknown> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface Assertion<T> {
     toBeValidGuyanaAmount(): T;
   }
   interface AsymmetricMatchersContaining {

@@ -195,8 +195,7 @@ function RouteComponent() {
   const immigrationCases: ImmigrationCase[] = useMemo(() => {
     if (!casesQuery.data?.data?.items) return [];
 
-    return casesQuery.data.data.items.map(
-      (apiCase: {
+    return (casesQuery.data.data.items as unknown as Array<{
         id: string;
         caseNumber: string;
         caseType: string;
@@ -209,7 +208,8 @@ function RouteComponent() {
         targetCompletionDate: string | Date | null;
         currentStage: string | null;
         updatedAt: string | Date | null;
-      }) => ({
+      }>).map(
+      (apiCase) => ({
         id: apiCase.id,
         caseNumber: apiCase.caseNumber || "N/A",
         petitionType:

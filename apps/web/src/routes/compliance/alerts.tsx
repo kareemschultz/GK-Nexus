@@ -213,7 +213,7 @@ function ComplianceAlertsPage() {
           {alerts.length === 0 ? (
             <EmptyState
               description="No compliance alerts or deadlines at this time."
-              icon={<CheckCircle2 className="h-12 w-12" />}
+              icon={CheckCircle2}
               title="All caught up!"
             />
           ) : (

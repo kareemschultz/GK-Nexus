@@ -279,9 +279,10 @@ describe("Enterprise RBAC System", () => {
         ];
 
         for (const group of expectedGroups) {
-          expect(PERMISSION_GROUPS[group]).toBeDefined();
-          expect(Array.isArray(PERMISSION_GROUPS[group])).toBe(true);
-          expect(PERMISSION_GROUPS[group].length).toBeGreaterThan(0);
+          const groupKey = group as keyof typeof PERMISSION_GROUPS;
+          expect(PERMISSION_GROUPS[groupKey]).toBeDefined();
+          expect(Array.isArray(PERMISSION_GROUPS[groupKey])).toBe(true);
+          expect(PERMISSION_GROUPS[groupKey].length).toBeGreaterThan(0);
         }
       });
 

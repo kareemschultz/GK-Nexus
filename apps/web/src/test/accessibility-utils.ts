@@ -5,7 +5,8 @@ import { expect } from "vitest";
 
 // Extend Vitest matchers with jest-axe
 declare module "vitest" {
-  interface Assertion {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface Assertion<T> {
     toHaveNoViolations(): void;
   }
   interface AsymmetricMatchersContaining {
@@ -14,7 +15,7 @@ declare module "vitest" {
 }
 
 // Extend Vitest expect with jest-axe matchers
-expect.extend(toHaveNoViolations);
+expect.extend({ toHaveNoViolations });
 
 /**
  * Test a component for accessibility violations using axe-core
@@ -33,6 +34,7 @@ export const testA11yWithConfig = async (
   config?: Record<string, unknown>
 ): Promise<void> => {
   const { container } = render(component);
+  // @ts-expect-error - jest-axe types don't match exactly
   const results = await axe(container, config);
   expect(results).toHaveNoViolations();
 };

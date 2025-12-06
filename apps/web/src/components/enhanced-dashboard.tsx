@@ -222,7 +222,7 @@ export function EnhancedDashboard() {
       safeApiCall(() => client.dashboardOverview({ timeRange: "30d" }), {
         success: true,
         data: mockDashboard,
-      } as Awaited<ReturnType<typeof client.dashboardOverview>>),
+      } as unknown as Awaited<ReturnType<typeof client.dashboardOverview>>),
     refetchInterval: 30_000, // Refresh every 30 seconds
     retry: 1,
     staleTime: 30_000,
@@ -290,7 +290,7 @@ export function EnhancedDashboard() {
             upcomingDeadlines: [],
             clientCompliance: [],
           },
-        } as Awaited<ReturnType<typeof client.dashboardComplianceReport>>
+        } as unknown as Awaited<ReturnType<typeof client.dashboardComplianceReport>>
       ),
     refetchInterval: 60_000,
     retry: 1,

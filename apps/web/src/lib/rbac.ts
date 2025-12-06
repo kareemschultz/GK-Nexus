@@ -369,7 +369,7 @@ export function getPermissionGroup(
   permission: Permission
 ): keyof typeof PERMISSION_GROUPS | null {
   for (const [group, permissions] of Object.entries(PERMISSION_GROUPS)) {
-    if (permissions.includes(permission)) {
+    if ((permissions as readonly string[]).includes(permission)) {
       return group as keyof typeof PERMISSION_GROUPS;
     }
   }

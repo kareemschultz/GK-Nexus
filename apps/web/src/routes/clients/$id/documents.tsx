@@ -174,9 +174,7 @@ function RouteComponent() {
 
   // Map documents API response
   const documents: Document[] = (
-    (documentsResponse?.data?.items || []) as unknown[]
-  ).map(
-    (doc: {
+    (documentsResponse?.data?.items || []) as unknown as Array<{
       id: string;
       clientId: string;
       name: string;
@@ -191,7 +189,9 @@ function RouteComponent() {
       isConfidential: boolean;
       createdAt: string | Date | null;
       updatedAt: string | Date | null;
-    }) => ({
+    }>
+  ).map(
+    (doc) => ({
       id: doc.id,
       clientId: doc.clientId,
       name: doc.name || doc.fileName,

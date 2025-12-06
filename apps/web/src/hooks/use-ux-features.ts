@@ -90,7 +90,7 @@ export function useUserActivity(timeoutMs = 300_000) {
   // 5 minutes default
   const [isIdle, setIsIdle] = useState(false);
   const [lastActivity, setLastActivity] = useState(new Date());
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -515,7 +515,7 @@ export function useAutoSave<T>(
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!enabled) return;

@@ -144,7 +144,7 @@ export async function exportToPDF<T extends Record<string, unknown>>(
     // TODO: Install jspdf packages - currently commented out to avoid build errors
     // Run: bun add jspdf jspdf-autotable
     // Dynamic imports
-    const { jsPDF } = await import("jspdf");
+    const jsPDF = (await import("jspdf")).default;
     const autoTable = (await import("jspdf-autotable")).default;
 
     const doc = new jsPDF({
@@ -207,13 +207,13 @@ export async function exportToPDF<T extends Record<string, unknown>>(
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150);
-      doc.text(
+      (doc as { text: (text: string, x: number, y: number, options?: { align?: string }) => void }).text(
         `Page ${i} of ${pageCount}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: "center" }
       );
-      doc.text(
+      (doc as { text: (text: string, x: number, y: number, options?: { align?: string }) => void }).text(
         "GK-Nexus",
         doc.internal.pageSize.getWidth() - 14,
         doc.internal.pageSize.getHeight() - 10,

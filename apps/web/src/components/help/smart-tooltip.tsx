@@ -96,7 +96,7 @@ export function SmartTooltip({
 
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const IconComponent = tooltipIcons[type];
 
@@ -336,7 +336,7 @@ export function SmartTooltip({
                               if (!persistent) handleHide();
                             }}
                             size="sm"
-                            variant={action.variant || "secondary"}
+                            variant={action.variant === "primary" ? "default" : (action.variant || "secondary")}
                           >
                             {action.label}
                           </Button>
