@@ -35,7 +35,7 @@ import { formatGuyanacurrency } from "@/lib/tax-calculations";
 
 // Enhanced VAT Configuration for Guyana
 const GUYANA_VAT_CONFIG = {
-  STANDARD_RATE: 0.125, // 12.5%
+  STANDARD_RATE: 0.14, // 14%
   REGISTRATION_THRESHOLD: 15_000_000, // GYD 15M annual revenue
   ZERO_RATED_CATEGORIES: [
     "BASIC_FOOD_ITEMS",
@@ -497,7 +497,7 @@ export function EnhancedVatCalculator({
         </div>
         <div className="flex items-center gap-2">
           <Badge className="text-sm" variant="outline">
-            Guyana VAT 12.5%
+            Guyana VAT 14%
           </Badge>
           {enableAdvancedValidation && (
             <Badge className="text-sm" variant="secondary">
@@ -606,7 +606,7 @@ export function EnhancedVatCalculator({
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="standardRatedSales">
-                        Standard Rated Sales (12.5% VAT) - GYD *
+                        Standard Rated Sales (14% VAT) - GYD *
                       </Label>
                       <Input
                         id="standardRatedSales"
@@ -695,7 +695,7 @@ export function EnhancedVatCalculator({
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="standardRatedPurchases">
-                        Standard Rated Purchases (12.5% VAT) - GYD
+                        Standard Rated Purchases (14% VAT) - GYD
                       </Label>
                       <Input
                         id="standardRatedPurchases"
@@ -880,7 +880,7 @@ export function EnhancedVatCalculator({
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm">Standard Rate:</span>
-                      <span className="font-mono text-sm">12.5%</span>
+                      <span className="font-mono text-sm">14%</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Zero-Rated:</span>
@@ -1170,7 +1170,7 @@ export function EnhancedVatCalculator({
                       {...singleVatForm.register("category")}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
-                      <option value="STANDARD">Standard Rated (12.5%)</option>
+                      <option value="STANDARD">Standard Rated (14%)</option>
                       <option value="ZERO_RATED">Zero-Rated (0%)</option>
                       <option value="EXEMPT">Exempt</option>
                       <optgroup label="Zero-Rated Categories">

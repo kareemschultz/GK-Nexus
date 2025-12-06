@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### **Critical Bug Fixes**
 - 🔴 **Fixed VAT Rate** - Corrected VAT rate from 12.5% to 14% (official GRA rate)
   - Updated `apps/web/src/lib/tax-calculations.ts`
+  - Updated `apps/web/src/components/tax/enhanced-vat-calculator.tsx`
+  - Updated `apps/web/src/components/vat-calculator.tsx`
+  - Updated `apps/web/src/components/wizards/invoice-wizard.tsx`
+  - Updated `apps/web/src/components/wizards/tax-filing-wizard.tsx`
   - Updated `packages/db/src/schema/tax-calculations.ts`
   - Updated `packages/db/src/utils.ts`
   - Updated all test files with correct VAT calculations
@@ -224,7 +228,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📋 Analyzed GK-Enterprise-Suite business logic for feature implementation
 - 🗄️ Enhanced database schema with Guyana-specific requirements (TIN, NIS, Local Content)
 - 📅 Created comprehensive appointments and services booking system schema
-- 💰 Updated tax calculations schema for Guyana 2025 rates (PAYE, NIS, VAT 12.5%)
+- 💰 Updated tax calculations schema for Guyana 2025 rates (PAYE, NIS, VAT 14%)
 - 🔗 Integrated all enhanced schemas into unified database structure
 - 🧙‍♂️ Created comprehensive 5-step client onboarding wizard with Guyana-specific fields
 - 💰 Built fully functional PAYE calculator with 2025 Guyana tax bands (25%/35%)

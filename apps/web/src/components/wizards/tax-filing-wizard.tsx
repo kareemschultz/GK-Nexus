@@ -536,7 +536,7 @@ function DataEntryStep({
             placeholder="0.00"
           />
           <p className="mt-1 text-muted-foreground text-xs">
-            12.5% VAT applies
+            14% VAT applies
           </p>
         </div>
         <div>
@@ -687,7 +687,7 @@ function CalculationStep({
 
     breakdown = [
       { label: "Total Sales", amount: vatCalc.totalSales },
-      { label: "Output VAT (12.5%)", amount: vatCalc.outputVAT },
+      { label: "Output VAT (14%)", amount: vatCalc.outputVAT },
       { label: "Total Purchases", amount: vatCalc.totalPurchases },
       { label: "Input VAT (Claimable)", amount: vatCalc.inputVAT },
       { label: "Net VAT Due", amount: vatCalc.netVAT },

@@ -479,7 +479,7 @@ grep -n "DISABLED\|disabled" packages/api/src/routers/index.ts
 | PAYE Exempt | - | First GYD 85,000/month |
 | NIS Employee | 5.6% | Cap: GYD 294,840/year |
 | NIS Employer | 8.4% | Cap: GYD 442,260/year |
-| NIS Self-Employed | 12.5% | Combined rate |
+| NIS Self-Employed | 14% | Combined rate |
 | VAT | 14% | Standard rate |
 | Corporate Tax | 25% | Commercial companies |
 | Corporate Tax | 40% | Non-commercial companies |

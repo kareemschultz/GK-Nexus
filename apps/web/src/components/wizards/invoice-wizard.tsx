@@ -148,7 +148,7 @@ const step2Schema = z.object({
 
 const step3Schema = z.object({
   applyVAT: z.boolean().default(true),
-  vatRate: z.number().default(0.125),
+  vatRate: z.number().default(0.14),
   discountType: z.enum(["none", "percentage", "fixed"]).default("none"),
   discountValue: z.number().min(0).default(0),
 });
@@ -513,12 +513,12 @@ function TaxDiscountStep({
                 {...form.register("applyVAT")}
                 className="h-4 w-4"
               />
-              <Label htmlFor="applyVAT">Apply VAT (12.5%)</Label>
+              <Label htmlFor="applyVAT">Apply VAT (14%)</Label>
             </div>
             {applyVAT && (
               <Alert>
                 <AlertDescription>
-                  VAT will be calculated at the standard Guyana rate of 12.5%
+                  VAT will be calculated at the standard Guyana rate of 14%
                 </AlertDescription>
               </Alert>
             )}
@@ -591,7 +591,7 @@ function TaxDiscountStep({
               )}
               {applyVAT && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">VAT (12.5%)</span>
+                  <span className="text-muted-foreground">VAT (14%)</span>
                   <span className="font-mono">
                     {formatGuyanacurrency(vatAmount)}
                   </span>
@@ -876,7 +876,7 @@ function ReviewGenerateStep({
               )}
               {formData.applyVAT && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">VAT (12.5%)</span>
+                  <span className="text-muted-foreground">VAT (14%)</span>
                   <span className="font-mono">
                     {formatGuyanacurrency(vatAmount)}
                   </span>
