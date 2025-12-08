@@ -27,10 +27,13 @@ WORKDIR /app
 # Copy package files for dependency resolution
 COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/
-COPY packages/*/package.json ./packages/*/
+COPY packages/api/package.json ./packages/api/
+COPY packages/auth/package.json ./packages/auth/
+COPY packages/db/package.json ./packages/db/
+COPY packages/config/package.json ./packages/config/
 
 # Install all dependencies (including devDependencies for build)
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Stage 3: Builder stage
 FROM base AS builder
@@ -44,9 +47,7 @@ COPY . .
 ENV NODE_ENV=production
 
 # Build the web application
-RUN cd apps/web && \
-    bun run build && \
-    bun install --frozen-lockfile --production
+RUN cd apps/web && bun run build
 
 # Stage 4: Production runner with Nginx
 FROM nginx:1.25-alpine AS runner

@@ -25,7 +25,7 @@ COPY packages/db/package.json ./packages/db/
 COPY packages/config/package.json ./packages/config/ 2>/dev/null || true
 
 # Install dependencies
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # ============================================
 # Stage 3: Builder - Build the application

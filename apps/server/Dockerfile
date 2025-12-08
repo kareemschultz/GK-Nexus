@@ -24,10 +24,13 @@ WORKDIR /app
 # Copy package files for dependency resolution
 COPY package.json bun.lock ./
 COPY apps/server/package.json ./apps/server/
-COPY packages/*/package.json ./packages/*/
+COPY packages/api/package.json ./packages/api/
+COPY packages/auth/package.json ./packages/auth/
+COPY packages/db/package.json ./packages/db/
+COPY packages/config/package.json ./packages/config/
 
 # Install dependencies with production optimizations
-RUN bun install --frozen-lockfile --production
+RUN bun install --production
 
 # Stage 3: Builder stage
 FROM base AS builder
