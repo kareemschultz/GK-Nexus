@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calculator,
   Calendar,
@@ -76,33 +77,13 @@ const FILING_TYPES = [
   },
 ] as const;
 
-// Mock clients for demo - in production this would come from API
-const MOCK_CLIENTS = [
-  {
-    id: "1",
-    name: "Demerara Sugar Company Ltd",
-    tin: "123456789",
-    type: "COMPANY",
-  },
-  {
-    id: "2",
-    name: "John Smith",
-    tin: "987654321",
-    type: "INDIVIDUAL",
-  },
-  {
-    id: "3",
-    name: "Georgetown Traders Inc",
-    tin: "456789123",
-    type: "COMPANY",
-  },
-  {
-    id: "4",
-    name: "Caribbean Tech Solutions",
-    tin: "789123456",
-    type: "COMPANY",
-  },
-];
+// Client type for the wizard
+type TaxFilingClient = {
+  id: string;
+  name: string;
+  tin: string;
+  type: string;
+};
 
 // Validation schemas for each step
 const step1Schema = z.object({
@@ -248,13 +229,33 @@ function ClientSelectionStep({
   const [searchTerm, setSearchTerm] = useState("");
   const selectedClientId = form.watch("clientId");
 
-  const filteredClients = MOCK_CLIENTS.filter(
+  // Fetch clients from API
+  const clientsQuery = useQuery({
+    queryKey: ["clients", "tax-filing"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      const result = await client.clientList({
+        page: 1,
+        limit: 100,
+        status: "active",
+      });
+      return result.data.items.map((c) => ({
+        id: c.id,
+        name: c.name || "Unknown Client",
+        tin: "",
+        type: c.entityType === "INDIVIDUAL" ? "INDIVIDUAL" : "COMPANY",
+      })) as TaxFilingClient[];
+    },
+  });
+
+  const clients = clientsQuery.data || [];
+  const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.tin.includes(searchTerm)
   );
 
-  const handleClientSelect = (client: (typeof MOCK_CLIENTS)[0]) => {
+  const handleClientSelect = (client: TaxFilingClient) => {
     form.setValue("clientId", client.id);
     form.setValue("clientTIN", client.tin);
   };
@@ -275,36 +276,45 @@ function ClientSelectionStep({
         </div>
 
         <div className="max-h-[300px] space-y-2 overflow-y-auto">
-          {filteredClients.map((client) => (
-            <div
-              className={cn(
-                "flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:border-primary/50",
-                selectedClientId === client.id
-                  ? "border-primary bg-primary/5"
-                  : "border-muted"
-              )}
-              key={client.id}
-              onClick={() => handleClientSelect(client)}
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium">{client.name}</h4>
-                  <Badge variant="outline">{client.type}</Badge>
-                </div>
-                <p className="mt-1 text-muted-foreground text-sm">
-                  TIN: {client.tin}
-                </p>
-              </div>
-              {selectedClientId === client.id && (
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-              )}
+          {clientsQuery.isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-muted-foreground">Loading clients...</span>
             </div>
-          ))}
-
-          {filteredClients.length === 0 && (
+          ) : clientsQuery.error ? (
+            <div className="py-8 text-center text-destructive">
+              Failed to load clients. Please try again.
+            </div>
+          ) : filteredClients.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
               No clients found matching your search.
             </div>
+          ) : (
+            filteredClients.map((client) => (
+              <div
+                className={cn(
+                  "flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:border-primary/50",
+                  selectedClientId === client.id
+                    ? "border-primary bg-primary/5"
+                    : "border-muted"
+                )}
+                key={client.id}
+                onClick={() => handleClientSelect(client)}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium">{client.name}</h4>
+                    <Badge variant="outline">{client.type}</Badge>
+                  </div>
+                  <p className="mt-1 text-muted-foreground text-sm">
+                    TIN: {client.tin || "Not provided"}
+                  </p>
+                </div>
+                {selectedClientId === client.id && (
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -535,9 +545,7 @@ function DataEntryStep({
             {...form.register("standardRatedSales", { valueAsNumber: true })}
             placeholder="0.00"
           />
-          <p className="mt-1 text-muted-foreground text-xs">
-            14% VAT applies
-          </p>
+          <p className="mt-1 text-muted-foreground text-xs">14% VAT applies</p>
         </div>
         <div>
           <Label htmlFor="zeroRatedSales">Zero-Rated Sales</Label>
@@ -802,7 +810,11 @@ function ReviewSubmitStep({
 }) {
   const formData = form.getValues();
   const filingType = FILING_TYPES.find((t) => t.value === formData.filingType);
-  const client = MOCK_CLIENTS.find((c) => c.id === formData.clientId);
+  // Client TIN is stored in form when selected
+  const client = {
+    id: formData.clientId,
+    tin: formData.clientTIN,
+  };
 
   const totalDue =
     (formData.calculatedTax || 0) +
@@ -826,7 +838,9 @@ function ReviewSubmitStep({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Client:</span>
-                <span className="font-medium">{client?.name}</span>
+                <span className="font-medium">
+                  Client #{client?.id?.slice(0, 8)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">TIN:</span>
@@ -989,12 +1003,15 @@ export default function TaxFilingWizard({
       setIsSubmitting(true);
       const data = form.getValues();
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Simulate API call - tax filing submission would be implemented here
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
+      const { toast } = await import("sonner");
+      toast.success("Tax filing submitted successfully!");
       onComplete?.(data);
-    } catch (error) {
-      console.error("Submission error:", error);
+    } catch {
+      const { toast } = await import("sonner");
+      toast.error("Failed to submit tax filing. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -1235,6 +1235,86 @@ export const SERVICE_DOCUMENTS: Record<string, ServiceDocumentCategory> = {
   },
 
   // ---------------------------------------------------------------------------
+  // TENDER COMPLIANCE CERTIFICATE
+  // ---------------------------------------------------------------------------
+  "tender-compliance": {
+    serviceId: "tender-compliance",
+    serviceName: "Tender Compliance Certificate",
+    description:
+      "Compliance certificate for government and private tender submissions",
+    icon: "Award",
+    documents: [
+      {
+        id: "tin-certificate",
+        name: "TIN Certificate",
+        description: "Current Tax Identification Number certificate from GRA",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Guyana Revenue Authority (GRA)",
+      },
+      {
+        id: "tax-clearance-cert",
+        name: "Tax Clearance Certificate",
+        description: "Current tax clearance from GRA (valid and unexpired)",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Guyana Revenue Authority (GRA)",
+        validityPeriod: "Valid for specific period",
+      },
+      {
+        id: "nis-clearance-cert",
+        name: "NIS Clearance Certificate",
+        description:
+          "Current NIS clearance showing contributions are up to date",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "National Insurance Scheme (NIS)",
+      },
+      {
+        id: "vat-registration-cert",
+        name: "VAT Registration Certificate",
+        description: "VAT registration (if registered for VAT)",
+        required: false,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Guyana Revenue Authority (GRA)",
+        notes: "Required only if business is VAT registered",
+      },
+      {
+        id: "business-registration-cert",
+        name: "Business Registration Certificate",
+        description:
+          "Certificate of Incorporation or Business Name Registration",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 10,
+        source: "Deeds Registry, Georgetown",
+      },
+      {
+        id: "audited-financial-statements",
+        name: "Audited Financial Statements",
+        description: "Most recent audited financials (if required by tender)",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 50,
+        source: "Licensed Auditor",
+      },
+      {
+        id: "company-profile",
+        name: "Company Profile",
+        description: "Company profile with capabilities and experience",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 20,
+        source: "Company",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
   // EXPEDITING SERVICES
   // ---------------------------------------------------------------------------
   expediting: {
@@ -1272,6 +1352,280 @@ export const SERVICE_DOCUMENTS: Record<string, ServiceDocumentCategory> = {
       },
     ],
   },
+
+  // ---------------------------------------------------------------------------
+  // TRAINING SERVICES
+  // ---------------------------------------------------------------------------
+  trainings: {
+    serviceId: "trainings",
+    serviceName: "Training Programs",
+    description: "Professional development and skills training",
+    icon: "GraduationCap",
+    documents: [
+      {
+        id: "participant-id",
+        name: "Participant Valid ID",
+        description: "National ID or Passport for each participant",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 10,
+        source: "Participant",
+      },
+      {
+        id: "participant-details",
+        name: "Participant Details Form",
+        description: "Contact information and background for each participant",
+        required: true,
+        acceptedFormats: [".pdf", ".xlsx"],
+        maxSizeMB: 5,
+        source: "Participant/HR Department",
+      },
+      {
+        id: "company-authorization",
+        name: "Company Authorization Letter",
+        description:
+          "Letter authorizing employee participation (if company-sponsored)",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 5,
+        source: "Employer",
+      },
+      {
+        id: "payment-confirmation",
+        name: "Payment Confirmation",
+        description: "Proof of training fee payment",
+        required: false,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Bank/Payment Provider",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // PARALEGAL SERVICES
+  // ---------------------------------------------------------------------------
+  paralegal: {
+    serviceId: "paralegal",
+    serviceName: "Paralegal Services",
+    description: "Legal document preparation and notarization",
+    icon: "Scale",
+    documents: [
+      {
+        id: "client-valid-id",
+        name: "Client Valid ID",
+        description: "Passport or National ID of the client",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Client",
+      },
+      {
+        id: "relevant-supporting-docs",
+        name: "Relevant Supporting Documents",
+        description:
+          "Any documents related to the legal matter (contracts, titles, etc.)",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 50,
+        source: "Client",
+        notes:
+          "Varies by service - wills need asset lists, sales need property docs, etc.",
+      },
+      {
+        id: "authorization-affidavit",
+        name: "Authorization/Consent",
+        description: "Written authorization for document preparation",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 5,
+        source: "Client",
+      },
+      {
+        id: "witness-ids",
+        name: "Witness Identification",
+        description: "ID copies for witnesses (if required for notarization)",
+        required: false,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 10,
+        source: "Witnesses",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // BUSINESS PROPOSALS
+  // ---------------------------------------------------------------------------
+  "business-proposals": {
+    serviceId: "business-proposals",
+    serviceName: "Business Proposals",
+    description: "Investment proposals and startup planning",
+    icon: "FileSpreadsheet",
+    documents: [
+      {
+        id: "business-concept",
+        name: "Business Concept Description",
+        description: "Written description of the business idea and objectives",
+        required: true,
+        acceptedFormats: [".pdf", ".docx"],
+        maxSizeMB: 10,
+        source: "Client",
+      },
+      {
+        id: "financial-projections",
+        name: "Financial Projections",
+        description: "Estimated income, expenses, and cash flow (if available)",
+        required: false,
+        acceptedFormats: [".pdf", ".xlsx"],
+        maxSizeMB: 10,
+        source: "Client/Accountant",
+      },
+      {
+        id: "market-research",
+        name: "Market Research Data",
+        description: "Any market analysis or competitor research",
+        required: false,
+        acceptedFormats: [".pdf", ".xlsx"],
+        maxSizeMB: 20,
+        source: "Client",
+      },
+      {
+        id: "land-documents",
+        name: "Land/Property Documents",
+        description:
+          "Title, lease, or land ownership documents (for land proposals)",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 20,
+        source: "Client/Deeds Registry",
+        notes: "Required for land occupation proposals",
+      },
+      {
+        id: "owner-credentials",
+        name: "Owner Credentials",
+        description: "CV/resume and qualifications of business owner(s)",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 10,
+        source: "Client",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // PARTNER NETWORK / REFERRAL SERVICES
+  // ---------------------------------------------------------------------------
+  "partner-network": {
+    serviceId: "partner-network",
+    serviceName: "Partner Network Referrals",
+    description: "Professional referral network services",
+    icon: "Network",
+    documents: [
+      {
+        id: "referral-request",
+        name: "Referral Request Form",
+        description: "Description of services needed and preferences",
+        required: true,
+        acceptedFormats: [".pdf", ".docx"],
+        maxSizeMB: 5,
+        source: "Client",
+      },
+      {
+        id: "client-id-referral",
+        name: "Client Valid ID",
+        description: "Passport or National ID for verification",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Client",
+      },
+      {
+        id: "authorization-referral",
+        name: "Authorization for Referral",
+        description: "Consent to share information with partner firms",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 5,
+        source: "Client",
+      },
+      {
+        id: "supporting-docs-referral",
+        name: "Supporting Documentation",
+        description: "Any relevant documents for the referral service",
+        required: false,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 30,
+        source: "Client",
+        notes: "Property docs for real estate, financials for accounting, etc.",
+      },
+    ],
+  },
+
+  // ---------------------------------------------------------------------------
+  // PROPERTY MANAGEMENT
+  // ---------------------------------------------------------------------------
+  "property-management": {
+    serviceId: "property-management",
+    serviceName: "Property Management",
+    description: "Full property management services",
+    icon: "Home",
+    documents: [
+      {
+        id: "property-title",
+        name: "Property Title/Transport",
+        description: "Proof of property ownership or lease agreement",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 20,
+        source: "Deeds Registry/Client",
+      },
+      {
+        id: "owner-id-property",
+        name: "Owner Valid ID",
+        description: "Passport or National ID of property owner",
+        required: true,
+        acceptedFormats: [".pdf", ".jpg", ".jpeg", ".png"],
+        maxSizeMB: 5,
+        source: "Property Owner",
+      },
+      {
+        id: "property-photos",
+        name: "Property Photos",
+        description: "Recent photos of the property (interior and exterior)",
+        required: true,
+        acceptedFormats: [".jpg", ".jpeg", ".png", ".pdf"],
+        maxSizeMB: 50,
+        source: "Property Owner",
+      },
+      {
+        id: "existing-lease",
+        name: "Existing Lease Agreements",
+        description: "Current tenant lease agreements (if any)",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 30,
+        source: "Property Owner",
+      },
+      {
+        id: "property-valuation",
+        name: "Property Valuation Report",
+        description: "Recent property valuation (if available)",
+        required: false,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 10,
+        source: "Licensed Valuator",
+      },
+      {
+        id: "management-authorization",
+        name: "Property Management Authorization",
+        description: "Written authorization for GK to manage the property",
+        required: true,
+        acceptedFormats: [".pdf"],
+        maxSizeMB: 5,
+        source: "Property Owner",
+      },
+    ],
+  },
 };
 
 // =============================================================================
@@ -1279,96 +1633,462 @@ export const SERVICE_DOCUMENTS: Record<string, ServiceDocumentCategory> = {
 // =============================================================================
 
 const SERVICE_ID_MAP: Record<string, string> = {
-  // PAYE variations
-  paye: "paye",
-  PAYE: "paye",
-  "paye-filing": "paye",
-  "tax-paye": "paye",
-  PAYE_FILING: "paye",
+  // ==========================================================================
+  // KAJ FINANCIAL SERVICES - TAX COMPLIANCE
+  // ==========================================================================
+  // Income Tax Returns
+  income_tax_return: "personal-tax",
+  INCOME_TAX_RETURN: "personal-tax",
+  "income-tax-return": "personal-tax",
+  "income-tax-returns": "personal-tax",
 
-  // VAT variations
-  vat: "vat",
-  VAT: "vat",
-  "vat-filing": "vat",
-  "tax-vat": "vat",
-  VAT_RETURN: "vat",
-
-  // Corporate tax variations
+  // Corporation Tax Returns
+  corporation_tax_return: "corporate-tax",
+  CORPORATION_TAX_RETURN: "corporate-tax",
+  "corporation-tax-return": "corporate-tax",
   "corporate-tax": "corporate-tax",
   corporate_tax: "corporate-tax",
   corporateTax: "corporate-tax",
   "tax-corporate": "corporate-tax",
-  INCOME_TAX_RETURN: "corporate-tax",
-  CORPORATION_TAX_RETURN: "corporate-tax",
 
-  // Personal tax variations
+  // PAYE Filing
+  paye: "paye",
+  PAYE: "paye",
+  paye_filing: "paye",
+  PAYE_FILING: "paye",
+  "paye-filing": "paye",
+  "tax-paye": "paye",
+
+  // VAT Returns
+  vat: "vat",
+  VAT: "vat",
+  vat_return: "vat",
+  VAT_RETURN: "vat",
+  "vat-return": "vat",
+  "vat-returns": "vat",
+  "vat-filing": "vat",
+  "tax-vat": "vat",
+
+  // Property Tax
+  property_tax_return: "personal-tax",
+  PROPERTY_TAX_RETURN: "personal-tax",
+  "property-tax-return": "personal-tax",
+
+  // Capital Gains Tax
+  capital_gains_tax: "personal-tax",
+  CAPITAL_GAINS_TAX: "personal-tax",
+  "capital-gains-tax": "personal-tax",
+
+  // Excise Tax
+  excise_tax_return: "compliance",
+  EXCISE_TAX_RETURN: "compliance",
+  "excise-tax-return": "compliance",
+
+  // Tender Compliance
+  tender_compliance: "tender-compliance",
+  TENDER_COMPLIANCE: "tender-compliance",
+  "tender-compliance": "tender-compliance",
+  "tender-compliance-certificate": "tender-compliance",
+  tenderCompliance: "tender-compliance",
+  TENDER_COMPLIANCE_CERTIFICATE: "tender-compliance",
+  "compliance-certificate": "tender-compliance",
+  complianceCertificate: "tender-compliance",
+  COMPLIANCE_CERTIFICATE: "tender-compliance",
+
+  // Work Permit Compliance
+  work_permit_compliance: "compliance",
+  WORK_PERMIT_COMPLIANCE: "compliance",
+  "work-permit-compliance": "compliance",
+  "work-permit-tax-compliance": "compliance",
+
+  // Land Transfer Compliance
+  land_transfer_compliance: "compliance",
+  LAND_TRANSFER_COMPLIANCE: "compliance",
+  "land-transfer-compliance": "compliance",
+
+  // Liability Compliance
+  liability_compliance: "compliance",
+  LIABILITY_COMPLIANCE: "compliance",
+  "liability-compliance": "compliance",
+
+  // Pension Compliance
+  pension_compliance: "compliance",
+  PENSION_COMPLIANCE: "compliance",
+  "pension-compliance": "compliance",
+
+  // Certificate of Assessment
+  certificate_of_assessment: "compliance",
+  CERTIFICATE_OF_ASSESSMENT: "compliance",
+  "certificate-of-assessment": "compliance",
+
+  // ==========================================================================
+  // KAJ FINANCIAL SERVICES - FINANCIAL SERVICES
+  // ==========================================================================
+  // Bank Account Statement
+  bank_account_statement: "bookkeeping",
+  BANK_ACCOUNT_STATEMENT: "bookkeeping",
+  "bank-account-statement": "bookkeeping",
+
+  // Loan Application Statement
+  loan_application_statement: "bookkeeping",
+  LOAN_APPLICATION_STATEMENT: "bookkeeping",
+  "loan-application-statement": "bookkeeping",
+
+  // Investment Statement
+  investment_statement: "bookkeeping",
+  INVESTMENT_STATEMENT: "bookkeeping",
+  "investment-statement": "bookkeeping",
+
+  // Cash Flow Projection
+  cash_flow_projection: "bookkeeping",
+  CASH_FLOW_PROJECTION: "bookkeeping",
+  "cash-flow-projection": "bookkeeping",
+
+  // Firearm Statement
+  firearm_statement: "bookkeeping",
+  FIREARM_STATEMENT: "bookkeeping",
+  "firearm-statement": "bookkeeping",
+  "commissioner-of-police-statement": "bookkeeping",
+
+  // Bookkeeping
+  bookkeeping: "bookkeeping",
+  BOOKKEEPING: "bookkeeping",
+  "book-keeping": "bookkeeping",
+  "monthly-bookkeeping": "bookkeeping",
+  accounting: "bookkeeping",
+
+  // Annual Financial Statements
+  annual_financial_statements: "bookkeeping",
+  ANNUAL_FINANCIAL_STATEMENTS: "bookkeeping",
+  "annual-financial-statements": "bookkeeping",
+
+  // ==========================================================================
+  // KAJ FINANCIAL SERVICES - AUDIT SERVICES
+  // ==========================================================================
+  // NGO Audit
+  ngo_audit: "audit",
+  NGO_AUDIT: "audit",
+  "ngo-audit": "audit",
+
+  // Cooperative Audit
+  cooperative_audit: "audit",
+  COOPERATIVE_AUDIT: "audit",
+  "cooperative-audit": "audit",
+  "cooperative-society-audit": "audit",
+
+  // General audit
+  audit: "audit",
+  "audit-preparation": "audit",
+  "audit-prep": "audit",
+
+  // ==========================================================================
+  // KAJ FINANCIAL SERVICES - NIS SERVICES
+  // ==========================================================================
+  nis: "nis",
+  NIS: "nis",
+  "nis-submission": "nis",
+
+  // NIS Registration
+  nis_registration: "nis",
+  NIS_REGISTRATION: "nis",
+  "nis-registration": "nis",
+
+  // NIS Contributions
+  nis_contributions: "nis",
+  NIS_CONTRIBUTIONS: "nis",
+  "nis-contributions": "nis",
+  "nis-contribution-schedules": "nis",
+
+  // NIS Compliance
+  nis_compliance: "nis",
+  NIS_COMPLIANCE: "nis",
+  "nis-compliance": "nis",
+  "nis-compliance-certificate": "nis",
+
+  // NIS Pension Query
+  nis_pension_query: "nis",
+  NIS_PENSION_QUERY: "nis",
+  "nis-pension-query": "nis",
+  "nis-pension-queries": "nis",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - IMMIGRATION
+  // ==========================================================================
+  immigration: "immigration",
+  IMMIGRATION: "immigration",
+  "work-permit": "immigration",
+  "work-permits": "immigration",
+  workPermit: "immigration",
+
+  // Work Permit
+  work_permit: "immigration",
+  WORK_PERMIT: "immigration",
+  "work-permit-application": "immigration",
+
+  // Work Permit Renewal
+  work_permit_renewal: "immigration",
+  WORK_PERMIT_RENEWAL: "immigration",
+  "work-permit-renewal": "immigration",
+
+  // Citizenship Application
+  citizenship_application: "immigration",
+  CITIZENSHIP_APPLICATION: "immigration",
+  "citizenship-application": "immigration",
+
+  // Business Visa
+  business_visa: "immigration",
+  BUSINESS_VISA: "immigration",
+  "business-visa": "immigration",
+
+  // Residence Permit
+  residence_permit: "immigration",
+  RESIDENCE_PERMIT: "immigration",
+  "residence-permit": "immigration",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - BUSINESS DEVELOPMENT
+  // ==========================================================================
+  // Company Incorporation
+  company_incorporation: "business-registration",
+  COMPANY_INCORPORATION: "business-registration",
+  "company-incorporation": "business-registration",
+
+  // Business Name Registration
+  business_name_registration: "business-registration",
+  BUSINESS_NAME_REGISTRATION: "business-registration",
+  "business-name-registration": "business-registration",
+
+  // General
+  "business-registration": "business-registration",
+  "company-registration": "business-registration",
+  registration: "business-registration",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - LOCAL CONTENT
+  // ==========================================================================
+  "local-content": "local-content",
+  localContent: "local-content",
+  LOCAL_CONTENT: "local-content",
+
+  // Local Content Registration
+  local_content_registration: "local-content",
+  LOCAL_CONTENT_REGISTRATION: "local-content",
+  "local-content-registration": "local-content",
+
+  // Local Content Certification
+  local_content_certification: "local-content",
+  LOCAL_CONTENT_CERTIFICATION: "local-content",
+  "local-content-certification": "local-content",
+
+  // Local Content Compliance
+  local_content_compliance: "local-content",
+  LOCAL_CONTENT_COMPLIANCE: "local-content",
+  "local-content-compliance": "local-content",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - EXPEDITING
+  // ==========================================================================
+  expediting: "expediting",
+  EXPEDITING: "expediting",
+
+  // GRA Expediting
+  gra_expediting: "expediting",
+  GRA_EXPEDITING: "expediting",
+  "gra-expediting": "expediting",
+
+  // Deeds Expediting
+  deeds_expediting: "expediting",
+  DEEDS_EXPEDITING: "expediting",
+  "deeds-expediting": "expediting",
+
+  // Immigration Expediting
+  immigration_expediting: "expediting",
+  IMMIGRATION_EXPEDITING: "expediting",
+  "immigration-expediting": "expediting",
+
+  // General Expediting
+  general_expediting: "expediting",
+  GENERAL_EXPEDITING: "expediting",
+  "general-expediting": "expediting",
+
+  // ==========================================================================
+  // PAYROLL SERVICES
+  // ==========================================================================
+  payroll: "payroll",
+  PAYROLL: "payroll",
+  "payroll-management": "payroll",
+  "payroll-processing": "payroll",
+
+  // ==========================================================================
+  // COMPLIANCE (General)
+  // ==========================================================================
+  compliance: "compliance",
+  COMPLIANCE: "compliance",
+  "tax-compliance": "compliance",
+
+  // ==========================================================================
+  // PERSONAL TAX
+  // ==========================================================================
   "personal-tax": "personal-tax",
   personal_tax: "personal-tax",
   personalTax: "personal-tax",
   "tax-personal": "personal-tax",
 
-  // Payroll variations
-  payroll: "payroll",
-  "payroll-management": "payroll",
-  "payroll-processing": "payroll",
+  // ==========================================================================
+  // GCMC CONSULTANCY - TRAININGS
+  // ==========================================================================
+  trainings: "trainings",
+  TRAININGS: "trainings",
+  training: "trainings",
+  TRAINING: "trainings",
 
-  // Immigration variations
-  immigration: "immigration",
-  "work-permit": "immigration",
-  "work-permits": "immigration",
-  workPermit: "immigration",
-  WORK_PERMIT: "immigration",
-  WORK_PERMIT_RENEWAL: "immigration",
-  IMMIGRATION: "immigration",
-  CITIZENSHIP_APPLICATION: "immigration",
-  BUSINESS_VISA: "immigration",
-  RESIDENCE_PERMIT: "immigration",
+  // HR Management Training
+  hr_management_training: "trainings",
+  HR_MANAGEMENT_TRAINING: "trainings",
+  "hr-management-training": "trainings",
+  "human-resource-management": "trainings",
 
-  // Compliance variations
-  compliance: "compliance",
-  "tax-compliance": "compliance",
+  // Customer Relations Training
+  customer_relations_training: "trainings",
+  CUSTOMER_RELATIONS_TRAINING: "trainings",
+  "customer-relations-training": "trainings",
+  "customer-relations": "trainings",
 
-  // Audit variations
-  audit: "audit",
-  "audit-preparation": "audit",
-  "audit-prep": "audit",
+  // Cooperatives Training
+  cooperatives_training: "trainings",
+  COOPERATIVES_TRAINING: "trainings",
+  "cooperatives-training": "trainings",
+  "co-operatives-and-credit-unions": "trainings",
 
-  // Bookkeeping variations
-  bookkeeping: "bookkeeping",
-  "book-keeping": "bookkeeping",
-  accounting: "bookkeeping",
+  // Organisational Management
+  organisational_management: "trainings",
+  ORGANISATIONAL_MANAGEMENT: "trainings",
+  "organisational-management": "trainings",
+  "organizational-management": "trainings",
 
-  // Business registration variations
-  "business-registration": "business-registration",
-  "company-registration": "business-registration",
-  registration: "business-registration",
-  COMPANY_INCORPORATION: "business-registration",
-  BUSINESS_NAME_REGISTRATION: "business-registration",
+  // ==========================================================================
+  // GCMC CONSULTANCY - PARALEGAL
+  // ==========================================================================
+  paralegal: "paralegal",
+  PARALEGAL: "paralegal",
+  "paralegal-services": "paralegal",
 
-  // NIS variations
-  nis: "nis",
-  NIS: "nis",
-  "nis-submission": "nis",
-  NIS_REGISTRATION: "nis",
-  NIS_CONTRIBUTIONS: "nis",
-  NIS_COMPLIANCE: "nis",
-  NIS_SUBMISSION: "nis",
+  // Affidavit Preparation
+  affidavit_preparation: "paralegal",
+  AFFIDAVIT_PREPARATION: "paralegal",
+  "affidavit-preparation": "paralegal",
+  affidavits: "paralegal",
 
-  // Local content variations
-  "local-content": "local-content",
-  localContent: "local-content",
-  LOCAL_CONTENT: "local-content",
-  LOCAL_CONTENT_REGISTRATION: "local-content",
-  LOCAL_CONTENT_CERTIFICATION: "local-content",
-  LOCAL_CONTENT_COMPLIANCE: "local-content",
+  // Agreement of Sale
+  agreement_of_sale: "paralegal",
+  AGREEMENT_OF_SALE: "paralegal",
+  "agreement-of-sale": "paralegal",
+  "agreement-of-sale-purchase": "paralegal",
 
-  // Expediting variations
-  expediting: "expediting",
-  EXPEDITING: "expediting",
-  GRA_EXPEDITING: "expediting",
-  DEEDS_EXPEDITING: "expediting",
-  IMMIGRATION_EXPEDITING: "expediting",
-  GENERAL_EXPEDITING: "expediting",
+  // Will Preparation
+  will_preparation: "paralegal",
+  WILL_PREPARATION: "paralegal",
+  "will-preparation": "paralegal",
+  wills: "paralegal",
+
+  // Settlement Agreement
+  settlement_agreement: "paralegal",
+  SETTLEMENT_AGREEMENT: "paralegal",
+  "settlement-agreement": "paralegal",
+
+  // Separation Agreement
+  separation_agreement: "paralegal",
+  SEPARATION_AGREEMENT: "paralegal",
+  "separation-agreement": "paralegal",
+
+  // Partnership Agreement
+  partnership_agreement: "paralegal",
+  PARTNERSHIP_AGREEMENT: "paralegal",
+  "partnership-agreement": "paralegal",
+  "investment-partnership-agreement": "paralegal",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - BUSINESS PROPOSALS
+  // ==========================================================================
+  "business-proposals": "business-proposals",
+  business_proposals: "business-proposals",
+  BUSINESS_PROPOSALS: "business-proposals",
+  proposals: "business-proposals",
+
+  // Land Occupation Proposal
+  land_occupation_proposal: "business-proposals",
+  LAND_OCCUPATION_PROPOSAL: "business-proposals",
+  "land-occupation-proposal": "business-proposals",
+
+  // Investment Proposal
+  investment_proposal: "business-proposals",
+  INVESTMENT_PROPOSAL: "business-proposals",
+  "investment-proposal": "business-proposals",
+
+  // Startup Proposal
+  startup_proposal: "business-proposals",
+  STARTUP_PROPOSAL: "business-proposals",
+  "startup-proposal": "business-proposals",
+  "start-up-proposal": "business-proposals",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - PARTNER NETWORK (REFERRALS)
+  // ==========================================================================
+  "partner-network": "partner-network",
+  partner_network: "partner-network",
+  PARTNER_NETWORK: "partner-network",
+  referrals: "partner-network",
+
+  // Real Estate Referral
+  real_estate_referral: "partner-network",
+  REAL_ESTATE_REFERRAL: "partner-network",
+  "real-estate-referral": "partner-network",
+  "real-estate-agency-referral": "partner-network",
+
+  // IT Technician Referral
+  it_technician_referral: "partner-network",
+  IT_TECHNICIAN_REFERRAL: "partner-network",
+  "it-technician-referral": "partner-network",
+
+  // Law Firm Referral
+  law_firm_referral: "partner-network",
+  LAW_FIRM_REFERRAL: "partner-network",
+  "law-firm-referral": "partner-network",
+
+  // Accounting Referral
+  accounting_referral: "partner-network",
+  ACCOUNTING_REFERRAL: "partner-network",
+  "accounting-referral": "partner-network",
+  "accounting-firm-referral": "partner-network",
+
+  // Insurance Referral
+  insurance_referral: "partner-network",
+  INSURANCE_REFERRAL: "partner-network",
+  "insurance-referral": "partner-network",
+  "insurance-provider-referral": "partner-network",
+
+  // Banking Referral
+  banking_referral: "partner-network",
+  BANKING_REFERRAL: "partner-network",
+  "banking-referral": "partner-network",
+  "banking-services-referral": "partner-network",
+
+  // ==========================================================================
+  // GCMC CONSULTANCY - PROPERTY MANAGEMENT
+  // ==========================================================================
+  "property-management": "property-management",
+  property_management: "property-management",
+  PROPERTY_MANAGEMENT: "property-management",
+
+  // Tenant Placement
+  tenant_placement: "property-management",
+  TENANT_PLACEMENT: "property-management",
+  "tenant-placement": "property-management",
+
+  // Rent Collection
+  rent_collection: "property-management",
+  RENT_COLLECTION: "property-management",
+  "rent-collection": "property-management",
 };
 
 // =============================================================================

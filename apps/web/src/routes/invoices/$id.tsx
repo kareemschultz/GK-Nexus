@@ -46,7 +46,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/invoices/id")({
+export const Route = createFileRoute("/invoices/$id")({
   component: RouteComponent,
   beforeLoad: async () => {
     const session = await authClient.getSession();

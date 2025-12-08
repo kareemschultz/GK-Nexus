@@ -1,9 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AutomationDashboard } from "@/components/automation/dashboard";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/automation")({
-  component: RouteComponent,
+  component: AutomationLayout,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -16,6 +15,6 @@ export const Route = createFileRoute("/automation")({
   },
 });
 
-function RouteComponent() {
-  return <AutomationDashboard />;
+function AutomationLayout() {
+  return <Outlet />;
 }

@@ -399,6 +399,12 @@ const sidebarSections: SidebarSection[] = [
             business: "all",
           },
           {
+            title: "Profile",
+            to: "/settings/profile",
+            icon: Users,
+            business: "all",
+          },
+          {
             title: "Security",
             to: "/settings/security",
             icon: Shield,
@@ -408,6 +414,30 @@ const sidebarSections: SidebarSection[] = [
             title: "Notifications",
             to: "/settings/notifications",
             icon: Bell,
+            business: "all",
+          },
+          {
+            title: "Appearance",
+            to: "/settings/appearance",
+            icon: Settings,
+            business: "all",
+          },
+          {
+            title: "Integrations",
+            to: "/settings/integrations",
+            icon: Zap,
+            business: "all",
+          },
+          {
+            title: "Billing",
+            to: "/settings/billing",
+            icon: Receipt,
+            business: "all",
+          },
+          {
+            title: "Backup & Data",
+            to: "/settings/backup",
+            icon: Database,
             business: "all",
           },
         ],

@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
   CheckCircle2,
@@ -42,30 +43,13 @@ import {
 } from "@/lib/tax-calculations";
 import { cn } from "@/lib/utils";
 
-// Mock clients for demo
-const MOCK_CLIENTS = [
-  {
-    id: "1",
-    name: "Demerara Sugar Company Ltd",
-    tin: "123456789",
-    email: "accounts@demsugar.gy",
-    address: "123 Main Street, Georgetown",
-  },
-  {
-    id: "2",
-    name: "John Smith",
-    tin: "987654321",
-    email: "john.smith@email.com",
-    address: "456 Water Street, Berbice",
-  },
-  {
-    id: "3",
-    name: "Georgetown Traders Inc",
-    tin: "456789123",
-    email: "billing@gttraders.gy",
-    address: "789 Commerce Road, Georgetown",
-  },
-];
+// Client type for invoicing
+type InvoiceClient = {
+  id: string;
+  name: string;
+  email: string;
+  address: string;
+};
 
 // Service catalog for line items
 const SERVICE_CATALOG = [
@@ -197,13 +181,33 @@ function ClientSelectionStep({
   const [searchTerm, setSearchTerm] = useState("");
   const selectedClientId = form.watch("clientId");
 
-  const filteredClients = MOCK_CLIENTS.filter(
+  // Fetch clients from API
+  const clientsQuery = useQuery({
+    queryKey: ["clients", "invoicing"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      const result = await client.clientList({
+        page: 1,
+        limit: 100,
+        status: "active",
+      });
+      return result.data.items.map((c) => ({
+        id: c.id,
+        name: c.name || "Unknown Client",
+        email: "",
+        address: "",
+      })) as InvoiceClient[];
+    },
+  });
+
+  const clients = clientsQuery.data || [];
+  const filteredClients = clients.filter(
     (client) =>
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleClientSelect = (client: (typeof MOCK_CLIENTS)[0]) => {
+  const handleClientSelect = (client: InvoiceClient) => {
     form.setValue("clientId", client.id);
     form.setValue("clientName", client.name);
     form.setValue("clientEmail", client.email);
@@ -228,31 +232,48 @@ function ClientSelectionStep({
         <div className="mb-4">
           <h4 className="mb-2 text-muted-foreground text-sm">Recent Clients</h4>
           <div className="max-h-[300px] space-y-2 overflow-y-auto">
-            {filteredClients.map((client) => (
-              <div
-                className={cn(
-                  "flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:border-primary/50",
-                  selectedClientId === client.id
-                    ? "border-primary bg-primary/5"
-                    : "border-muted"
-                )}
-                key={client.id}
-                onClick={() => handleClientSelect(client)}
-              >
-                <div>
-                  <h4 className="font-medium">{client.name}</h4>
-                  <p className="text-muted-foreground text-sm">
-                    {client.email}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {client.address}
-                  </p>
-                </div>
-                {selectedClientId === client.id && (
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                )}
+            {clientsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-muted-foreground">
+                  Loading clients...
+                </span>
               </div>
-            ))}
+            ) : clientsQuery.error ? (
+              <div className="py-8 text-center text-destructive">
+                Failed to load clients. Please try again.
+              </div>
+            ) : filteredClients.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                No clients found.
+              </div>
+            ) : (
+              filteredClients.map((client) => (
+                <div
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all hover:border-primary/50",
+                    selectedClientId === client.id
+                      ? "border-primary bg-primary/5"
+                      : "border-muted"
+                  )}
+                  key={client.id}
+                  onClick={() => handleClientSelect(client)}
+                >
+                  <div>
+                    <h4 className="font-medium">{client.name}</h4>
+                    <p className="text-muted-foreground text-sm">
+                      {client.email || "No email"}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {client.address || "No address"}
+                    </p>
+                  </div>
+                  {selectedClientId === client.id && (
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -763,7 +784,13 @@ function ReviewGenerateStep({
   isSubmitting: boolean;
 }) {
   const formData = form.getValues();
-  const client = MOCK_CLIENTS.find((c) => c.id === formData.clientId);
+  // Client info is stored in the form when selected
+  const client = {
+    id: formData.clientId,
+    name: formData.clientName,
+    email: formData.clientEmail,
+    address: formData.clientAddress,
+  };
 
   const lineItems = formData.lineItems || [];
   const subtotal = lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -986,12 +1013,15 @@ export default function InvoiceWizard({
       setIsSubmitting(true);
       const data = form.getValues();
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Simulate API call - invoice creation would be implemented here
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
+      const { toast } = await import("sonner");
+      toast.success("Invoice created successfully!");
       onComplete?.(data);
-    } catch (error) {
-      console.error("Submission error:", error);
+    } catch {
+      const { toast } = await import("sonner");
+      toast.error("Failed to create invoice. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

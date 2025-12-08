@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 **v1.2.4 - Route Fixes & Wizard API Integration** (2025-12-08)
+
+#### **Critical Bug Fixes**
+- 🔴 **Fixed Invoice Route 404** - Renamed `[id].tsx` to `$id.tsx` and corrected route definition from `/invoices/id` to `/invoices/$id`
+  - This was causing all invoice detail pages to return 404 errors
+  - TanStack Router requires `$` prefix for dynamic route parameters
+
+#### **Code Quality Improvements**
+- 🧹 **Removed debug statements** - Cleaned up production code:
+  - Removed `alert()` calls from `settings/index.tsx`
+  - Removed `console.log()` from `settings/index.tsx`
+  - Removed `alert()` calls from `settings/notifications.tsx`
+  - Replaced all debug statements with proper toast notifications using `sonner`
+
+#### **Wizard API Integration**
+- 🔗 **Tax Filing Wizard** - Connected to real client API:
+  - Removed `MOCK_CLIENTS` hardcoded data
+  - Integrated with `client.clientList()` API endpoint
+  - Fixed property mapping (`entityType` → `type`)
+  - Added proper loading states and error handling
+
+- 🔗 **Invoice Wizard** - Connected to real client API:
+  - Removed `MOCK_CLIENTS` hardcoded data
+  - Integrated with `client.clientList()` API endpoint
+  - Fixed review step to use form data for client display
+
+#### **Verification**
+- ✅ TypeScript compilation: 0 errors
+- ✅ Vite build: Successful (7.09s)
+- ✅ 84 route definitions verified
+- ✅ Unit tests: 111/121 passed (10 pre-existing failures)
+
+#### **Files Changed**
+- `apps/web/src/routes/invoices/$id.tsx` (renamed from `[id].tsx`)
+- `apps/web/src/routes/settings/index.tsx`
+- `apps/web/src/routes/settings/notifications.tsx`
+- `apps/web/src/components/wizards/tax-filing-wizard.tsx`
+- `apps/web/src/components/wizards/invoice-wizard.tsx`
+
+---
+
 ### 🔧 **v1.2.3 - CI/CD Pipeline Fixes** (2025-12-06)
 
 #### **CI/CD Fixes**

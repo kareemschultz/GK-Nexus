@@ -10,7 +10,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { type UseFormReturn, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Textarea } from "@/components/ui/textarea";
@@ -544,30 +544,22 @@ function ContactInformationStep({
   );
 }
 
-// Step 3: Document Upload - Dynamic based on entity type and selected services
+// Step 3: Document Upload - Based on selected services ONLY
 function DocumentUploadStep({ form, onNext, onBack, isSubmitting }: StepProps) {
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File>>({});
   const entityType = form.watch("entityType");
   const selectedServices = form.watch("selectedServices") || [];
 
-  // Get dynamic document requirements GROUPED by entity type and selected services
-  const { entityDocuments, serviceDocuments } = getRequiredDocuments(
+  // Get document requirements - only use service documents, not entity documents
+  const { serviceDocuments } = getRequiredDocuments(
     entityType,
     selectedServices
   );
-  const stats = countRequiredDocuments(entityDocuments, serviceDocuments);
 
-  // Helper: count uploaded required docs for entity
-  const countEntityUploads = () => {
-    if (!entityDocuments) {
-      return 0;
-    }
-    return entityDocuments.documents.filter(
-      (doc) => doc.required && uploadedFiles[doc.id]
-    ).length;
-  };
+  // Calculate stats for service documents only
+  const stats = countRequiredDocuments(null, serviceDocuments);
 
-  // Helper: count uploaded required docs for services
+  // Helper: count uploaded required docs for services only
   const countServiceUploads = () =>
     serviceDocuments.reduce((total, service) => {
       const uploaded = service.documents.filter((doc) => {
@@ -577,7 +569,7 @@ function DocumentUploadStep({ form, onNext, onBack, isSubmitting }: StepProps) {
       return total + uploaded;
     }, 0);
 
-  const uploadedRequiredCount = countEntityUploads() + countServiceUploads();
+  const uploadedRequiredCount = countServiceUploads();
 
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -646,108 +638,6 @@ function DocumentUploadStep({ form, onNext, onBack, isSubmitting }: StepProps) {
           }
         />
       </div>
-
-      {/* Entity Documents Section */}
-      {entityDocuments && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-1 w-4 rounded bg-blue-500" />
-            <h3 className="font-semibold">
-              {entityDocuments.entityName} Documents
-            </h3>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            {entityDocuments.description}
-          </p>
-
-          <div className="grid gap-3">
-            {entityDocuments.documents.map((doc) => (
-              <div
-                className={cn(
-                  "rounded-lg border p-4 transition-all",
-                  getDocumentBorderClass(doc.id, doc.required)
-                )}
-                key={doc.id}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="mb-1 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{doc.name}</span>
-                      {doc.required ? (
-                        <Badge className="text-xs" variant="destructive">
-                          Required
-                        </Badge>
-                      ) : (
-                        <Badge className="text-xs" variant="secondary">
-                          Optional
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mb-2 text-muted-foreground text-sm">
-                      {doc.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
-                      <span>Formats: {doc.acceptedFormats.join(", ")}</span>
-                      <span>Max: {doc.maxSizeMB}MB</span>
-                      {doc.validityPeriod && (
-                        <span>Valid: {doc.validityPeriod}</span>
-                      )}
-                      {doc.source && <span>From: {doc.source}</span>}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {uploadedFiles[doc.id] ? (
-                      <>
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        <Button
-                          onClick={() => removeFile(doc.id)}
-                          size="icon"
-                          type="button"
-                          variant="ghost"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <AlertCircle
-                        className={cn(
-                          "h-5 w-5",
-                          doc.required
-                            ? "text-orange-500"
-                            : "text-muted-foreground"
-                        )}
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {uploadedFiles[doc.id] ? (
-                  <div className="mt-3 flex items-center gap-2 rounded bg-green-100 p-2 text-green-700 text-sm dark:bg-green-900/30 dark:text-green-300">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span className="truncate">
-                      {uploadedFiles[doc.id].name}
-                    </span>
-                    <span className="text-xs">
-                      ({(uploadedFiles[doc.id].size / 1024 / 1024).toFixed(2)}
-                      MB)
-                    </span>
-                  </div>
-                ) : (
-                  <div className="mt-3">
-                    <Input
-                      accept={doc.acceptedFormats.join(",")}
-                      onChange={(e) => handleFileUpload(e, doc.id)}
-                      type="file"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* No services selected message */}
       {serviceDocuments.length === 0 && (
@@ -914,7 +804,19 @@ function ServiceSelectionStep({
   onBack,
   isSubmitting,
 }: StepProps) {
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  // Initialize from form value to support back navigation
+  const formSelectedServices = form.watch("selectedServices") || [];
+  const [selectedServices, setSelectedServices] = useState<string[]>(
+    () => formSelectedServices
+  );
+
+  // Sync local state when form value changes (e.g., from reset)
+  // Using JSON.stringify to avoid infinite loops from array reference changes
+  const formServicesKey = JSON.stringify(formSelectedServices);
+  useEffect(() => {
+    const parsed = JSON.parse(formServicesKey) as string[];
+    setSelectedServices(parsed);
+  }, [formServicesKey]);
 
   const toggleService = (serviceValue: string) => {
     const newSelection = selectedServices.includes(serviceValue)
@@ -922,7 +824,7 @@ function ServiceSelectionStep({
       : [...selectedServices, serviceValue];
 
     setSelectedServices(newSelection);
-    form.setValue("selectedServices", newSelection);
+    form.setValue("selectedServices", newSelection, { shouldDirty: true });
   };
 
   const kajServices = SERVICE_TYPES.filter((s) => s.business === "kaj");
@@ -950,7 +852,8 @@ function ServiceSelectionStep({
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {kajServices.map((service) => (
-              <button
+              // biome-ignore lint/a11y/useSemanticElements: Cannot use button - Checkbox renders as button, causing nested buttons
+              <div
                 className={cn(
                   "cursor-pointer rounded-lg border p-3 text-left transition-all",
                   selectedServices.includes(service.value)
@@ -959,7 +862,14 @@ function ServiceSelectionStep({
                 )}
                 key={service.value}
                 onClick={() => toggleService(service.value)}
-                type="button"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleService(service.value);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -979,10 +889,10 @@ function ServiceSelectionStep({
                   </div>
                   <Checkbox
                     checked={selectedServices.includes(service.value)}
-                    onChange={() => toggleService(service.value)}
+                    onCheckedChange={() => toggleService(service.value)}
                   />
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>
@@ -1000,7 +910,8 @@ function ServiceSelectionStep({
           </p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {gcmcServices.map((service) => (
-              <button
+              // biome-ignore lint/a11y/useSemanticElements: Cannot use button - Checkbox renders as button, causing nested buttons
+              <div
                 className={cn(
                   "cursor-pointer rounded-lg border p-3 text-left transition-all",
                   selectedServices.includes(service.value)
@@ -1009,7 +920,14 @@ function ServiceSelectionStep({
                 )}
                 key={service.value}
                 onClick={() => toggleService(service.value)}
-                type="button"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleService(service.value);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -1029,10 +947,10 @@ function ServiceSelectionStep({
                   </div>
                   <Checkbox
                     checked={selectedServices.includes(service.value)}
-                    onChange={() => toggleService(service.value)}
+                    onCheckedChange={() => toggleService(service.value)}
                   />
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </div>

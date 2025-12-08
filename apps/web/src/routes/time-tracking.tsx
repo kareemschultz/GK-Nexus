@@ -1,9 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { TimeTrackingDashboard } from "@/components/time-tracking/dashboard";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/time-tracking")({
-  component: RouteComponent,
+  component: TimeTrackingLayout,
   beforeLoad: async () => {
     const session = await authClient.getSession();
     if (!session.data) {
@@ -16,6 +15,6 @@ export const Route = createFileRoute("/time-tracking")({
   },
 });
 
-function RouteComponent() {
-  return <TimeTrackingDashboard />;
+function TimeTrackingLayout() {
+  return <Outlet />;
 }

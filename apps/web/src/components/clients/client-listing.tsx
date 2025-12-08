@@ -182,7 +182,9 @@ const getEntityTypeIcon = (type: EntityType) => {
 };
 
 const formatDate = (date: Date | string | null) => {
-  if (!date) return "N/A";
+  if (!date) {
+    return "N/A";
+  }
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
@@ -197,6 +199,32 @@ const formatCurrency = (amount: number) =>
     currency: "GYD",
     minimumFractionDigits: 0,
   }).format(amount);
+
+// Helper function to get compliance score color class
+const getComplianceScoreColorClass = (score: number) => {
+  if (score >= 90) {
+    return "text-green-600";
+  }
+  if (score >= 70) {
+    return "text-yellow-600";
+  }
+  return "text-red-600";
+};
+
+// Helper function to get status background color class
+const getStatusBgClass = (status: ClientStatus) => {
+  switch (status) {
+    case "active":
+      return "bg-green-100 text-green-600";
+    case "onboarding":
+      return "bg-blue-100 text-blue-600";
+    case "suspended":
+      return "bg-red-100 text-red-600";
+    case "inactive":
+    default:
+      return "bg-gray-100 text-gray-600";
+  }
+};
 
 export function ClientListing({
   clients = [],
@@ -247,6 +275,9 @@ export function ClientListing({
         filtered = filtered.filter(
           (c) => c.complianceStatus === "NON_COMPLIANT"
         );
+        break;
+      default:
+        // "all" tab - no additional filtering needed
         break;
     }
 
@@ -488,13 +519,7 @@ export function ClientListing({
                   Avg Compliance
                 </p>
                 <p
-                  className={`font-bold text-2xl ${
-                    clientStats.averageComplianceScore >= 90
-                      ? "text-green-600"
-                      : clientStats.averageComplianceScore >= 70
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                  }`}
+                  className={`font-bold text-2xl ${getComplianceScoreColorClass(clientStats.averageComplianceScore)}`}
                 >
                   {clientStats.averageComplianceScore}%
                 </p>
@@ -1095,13 +1120,7 @@ export function ClientListing({
                               Compliance Score
                             </span>
                             <span
-                              className={`font-medium ${
-                                client.complianceScore >= 90
-                                  ? "text-green-600"
-                                  : client.complianceScore >= 70
-                                    ? "text-yellow-600"
-                                    : "text-red-600"
-                              }`}
+                              className={`font-medium ${getComplianceScoreColorClass(client.complianceScore)}`}
                             >
                               {client.complianceScore}%
                             </span>
@@ -1164,15 +1183,7 @@ export function ClientListing({
                       <div className="flex gap-4" key={client.id}>
                         <div className="flex flex-col items-center">
                           <div
-                            className={`rounded-full p-2 ${
-                              client.status === "active"
-                                ? "bg-green-100 text-green-600"
-                                : client.status === "onboarding"
-                                  ? "bg-blue-100 text-blue-600"
-                                  : client.status === "suspended"
-                                    ? "bg-red-100 text-red-600"
-                                    : "bg-gray-100 text-gray-600"
-                            }`}
+                            className={`rounded-full p-2 ${getStatusBgClass(client.status)}`}
                           >
                             <Activity className="h-4 w-4" />
                           </div>

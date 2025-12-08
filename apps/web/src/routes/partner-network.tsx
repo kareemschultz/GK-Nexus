@@ -164,14 +164,14 @@ function PartnerNetworkPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).partners.list({
+      return (client as any).partnerNetworkPartnersList({
         search: searchTerm || undefined,
         partnerType:
           typeFilter !== "all"
             ? (typeFilter as (typeof partnerTypes)[number])
             : undefined,
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });
@@ -181,9 +181,9 @@ function PartnerNetworkPage() {
     queryKey: ["referrals"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).referrals.list({
+      return (client as any).partnerNetworkReferralsList({
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });
@@ -193,9 +193,9 @@ function PartnerNetworkPage() {
     queryKey: ["agreements"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).agreements.list({
+      return (client as any).partnerNetworkAgreementsList({
         page: 1,
-        limit: 50,
+        pageSize: 50,
       });
     },
   });
@@ -205,7 +205,7 @@ function PartnerNetworkPage() {
     queryKey: ["partnerStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).partners.stats();
+      return (client as any).partnerNetworkPartnersStats();
     },
   });
 
@@ -225,7 +225,19 @@ function PartnerNetworkPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).partners.create(data);
+      return (client as any).partnerNetworkPartnersCreate({
+        companyName: data.companyName,
+        tradingName: data.tradeName,
+        partnerType: data.partnerType,
+        primaryContactName: data.contactPerson || data.companyName,
+        primaryContactEmail: data.contactEmail || "contact@example.com",
+        primaryContactPhone: data.contactPhone,
+        addressLine1: data.address,
+        city: data.city,
+        country: data.country,
+        description: data.notes,
+        servicesOffered: data.specialties,
+      });
     },
     onSuccess: () => {
       toast.success("Partner created successfully");
@@ -245,9 +257,9 @@ function PartnerNetworkPage() {
       status: "PENDING" | "ACTIVE" | "INACTIVE" | "SUSPENDED" | "TERMINATED";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return (client as any).partners.update({
+      return (client as any).partnerNetworkPartnersUpdate({
         id: data.id,
-        data: { status: data.status },
+        status: data.status,
       });
     },
     onSuccess: () => {
