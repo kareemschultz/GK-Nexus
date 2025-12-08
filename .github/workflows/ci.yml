@@ -1,5 +1,6 @@
-# Simple CI workflow that always passes
-# This is the primary CI check for development
+# GK-Nexus CI Pipeline
+# ====================
+# Simple, reliable CI that builds and tests the application
 
 name: CI
 
@@ -9,82 +10,119 @@ on:
   pull_request:
     branches: [main, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUN_VERSION: "1.2.18"
+
 jobs:
   build:
-    name: Build & Verify
+    name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.2.18'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install
 
-      - name: Build web app
+      - name: Type check
+        run: bun run check-types
+
+      - name: Build web
         run: bun run build --filter=web
-        continue-on-error: true
 
       - name: Build server
         run: bun run build --filter=server
-        continue-on-error: true
 
-      - name: Verify builds exist
+      - name: Verify builds
         run: |
           echo "Checking build outputs..."
-          ls -la apps/web/dist/ 2>/dev/null || echo "Web build not found (may use different output)"
-          ls -la apps/server/dist/ 2>/dev/null || echo "Server build not found (may use different output)"
-          echo "Build verification complete"
+          if [ -d "apps/web/dist" ]; then
+            echo "✅ Web build successful"
+            ls -la apps/web/dist/ | head -10
+          else
+            echo "❌ Web build failed"
+            exit 1
+          fi
 
   lint:
-    name: Lint (Non-blocking)
+    name: Lint
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.2.18'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: bun install
 
       - name: Run linter
-        run: bunx ultracite check || true
+        run: bunx ultracite check
+        continue-on-error: true
 
-  typecheck:
-    name: Type Check (Non-blocking)
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    continue-on-error: true
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1.2.18'
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: bun install
 
-      - name: Run type check
-        run: bun run check-types || true
+      - name: Run unit tests
+        run: bun run test
+        continue-on-error: true
+
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: gk-nexus:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

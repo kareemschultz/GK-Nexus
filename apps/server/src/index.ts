@@ -25,7 +25,8 @@ app.use(
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-export const apiHandler = new OpenAPIHandler(appRouter, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const apiHandler: any = new OpenAPIHandler(appRouter, {
   plugins: [
     new OpenAPIReferencePlugin({
       // Temporarily disabled due to Zod v4 compatibility issue
@@ -39,7 +40,8 @@ export const apiHandler = new OpenAPIHandler(appRouter, {
   ],
 });
 
-export const rpcHandler = new RPCHandler(appRouter, {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const rpcHandler: any = new RPCHandler(appRouter, {
   interceptors: [
     onError((error) => {
       console.error(error);

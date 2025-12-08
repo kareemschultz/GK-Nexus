@@ -1,5 +1,18 @@
 # GK-Nexus Production Docker Compose
-# Usage: docker compose -f docker-compose.prod.yml up -d
+# ===================================
+# Complete production deployment with all services
+#
+# Quick Start:
+#   1. Copy .env.production.example to .env
+#   2. Edit .env with your production values
+#   3. Run: docker compose -f docker-compose.prod.yml up -d
+#
+# Services:
+#   - postgres: PostgreSQL 16 database
+#   - redis: Redis 7 for caching/sessions
+#   - server: GK-Nexus API server (port 3000)
+#   - web: GK-Nexus frontend (port 3001)
+#   - nginx: Reverse proxy (ports 80/443)
 
 name: gk-nexus-prod
 
@@ -7,35 +20,40 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: gk-nexus-postgres-prod
+    container_name: gk-nexus-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DATABASE_NAME:-gk_nexus}
       POSTGRES_USER: ${DATABASE_USER:-postgres}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Database password required}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?Database password is required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./scripts/db-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-gk_nexus}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: unless-stopped
     networks:
-      - gk-nexus-internal
+      - gk-internal
     deploy:
       resources:
         limits:
           memory: 1G
-        reservations:
-          memory: 256M
 
-  # Redis for caching and sessions
+  # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: gk-nexus-redis-prod
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    container_name: gk-nexus-cache
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - redis_data:/data
     healthcheck:
@@ -43,84 +61,119 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
     networks:
-      - gk-nexus-internal
+      - gk-internal
     deploy:
       resources:
         limits:
           memory: 512M
-        reservations:
-          memory: 128M
 
-  # GK-Nexus Application
-  app:
+  # API Server
+  server:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: gk-nexus-app
+      dockerfile: apps/server/Dockerfile
+      target: runner
+    image: gk-nexus-server:${VERSION:-latest}
+    container_name: gk-nexus-server
+    restart: unless-stopped
     environment:
       NODE_ENV: production
+      PORT: 3000
       DATABASE_URL: postgresql://${DATABASE_USER:-postgres}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME:-gk_nexus}
-      REDIS_URL: redis://redis:6379
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Auth secret required}
+      REDIS_URL: redis://${REDIS_PASSWORD:+:${REDIS_PASSWORD}@}redis:6379
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Auth secret is required}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3001}
-      PORT: 3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/tmp/uploads
     ports:
-      - "${PORT:-3000}:3000"
-      - "${WEB_PORT:-3001}:3001"
+      - "${SERVER_PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    restart: unless-stopped
     networks:
-      - gk-nexus-internal
-      - gk-nexus-external
+      - gk-internal
+      - gk-external
     deploy:
       resources:
         limits:
           memory: 1G
-        reservations:
+
+  # Frontend Web App
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+    image: gk-nexus-web:${VERSION:-latest}
+    container_name: gk-nexus-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    ports:
+      - "${WEB_PORT:-3001}:80"
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - gk-external
+    deploy:
+      resources:
+        limits:
           memory: 256M
 
-  # Nginx Reverse Proxy (optional - for production)
+  # Nginx Reverse Proxy (optional - enable with --profile nginx)
   nginx:
-    image: nginx:alpine
-    container_name: gk-nexus-nginx
-    ports:
-      - "80:80"
-      - "443:443"
+    image: nginx:1.25-alpine
+    container_name: gk-nexus-proxy
+    restart: unless-stopped
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./logs/nginx:/var/log/nginx
+    ports:
+      - "80:80"
+      - "443:443"
     depends_on:
-      - app
-    restart: unless-stopped
+      - web
+      - server
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
-      - gk-nexus-external
+      - gk-external
     profiles:
-      - with-nginx
+      - nginx
 
 volumes:
   postgres_data:
-    name: gk-nexus-postgres-prod-data
+    name: gk-nexus-postgres-data
   redis_data:
-    name: gk-nexus-redis-prod-data
+    name: gk-nexus-redis-data
 
 networks:
-  gk-nexus-internal:
+  gk-internal:
     name: gk-nexus-internal
     driver: bridge
     internal: true
-  gk-nexus-external:
+  gk-external:
     name: gk-nexus-external
     driver: bridge
