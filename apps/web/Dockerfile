@@ -25,7 +25,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files for dependency resolution
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/*/package.json ./packages/*/
 

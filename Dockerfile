@@ -16,7 +16,7 @@ RUN apk add --no-cache libc6-compat
 FROM base AS deps
 
 # Copy package files
-COPY package.json bun.lock* ./
+COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/server/package.json ./apps/server/
 COPY packages/api/package.json ./packages/api/
