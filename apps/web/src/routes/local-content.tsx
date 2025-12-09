@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -69,6 +68,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/local-content")({
   component: LocalContentPage,
@@ -154,141 +154,66 @@ function LocalContentPage() {
   const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [showNewPlanDialog, setShowNewPlanDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
-  const queryClient = useQueryClient();
+  const utils = orpc.useUtils();
 
   // Fetch plans
-  const plansQuery = useQuery({
-    queryKey: [
-      "localContentPlans",
-      {
-        search: searchTerm,
-        sector: sectorFilter !== "all" ? sectorFilter : undefined,
-      },
-    ],
-    queryFn: async () => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentPlansList({
+  const plansQuery = useQuery(
+    orpc.localContent.plans.list.queryOptions({
+      input: {
         page: 1,
         limit: 50,
-      });
-    },
-  });
+      },
+    })
+  );
 
   // Fetch suppliers
-  const suppliersQuery = useQuery({
-    queryKey: ["localContentSuppliers"],
-    queryFn: async () => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentVendorsList({});
-    },
-  });
+  const suppliersQuery = useQuery(
+    orpc.localContent.vendors.list.queryOptions({ input: {} })
+  );
 
   // Fetch reports
-  const reportsQuery = useQuery({
-    queryKey: ["localContentReports"],
-    queryFn: async () => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentReportsList({
+  const reportsQuery = useQuery(
+    orpc.localContent.reports.list.queryOptions({
+      input: {
         page: 1,
         limit: 50,
-      });
-    },
-  });
+      },
+    })
+  );
 
   // Fetch stats
-  const statsQuery = useQuery({
-    queryKey: ["localContentStats"],
-    queryFn: async () => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentRegistrationsStats();
-    },
-  });
+  const statsQuery = useQuery(
+    orpc.localContent.registrations.stats.queryOptions()
+  );
 
   // Create plan mutation
-  const createPlanMutation = useMutation({
-    mutationFn: async (data: {
-      registrationId: string;
-      planYear: number;
-      planTitle: string;
-      planDescription?: string;
-      employmentTargets?: {
-        totalJobs?: number;
-        guyaneseJobs?: number;
-        targetPercent?: string;
-      };
-      procurementTargets?: {
-        totalSpend?: string;
-        localSpend?: string;
-        targetPercent?: string;
-      };
-      trainingTargets?: {
-        totalTrainingHours?: number;
-        guyaneseParticipants?: number;
-        trainingBudget?: string;
-      };
-      notes?: string;
-    }) => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentPlansCreate(data);
-    },
-    onSuccess: () => {
-      toast.success("Local content plan created successfully");
-      setShowNewPlanDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["localContentPlans"] });
-      queryClient.invalidateQueries({ queryKey: ["localContentStats"] });
-    },
-    onError: (error) => {
-      toast.error(`Failed to create plan: ${error.message}`);
-    },
-  });
+  const createPlanMutation = useMutation(
+    orpc.localContent.plans.create.mutationOptions({
+      onSuccess: () => {
+        toast.success("Local content plan created successfully");
+        setShowNewPlanDialog(false);
+        utils.localContent.plans.list.invalidate();
+        utils.localContent.registrations.stats.invalidate();
+      },
+      onError: (error) => {
+        toast.error(`Failed to create plan: ${error.message}`);
+      },
+    })
+  );
 
   // Create supplier mutation
-  const createSupplierMutation = useMutation({
-    mutationFn: async (data: {
-      vendorName: string;
-      tradingName?: string;
-      vendorType: string;
-      guyaneseOwnershipPercent?: string;
-      address?: string;
-      contactName?: string;
-      email?: string;
-      phone?: string;
-      notes?: string;
-    }) => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentVendorsCreate(data);
-    },
-    onSuccess: () => {
-      toast.success("Supplier registered successfully");
-      setShowNewSupplierDialog(false);
-      queryClient.invalidateQueries({ queryKey: ["localContentSuppliers"] });
-    },
-    onError: (error) => {
-      toast.error(`Failed to register supplier: ${error.message}`);
-    },
-  });
-
-  // Update plan status mutation
-  const updatePlanStatusMutation = useMutation({
-    mutationFn: async (data: {
-      id: string;
-      status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "APPROVED" | "REJECTED";
-    }) => {
-      const { client } = await import("@/utils/orpc");
-      return client.localContentPlansUpdate({
-        id: data.id,
-        data: { status: data.status },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Plan status updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["localContentPlans"] });
-      queryClient.invalidateQueries({ queryKey: ["localContentStats"] });
-    },
-    onError: (error) => {
-      toast.error(`Failed to update plan: ${error.message}`);
-    },
-  });
+  const createSupplierMutation = useMutation(
+    orpc.localContent.vendors.create.mutationOptions({
+      onSuccess: () => {
+        toast.success("Supplier registered successfully");
+        setShowNewSupplierDialog(false);
+        utils.localContent.vendors.list.invalidate();
+      },
+      onError: (error) => {
+        toast.error(`Failed to register supplier: ${error.message}`);
+      },
+    })
+  );
 
   const handleCreatePlan = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

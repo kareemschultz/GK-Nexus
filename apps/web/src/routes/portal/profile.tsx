@@ -126,7 +126,7 @@ function ProfilePage() {
     queryKey: ["users", "me"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userMe();
+      return client.users.me();
     },
   });
 

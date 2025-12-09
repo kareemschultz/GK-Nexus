@@ -225,7 +225,7 @@ function FilingsPage() {
     queryKey: ["tax", "filings"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.taxFilingsList({});
+      return client.tax.filings.list({});
     },
   });
 

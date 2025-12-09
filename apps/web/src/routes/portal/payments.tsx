@@ -164,7 +164,7 @@ function PaymentsPage() {
     queryKey: ["invoices"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.invoiceList({ page: 1, limit: 100 });
+      return client.invoices.list({ page: 1, limit: 100 });
     },
   });
 

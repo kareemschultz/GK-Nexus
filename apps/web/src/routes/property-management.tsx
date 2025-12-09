@@ -94,7 +94,7 @@ function PropertyManagementPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagementPropertiesList({
+      return client.properties.list({
         search: searchTerm || undefined,
         status:
           statusFilter !== "all"
@@ -116,7 +116,7 @@ function PropertyManagementPage() {
     queryKey: ["tenants"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagementTenantsList({
+      return client.properties.tenants.list({
         page: 1,
         limit: 50,
       });
@@ -127,7 +127,7 @@ function PropertyManagementPage() {
     queryKey: ["propertyStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagementPropertiesStats({});
+      return client.properties.stats({});
     },
   });
 
@@ -147,7 +147,7 @@ function PropertyManagementPage() {
       monthlyRent?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.propertyManagementPropertiesCreate(data);
+      return client.properties.create(data);
     },
     onSuccess: () => {
       toast.success("Property created successfully");

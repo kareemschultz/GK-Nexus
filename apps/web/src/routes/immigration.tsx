@@ -183,7 +183,7 @@ function RouteComponent() {
     queryKey: ["immigrationCases", filters.searchTerm],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.immigrationListCases({
+      return client.immigration.cases.list({
         page: 1,
         limit: 100,
         search: filters.searchTerm || undefined,

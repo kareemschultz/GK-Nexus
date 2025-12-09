@@ -163,7 +163,7 @@ function TrainingPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingCoursesList({
+      return client.training.courses.list({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -180,7 +180,7 @@ function TrainingPage() {
     queryKey: ["trainingSessions"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingSessionsList({
+      return client.training.sessions.list({
         page: 1,
         limit: 50,
         upcoming: true,
@@ -193,7 +193,7 @@ function TrainingPage() {
     queryKey: ["trainingRegistrations"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingRegistrationsList({
+      return client.training.registrations.list({
         page: 1,
         limit: 50,
       });
@@ -205,7 +205,7 @@ function TrainingPage() {
     queryKey: ["trainingCertificates"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingCertificatesList({
+      return client.training.certificates.list({
         page: 1,
         limit: 50,
       });
@@ -217,7 +217,7 @@ function TrainingPage() {
     queryKey: ["trainingStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingCoursesStats();
+      return client.training.courses.stats({});
     },
   });
 
@@ -235,7 +235,7 @@ function TrainingPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingCoursesCreate(data);
+      return client.training.courses.create(data);
     },
     onSuccess: () => {
       toast.success("Course created successfully");
@@ -252,7 +252,7 @@ function TrainingPage() {
   const publishCourseMutation = useMutation({
     mutationFn: async (id: string) => {
       const { client } = await import("@/utils/orpc");
-      return client.trainingCoursesPublish({ id });
+      return client.training.courses.publish({ id });
     },
     onSuccess: () => {
       toast.success("Course published successfully");

@@ -160,7 +160,7 @@ function DocumentRequirementsPage() {
       queryKey: ["documents", "requirements"],
       queryFn: async () => {
         const { client } = await import("@/utils/orpc");
-        return client.documentRequirementList({});
+        return client.documents.requirements.list({});
       },
     });
 
@@ -170,7 +170,7 @@ function DocumentRequirementsPage() {
       queryKey: ["documents", "checklists"],
       queryFn: async () => {
         const { client } = await import("@/utils/orpc");
-        return client.documentRequirementChecklists({});
+        return client.documents.requirements.checklists({});
       },
     }
   );
