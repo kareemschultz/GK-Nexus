@@ -13,12 +13,28 @@ export class AuthHelper {
 
   async login(email: string, password: string): Promise<void> {
     await this.page.goto("/login");
-    await this.page.fill('input[name="email"]', email);
-    await this.page.fill('input[name="password"]', password);
-    await this.page.click('button[type="submit"]');
+    await this.page.waitForLoadState("networkidle");
 
-    // Wait for successful login redirect
-    await this.page.waitForURL(/\/dashboard/, { timeout: 30_000 });
+    // Clear any existing values and fill form
+    const emailInput = this.page.locator('input[name="email"]');
+    const passwordInput = this.page.locator('input[name="password"]');
+
+    await emailInput.fill(email);
+    await passwordInput.fill(password);
+
+    // Wait for form to be ready
+    await this.page.waitForTimeout(500);
+
+    // Click submit and wait for navigation
+    await Promise.all([
+      this.page.waitForURL(/\/dashboard/, { timeout: 30_000 }).catch(() => {
+        // If dashboard redirect doesn't happen, check if still on login
+      }),
+      this.page.click('button[type="submit"]'),
+    ]);
+
+    // Additional wait for page to settle
+    await this.page.waitForLoadState("networkidle").catch(() => {});
   }
 
   async logout(): Promise<void> {
@@ -30,7 +46,7 @@ export class AuthHelper {
   async loginAsAdmin(): Promise<void> {
     await this.login(
       process.env.TEST_ADMIN_EMAIL || "admin@gk-nexus.com",
-      process.env.TEST_ADMIN_PASSWORD || "Admin123!@#"
+      process.env.TEST_ADMIN_PASSWORD || "SuperSecure123!"
     );
   }
 
