@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, count, desc, eq, gte, ilike, lte, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Partner types
 const partnerTypes = [
@@ -379,7 +379,7 @@ const createCommunicationSchema = z.object({
 // ========================================
 
 export const partnerNetworkPartnersList = protectedProcedure
-  // .use(requirePermission("partners.read"))
+  .use(requirePermission("partners.read"))
   .input(partnerQuerySchema)
   .handler(async ({ input, context }) => {
     const { db, user: _user } = context;
@@ -474,7 +474,7 @@ export const partnerNetworkPartnersList = protectedProcedure
   });
 
 export const partnerNetworkPartnersGetById = protectedProcedure
-  // .use(requirePermission("partners.read"))
+  .use(requirePermission("partners.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -493,7 +493,7 @@ export const partnerNetworkPartnersGetById = protectedProcedure
   });
 
 export const partnerNetworkPartnersCreate = protectedProcedure
-  // .use(requirePermission("partners.create"))
+  .use(requirePermission("partners.create"))
   .input(createPartnerSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -521,7 +521,7 @@ export const partnerNetworkPartnersCreate = protectedProcedure
   });
 
 export const partnerNetworkPartnersUpdate = protectedProcedure
-  // .use(requirePermission("partners.update"))
+  .use(requirePermission("partners.update"))
   .input(updatePartnerSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -568,7 +568,7 @@ export const partnerNetworkPartnersUpdate = protectedProcedure
   });
 
 export const partnerNetworkPartnersDelete = protectedProcedure
-  // .use(requirePermission("partners.delete"))
+  .use(requirePermission("partners.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -594,7 +594,7 @@ export const partnerNetworkPartnersDelete = protectedProcedure
   });
 
 export const partnerNetworkPartnersVerify = protectedProcedure
-  // .use(requirePermission("partners.update"))
+  .use(requirePermission("partners.update"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -622,7 +622,7 @@ export const partnerNetworkPartnersVerify = protectedProcedure
   });
 
 export const partnerNetworkPartnersUpdateTier = protectedProcedure
-  // .use(requirePermission("partners.update"))
+  .use(requirePermission("partners.update"))
   .input(
     z.object({
       id: z.string(),
@@ -650,7 +650,7 @@ export const partnerNetworkPartnersUpdateTier = protectedProcedure
   });
 
 export const partnerNetworkPartnersStats = protectedProcedure
-  // .use(requirePermission("partners.read"))
+  .use(requirePermission("partners.read"))
   .input(z.object({ organizationId: z.string().optional() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -702,7 +702,7 @@ export const partnerNetworkPartnersStats = protectedProcedure
 // ========================================
 
 export const partnerNetworkReferralsList = protectedProcedure
-  // .use(requirePermission("referrals.read"))
+  .use(requirePermission("referrals.read"))
   .input(referralQuerySchema)
   .handler(async ({ input, context }) => {
     const { db, user: _user } = context;
@@ -808,7 +808,7 @@ export const partnerNetworkReferralsList = protectedProcedure
   });
 
 export const partnerNetworkReferralsGetById = protectedProcedure
-  // .use(requirePermission("referrals.read"))
+  .use(requirePermission("referrals.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -827,7 +827,7 @@ export const partnerNetworkReferralsGetById = protectedProcedure
   });
 
 export const partnerNetworkReferralsCreate = protectedProcedure
-  // .use(requirePermission("referrals.create"))
+  .use(requirePermission("referrals.create"))
   .input(createReferralSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -856,7 +856,7 @@ export const partnerNetworkReferralsCreate = protectedProcedure
   });
 
 export const partnerNetworkReferralsUpdate = protectedProcedure
-  // .use(requirePermission("referrals.update"))
+  .use(requirePermission("referrals.update"))
   .input(updateReferralSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -901,7 +901,7 @@ export const partnerNetworkReferralsUpdate = protectedProcedure
   });
 
 export const partnerNetworkReferralsAccept = protectedProcedure
-  // .use(requirePermission("referrals.update"))
+  .use(requirePermission("referrals.update"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -927,7 +927,7 @@ export const partnerNetworkReferralsAccept = protectedProcedure
   });
 
 export const partnerNetworkReferralsComplete = protectedProcedure
-  // .use(requirePermission("referrals.update"))
+  .use(requirePermission("referrals.update"))
   .input(
     z.object({
       id: z.string(),
@@ -962,7 +962,7 @@ export const partnerNetworkReferralsComplete = protectedProcedure
   });
 
 export const partnerNetworkReferralsDelete = protectedProcedure
-  // .use(requirePermission("referrals.delete"))
+  .use(requirePermission("referrals.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -992,7 +992,7 @@ export const partnerNetworkReferralsDelete = protectedProcedure
 // ========================================
 
 export const partnerNetworkAgreementsList = protectedProcedure
-  // .use(requirePermission("agreements.read"))
+  .use(requirePermission("agreements.read"))
   .input(agreementQuerySchema)
   .handler(async ({ input, context }) => {
     const { db, user: _user } = context;
@@ -1066,7 +1066,7 @@ export const partnerNetworkAgreementsList = protectedProcedure
   });
 
 export const partnerNetworkAgreementsGetById = protectedProcedure
-  // .use(requirePermission("agreements.read"))
+  .use(requirePermission("agreements.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1085,7 +1085,7 @@ export const partnerNetworkAgreementsGetById = protectedProcedure
   });
 
 export const partnerNetworkAgreementsCreate = protectedProcedure
-  // .use(requirePermission("agreements.create"))
+  .use(requirePermission("agreements.create"))
   .input(createAgreementSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1115,7 +1115,7 @@ export const partnerNetworkAgreementsCreate = protectedProcedure
   });
 
 export const partnerNetworkAgreementsUpdate = protectedProcedure
-  // .use(requirePermission("agreements.update"))
+  .use(requirePermission("agreements.update"))
   .input(updateAgreementSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1170,7 +1170,7 @@ export const partnerNetworkAgreementsUpdate = protectedProcedure
   });
 
 export const partnerNetworkAgreementsDelete = protectedProcedure
-  // .use(requirePermission("agreements.delete"))
+  .use(requirePermission("agreements.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1196,7 +1196,7 @@ export const partnerNetworkAgreementsDelete = protectedProcedure
   });
 
 export const partnerNetworkAgreementsActivate = protectedProcedure
-  // .use(requirePermission("agreements.update"))
+  .use(requirePermission("agreements.update"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1223,7 +1223,7 @@ export const partnerNetworkAgreementsActivate = protectedProcedure
 // ========================================
 
 export const partnerNetworkReviewsList = protectedProcedure
-  // .use(requirePermission("reviews.read"))
+  .use(requirePermission("reviews.read"))
   .input(reviewQuerySchema)
   .handler(async ({ input, context }) => {
     const { db, user: _user } = context;
@@ -1307,7 +1307,7 @@ export const partnerNetworkReviewsList = protectedProcedure
   });
 
 export const partnerNetworkReviewsGetById = protectedProcedure
-  // .use(requirePermission("reviews.read"))
+  .use(requirePermission("reviews.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1326,7 +1326,7 @@ export const partnerNetworkReviewsGetById = protectedProcedure
   });
 
 export const partnerNetworkReviewsCreate = protectedProcedure
-  // .use(requirePermission("reviews.create"))
+  .use(requirePermission("reviews.create"))
   .input(createReviewSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1352,7 +1352,7 @@ export const partnerNetworkReviewsCreate = protectedProcedure
   });
 
 export const partnerNetworkReviewsModerate = protectedProcedure
-  // .use(requirePermission("reviews.update"))
+  .use(requirePermission("reviews.update"))
   .input(
     z.object({
       id: z.string(),
@@ -1384,7 +1384,7 @@ export const partnerNetworkReviewsModerate = protectedProcedure
   });
 
 export const partnerNetworkReviewsAddResponse = protectedProcedure
-  // .use(requirePermission("reviews.update"))
+  .use(requirePermission("reviews.update"))
   .input(z.object({ id: z.string(), response: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1410,7 +1410,7 @@ export const partnerNetworkReviewsAddResponse = protectedProcedure
   });
 
 export const partnerNetworkReviewsDelete = protectedProcedure
-  // .use(requirePermission("reviews.delete"))
+  .use(requirePermission("reviews.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1440,7 +1440,7 @@ export const partnerNetworkReviewsDelete = protectedProcedure
 // ========================================
 
 export const partnerNetworkCommunicationsList = protectedProcedure
-  // .use(requirePermission("communications.read"))
+  .use(requirePermission("communications.read"))
   .input(communicationQuerySchema)
   .handler(async ({ input, context }) => {
     const { db, user: _user } = context;
@@ -1544,7 +1544,7 @@ export const partnerNetworkCommunicationsList = protectedProcedure
   });
 
 export const partnerNetworkCommunicationsGetById = protectedProcedure
-  // .use(requirePermission("communications.read"))
+  .use(requirePermission("communications.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1565,7 +1565,7 @@ export const partnerNetworkCommunicationsGetById = protectedProcedure
   });
 
 export const partnerNetworkCommunicationsCreate = protectedProcedure
-  // .use(requirePermission("communications.create"))
+  .use(requirePermission("communications.create"))
   .input(createCommunicationSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1595,7 +1595,7 @@ export const partnerNetworkCommunicationsCreate = protectedProcedure
 
 export const partnerNetworkCommunicationsMarkFollowUpComplete =
   protectedProcedure
-    // .use(requirePermission("communications.update"))
+    .use(requirePermission("communications.update"))
     .input(z.object({ id: z.string() }))
     .handler(async ({ input, context }) => {
       const { db } = context;
@@ -1621,7 +1621,7 @@ export const partnerNetworkCommunicationsMarkFollowUpComplete =
 
 export const partnerNetworkCommunicationsGetPendingFollowUps =
   protectedProcedure
-    // .use(requirePermission("communications.read"))
+    .use(requirePermission("communications.read"))
     .input(z.object({ organizationId: z.string().optional() }))
     .handler(async ({ input, context }) => {
       const { db } = context;
@@ -1655,7 +1655,7 @@ export const partnerNetworkCommunicationsGetPendingFollowUps =
     });
 
 export const partnerNetworkCommunicationsDelete = protectedProcedure
-  // .use(requirePermission("communications.delete"))
+  .use(requirePermission("communications.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const { db } = context;

@@ -173,7 +173,7 @@ function ServiceCatalogPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.servicesList({
+      return client.serviceCatalog.servicesList({
         search: searchTerm || undefined,
         category:
           categoryFilter !== "all"
@@ -190,7 +190,7 @@ function ServiceCatalogPage() {
     queryKey: ["serviceProjects"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.projectsList({
+      return client.serviceCatalog.projectsList({
         page: 1,
         pageSize: 50,
       });
@@ -202,7 +202,7 @@ function ServiceCatalogPage() {
     queryKey: ["servicePackages"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.packagesList({
+      return client.serviceCatalog.packagesList({
         page: 1,
         pageSize: 50,
       });
@@ -214,7 +214,7 @@ function ServiceCatalogPage() {
     queryKey: ["serviceStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.servicesStats();
+      return client.serviceCatalog.servicesStats();
     },
   });
 
@@ -230,7 +230,7 @@ function ServiceCatalogPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.servicesCreate({
+      return client.serviceCatalog.servicesCreate({
         name: data.name,
         shortDescription: data.description,
         fullDescription: data.notes,
@@ -264,7 +264,7 @@ function ServiceCatalogPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.packagesCreate({
+      return client.serviceCatalog.packagesCreate({
         name: data.name,
         description: data.description,
         businessEntity: "BOTH",
@@ -289,7 +289,7 @@ function ServiceCatalogPage() {
   const publishServiceMutation = useMutation({
     mutationFn: async (id: string) => {
       const { client } = await import("@/utils/orpc");
-      return client.servicesUpdate({ id, status: "ACTIVE" });
+      return client.serviceCatalog.servicesUpdate({ id, status: "ACTIVE" });
     },
     onSuccess: () => {
       toast.success("Service published successfully");

@@ -151,7 +151,7 @@ function RouteComponent() {
     queryKey: ["clients", filters.searchTerm],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientList({
+      return client.clients.list({
         page: 1,
         limit: 100,
         search: filters.searchTerm || undefined,
@@ -164,7 +164,7 @@ function RouteComponent() {
     queryKey: ["clientStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientStats();
+      return client.clients.stats();
     },
   });
 

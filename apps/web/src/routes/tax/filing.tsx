@@ -77,7 +77,7 @@ function TaxFilingPage() {
     queryKey: ["tax-deadlines"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.tax.getDeadlines({ upcomingOnly: false });
+      return client.tax.deadlines({ upcomingOnly: false });
     },
   });
 

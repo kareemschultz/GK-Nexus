@@ -568,10 +568,9 @@ export class OcrProcessingService {
     );
   }
 
-  private async triggerProcessing(processingId: string): Promise<void> {
+  private async triggerProcessing(_processingId: string): Promise<void> {
     // In a real implementation, this would trigger background processing
-    // For now, we'll just log that processing should be triggered
-    console.log(`Triggering OCR processing for ${processingId}`);
+    // Processing will be handled by a background job system
   }
 
   private async performOcrProcessing(

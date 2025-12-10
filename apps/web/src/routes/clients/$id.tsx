@@ -144,7 +144,7 @@ function RouteComponent() {
     queryKey: ["client", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientGetById({ id });
+      return client.clients.getById({ id });
     },
   });
 
@@ -153,7 +153,7 @@ function RouteComponent() {
     queryKey: ["clientImmigration", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientGetImmigrationStatus({ clientId: id });
+      return client.clients.immigration.getStatus({ clientId: id });
     },
     enabled: !!id,
   });
@@ -163,7 +163,7 @@ function RouteComponent() {
     queryKey: ["clientContacts", id],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientContactList({ clientId: id });
+      return client.clients.contacts.list({ clientId: id });
     },
     enabled: !!id,
   });

@@ -94,7 +94,7 @@ function RouteComponent() {
     queryKey: ["users", "list", searchTerm, roleFilter, statusFilter],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userList({
+      return client.users.list({
         search: searchTerm || undefined,
         role:
           roleFilter !== "all"
@@ -121,7 +121,7 @@ function RouteComponent() {
     queryKey: ["users", "stats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userStats();
+      return client.users.stats();
     },
   });
 
@@ -130,7 +130,7 @@ function RouteComponent() {
     queryKey: ["users", "rolesAndPermissions"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userRolesAndPermissions();
+      return client.users.rolesAndPermissions();
     },
   });
 

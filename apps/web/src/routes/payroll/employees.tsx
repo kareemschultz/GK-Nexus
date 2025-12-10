@@ -137,7 +137,7 @@ function RouteComponent() {
     queryKey: ["payroll", "employees"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.payrollEmployeeList({});
+      return client.payroll.employees.list({});
     },
   });
 

@@ -2,7 +2,7 @@ import { backupSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 import { getBackupService } from "../services/backup-service";
 
 // Input schemas
@@ -100,7 +100,7 @@ function calculateNextRun(_cronExpression: string, _timezone: string): Date {
 
 // Create a new backup
 export const backupCreate = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(createBackupSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -248,7 +248,7 @@ export const backupCreate = protectedProcedure
 
 // List backups with filtering and pagination
 export const backupList = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(listBackupsSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -321,7 +321,7 @@ export const backupList = protectedProcedure
 
 // Get backup by ID
 export const backupGetById = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -361,7 +361,7 @@ export const backupGetById = protectedProcedure
 
 // Delete a backup
 export const backupDelete = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -403,7 +403,7 @@ export const backupDelete = protectedProcedure
 
 // Verify backup integrity
 export const backupVerify = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -442,7 +442,7 @@ export const backupVerify = protectedProcedure
 
 // Restore from backup
 export const backupRestore = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(restoreBackupSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -572,7 +572,7 @@ export const backupRestore = protectedProcedure
 
 // Create backup schedule
 export const backupCreateSchedule = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(createScheduleSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -622,7 +622,7 @@ export const backupCreateSchedule = protectedProcedure
 
 // List backup schedules
 export const backupListSchedules = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(
     z.object({
       page: z.number().int().min(1).default(1),
@@ -677,7 +677,7 @@ export const backupListSchedules = protectedProcedure
 
 // Update schedule
 export const backupUpdateSchedule = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(
     z.object({
       id: z.string().uuid(),
@@ -736,7 +736,7 @@ export const backupUpdateSchedule = protectedProcedure
 
 // Delete schedule
 export const backupDeleteSchedule = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -770,7 +770,7 @@ export const backupDeleteSchedule = protectedProcedure
 
 // Get storage statistics
 export const backupGetStorageStats = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .handler(async ({ context }) => {
     const { db } = context;
     const backupService = getBackupService();
@@ -805,7 +805,7 @@ export const backupGetStorageStats = protectedProcedure
 
 // Get restore operations
 export const backupListRestoreOperations = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(
     z.object({
       page: z.number().int().min(1).default(1),
@@ -868,7 +868,7 @@ export const backupListRestoreOperations = protectedProcedure
 
 // Export settings backup
 export const backupExportSettings = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .handler(async () => {
     const backupService = getBackupService();
     const settings = getSystemSettings();
@@ -889,7 +889,7 @@ export const backupExportSettings = protectedProcedure
 
 // Get audit log
 export const backupGetAuditLog = protectedProcedure
-  // .use(requirePermission("system.admin"))
+  .use(requirePermission("system.admin"))
   .input(
     z.object({
       page: z.number().int().min(1).default(1),

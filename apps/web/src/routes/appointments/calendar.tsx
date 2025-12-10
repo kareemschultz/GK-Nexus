@@ -167,7 +167,7 @@ function CalendarPage() {
     queryKey: ["appointments", "calendar", filterStatus, filterType],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.appointmentList({
+      return client.appointments.list({
         page: 1,
         limit: 100,
         status:

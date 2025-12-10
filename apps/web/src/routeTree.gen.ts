@@ -15,6 +15,8 @@ import { Route as TimeTrackingRouteImport } from './routes/time-tracking'
 import { Route as TaxRouteImport } from './routes/tax'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ServiceCatalogRouteImport } from './routes/service-catalog'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PropertyManagementRouteImport } from './routes/property-management'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PortalRouteImport } from './routes/portal'
@@ -25,6 +27,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LocalContentRouteImport } from './routes/local-content'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as ImmigrationRouteImport } from './routes/immigration'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as ExpeditingRouteImport } from './routes/expediting'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -91,6 +94,8 @@ import { Route as AppointmentsRequestsRouteImport } from './routes/appointments/
 import { Route as AppointmentsNewRouteImport } from './routes/appointments/new'
 import { Route as AppointmentsCalendarRouteImport } from './routes/appointments/calendar'
 import { Route as AppointmentsIdRouteImport } from './routes/appointments/$id'
+import { Route as PayrollEmployeesIndexRouteImport } from './routes/payroll/employees/index'
+import { Route as PayrollEmployeesNewRouteImport } from './routes/payroll/employees/new'
 import { Route as ClientsIdEditRouteImport } from './routes/clients/$id/edit'
 import { Route as ClientsIdDocumentsRouteImport } from './routes/clients/$id/documents'
 
@@ -122,6 +127,16 @@ const SettingsRoute = SettingsRouteImport.update({
 const ServiceCatalogRoute = ServiceCatalogRouteImport.update({
   id: '/service-catalog',
   path: '/service-catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PropertyManagementRoute = PropertyManagementRouteImport.update({
@@ -172,6 +187,11 @@ const InvoicesRoute = InvoicesRouteImport.update({
 const ImmigrationRoute = ImmigrationRouteImport.update({
   id: '/immigration',
   path: '/immigration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpeditingRoute = ExpeditingRouteImport.update({
@@ -504,6 +524,16 @@ const AppointmentsIdRoute = AppointmentsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppointmentsRoute,
 } as any)
+const PayrollEmployeesIndexRoute = PayrollEmployeesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PayrollEmployeesRoute,
+} as any)
+const PayrollEmployeesNewRoute = PayrollEmployeesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => PayrollEmployeesRoute,
+} as any)
 const ClientsIdEditRoute = ClientsIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -523,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/expediting': typeof ExpeditingRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/local-content': typeof LocalContentRoute
@@ -533,6 +564,8 @@ export interface FileRoutesByFullPath {
   '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
   '/property-management': typeof PropertyManagementRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
   '/tax': typeof TaxRouteWithChildren
@@ -561,7 +594,7 @@ export interface FileRoutesByFullPath {
   '/invoices/$id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/payments': typeof InvoicesPaymentsRoute
-  '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/employees': typeof PayrollEmployeesRouteWithChildren
   '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
@@ -600,11 +633,14 @@ export interface FileRoutesByFullPath {
   '/users/': typeof UsersIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
+  '/payroll/employees/new': typeof PayrollEmployeesNewRoute
+  '/payroll/employees/': typeof PayrollEmployeesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/expediting': typeof ExpeditingRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/immigration': typeof ImmigrationRoute
   '/local-content': typeof LocalContentRoute
   '/login': typeof LoginRoute
@@ -612,6 +648,8 @@ export interface FileRoutesByTo {
   '/partner-network': typeof PartnerNetworkRoute
   '/profile': typeof ProfileRoute
   '/property-management': typeof PropertyManagementRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/training': typeof TrainingRoute
   '/appointments/$id': typeof AppointmentsIdRoute
@@ -636,7 +674,6 @@ export interface FileRoutesByTo {
   '/invoices/$id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/payments': typeof InvoicesPaymentsRoute
-  '/payroll/employees': typeof PayrollEmployeesRoute
   '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
@@ -675,6 +712,8 @@ export interface FileRoutesByTo {
   '/users': typeof UsersIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
+  '/payroll/employees/new': typeof PayrollEmployeesNewRoute
+  '/payroll/employees': typeof PayrollEmployeesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -685,6 +724,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRouteWithChildren
   '/expediting': typeof ExpeditingRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/immigration': typeof ImmigrationRoute
   '/invoices': typeof InvoicesRouteWithChildren
   '/local-content': typeof LocalContentRoute
@@ -695,6 +735,8 @@ export interface FileRoutesById {
   '/portal': typeof PortalRouteWithChildren
   '/profile': typeof ProfileRoute
   '/property-management': typeof PropertyManagementRoute
+  '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/service-catalog': typeof ServiceCatalogRoute
   '/settings': typeof SettingsRouteWithChildren
   '/tax': typeof TaxRouteWithChildren
@@ -723,7 +765,7 @@ export interface FileRoutesById {
   '/invoices/$id': typeof InvoicesIdRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/invoices/payments': typeof InvoicesPaymentsRoute
-  '/payroll/employees': typeof PayrollEmployeesRoute
+  '/payroll/employees': typeof PayrollEmployeesRouteWithChildren
   '/payroll/reports': typeof PayrollReportsRoute
   '/payroll/run': typeof PayrollRunRoute
   '/portal/appointments': typeof PortalAppointmentsRoute
@@ -762,6 +804,8 @@ export interface FileRoutesById {
   '/users/': typeof UsersIndexRoute
   '/clients/$id/documents': typeof ClientsIdDocumentsRoute
   '/clients/$id/edit': typeof ClientsIdEditRoute
+  '/payroll/employees/new': typeof PayrollEmployeesNewRoute
+  '/payroll/employees/': typeof PayrollEmployeesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -773,6 +817,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/expediting'
+    | '/forgot-password'
     | '/immigration'
     | '/invoices'
     | '/local-content'
@@ -783,6 +828,8 @@ export interface FileRouteTypes {
     | '/portal'
     | '/profile'
     | '/property-management'
+    | '/register'
+    | '/reset-password'
     | '/service-catalog'
     | '/settings'
     | '/tax'
@@ -850,11 +897,14 @@ export interface FileRouteTypes {
     | '/users/'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
+    | '/payroll/employees/new'
+    | '/payroll/employees/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/expediting'
+    | '/forgot-password'
     | '/immigration'
     | '/local-content'
     | '/login'
@@ -862,6 +912,8 @@ export interface FileRouteTypes {
     | '/partner-network'
     | '/profile'
     | '/property-management'
+    | '/register'
+    | '/reset-password'
     | '/service-catalog'
     | '/training'
     | '/appointments/$id'
@@ -886,7 +938,6 @@ export interface FileRouteTypes {
     | '/invoices/$id'
     | '/invoices/new'
     | '/invoices/payments'
-    | '/payroll/employees'
     | '/payroll/reports'
     | '/payroll/run'
     | '/portal/appointments'
@@ -925,6 +976,8 @@ export interface FileRouteTypes {
     | '/users'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
+    | '/payroll/employees/new'
+    | '/payroll/employees'
   id:
     | '__root__'
     | '/'
@@ -934,6 +987,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/expediting'
+    | '/forgot-password'
     | '/immigration'
     | '/invoices'
     | '/local-content'
@@ -944,6 +998,8 @@ export interface FileRouteTypes {
     | '/portal'
     | '/profile'
     | '/property-management'
+    | '/register'
+    | '/reset-password'
     | '/service-catalog'
     | '/settings'
     | '/tax'
@@ -1011,6 +1067,8 @@ export interface FileRouteTypes {
     | '/users/'
     | '/clients/$id/documents'
     | '/clients/$id/edit'
+    | '/payroll/employees/new'
+    | '/payroll/employees/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1021,6 +1079,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRouteWithChildren
   ExpeditingRoute: typeof ExpeditingRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   ImmigrationRoute: typeof ImmigrationRoute
   InvoicesRoute: typeof InvoicesRouteWithChildren
   LocalContentRoute: typeof LocalContentRoute
@@ -1031,6 +1090,8 @@ export interface RootRouteChildren {
   PortalRoute: typeof PortalRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   PropertyManagementRoute: typeof PropertyManagementRoute
+  RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ServiceCatalogRoute: typeof ServiceCatalogRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   TaxRoute: typeof TaxRouteWithChildren
@@ -1085,6 +1146,20 @@ declare module '@tanstack/react-router' {
       path: '/service-catalog'
       fullPath: '/service-catalog'
       preLoaderRoute: typeof ServiceCatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/property-management': {
@@ -1155,6 +1230,13 @@ declare module '@tanstack/react-router' {
       path: '/immigration'
       fullPath: '/immigration'
       preLoaderRoute: typeof ImmigrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expediting': {
@@ -1619,6 +1701,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppointmentsIdRouteImport
       parentRoute: typeof AppointmentsRoute
     }
+    '/payroll/employees/': {
+      id: '/payroll/employees/'
+      path: '/'
+      fullPath: '/payroll/employees/'
+      preLoaderRoute: typeof PayrollEmployeesIndexRouteImport
+      parentRoute: typeof PayrollEmployeesRoute
+    }
+    '/payroll/employees/new': {
+      id: '/payroll/employees/new'
+      path: '/new'
+      fullPath: '/payroll/employees/new'
+      preLoaderRoute: typeof PayrollEmployeesNewRouteImport
+      parentRoute: typeof PayrollEmployeesRoute
+    }
     '/clients/$id/edit': {
       id: '/clients/$id/edit'
       path: '/edit'
@@ -1734,15 +1830,28 @@ const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
   InvoicesRouteChildren,
 )
 
+interface PayrollEmployeesRouteChildren {
+  PayrollEmployeesNewRoute: typeof PayrollEmployeesNewRoute
+  PayrollEmployeesIndexRoute: typeof PayrollEmployeesIndexRoute
+}
+
+const PayrollEmployeesRouteChildren: PayrollEmployeesRouteChildren = {
+  PayrollEmployeesNewRoute: PayrollEmployeesNewRoute,
+  PayrollEmployeesIndexRoute: PayrollEmployeesIndexRoute,
+}
+
+const PayrollEmployeesRouteWithChildren =
+  PayrollEmployeesRoute._addFileChildren(PayrollEmployeesRouteChildren)
+
 interface PayrollRouteChildren {
-  PayrollEmployeesRoute: typeof PayrollEmployeesRoute
+  PayrollEmployeesRoute: typeof PayrollEmployeesRouteWithChildren
   PayrollReportsRoute: typeof PayrollReportsRoute
   PayrollRunRoute: typeof PayrollRunRoute
   PayrollIndexRoute: typeof PayrollIndexRoute
 }
 
 const PayrollRouteChildren: PayrollRouteChildren = {
-  PayrollEmployeesRoute: PayrollEmployeesRoute,
+  PayrollEmployeesRoute: PayrollEmployeesRouteWithChildren,
   PayrollReportsRoute: PayrollReportsRoute,
   PayrollRunRoute: PayrollRunRoute,
   PayrollIndexRoute: PayrollIndexRoute,
@@ -1872,6 +1981,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRouteWithChildren,
   ExpeditingRoute: ExpeditingRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   ImmigrationRoute: ImmigrationRoute,
   InvoicesRoute: InvoicesRouteWithChildren,
   LocalContentRoute: LocalContentRoute,
@@ -1882,6 +1992,8 @@ const rootRouteChildren: RootRouteChildren = {
   PortalRoute: PortalRouteWithChildren,
   ProfileRoute: ProfileRoute,
   PropertyManagementRoute: PropertyManagementRoute,
+  RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ServiceCatalogRoute: ServiceCatalogRoute,
   SettingsRoute: SettingsRouteWithChildren,
   TaxRoute: TaxRouteWithChildren,

@@ -30,6 +30,8 @@ const requireAuth = o.middleware(({ context, next }) => {
 export const protectedProcedure = publicProcedure.use(requireAuth);
 
 // Permission check middleware - returns a middleware that can be used with .use()
+// Note: This middleware should only be used after protectedProcedure which guarantees user is non-null
+// The 'as any' cast is needed due to oRPC type inference limitations with chained middlewares
 export const requirePermission = (permission: Permission) =>
   o.middleware(async ({ context, next }) => {
     if (!context.user) {
@@ -50,7 +52,7 @@ export const requirePermission = (permission: Permission) =>
     }
 
     return next({ context });
-  }) as ReturnType<typeof o.middleware>;
+  }) as any;
 
 // Convenience procedures for common permission checks
 export const adminProcedure = protectedProcedure.use(

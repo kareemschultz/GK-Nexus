@@ -1258,7 +1258,7 @@ export default function ClientOnboardingWizard({
       const { client: orpcClient } = await import("@/utils/orpc");
       const { toast } = await import("sonner");
 
-      const result = await orpcClient.clientCreate({
+      const result = await orpcClient.clients.create({
         // Computed display name
         name: clientName,
         entityType: entityTypeMap[validatedData.entityType] as

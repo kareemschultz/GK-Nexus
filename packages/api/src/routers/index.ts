@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 import { protectedProcedure, publicProcedure } from "../index";
-// AI (FLAT procedures)
+
+// AI procedures
 import {
   aiClassifyDocument,
   aiExecuteSmartFiling,
@@ -21,7 +22,8 @@ import {
   aiValidateSubmissionData,
   aiValidateTaxCalculation,
 } from "./ai";
-// Appointments (FLAT procedures)
+
+// Appointments procedures
 import {
   appointmentCancel,
   appointmentCheckAvailability,
@@ -33,7 +35,8 @@ import {
   appointmentReschedule,
   appointmentUpdate,
 } from "./appointments";
-// Audit (FLAT procedures)
+
+// Audit procedures
 import {
   auditArchiveLogs,
   auditCreateSystemEvent,
@@ -47,7 +50,8 @@ import {
   auditListSystemEvents,
   auditSearchLogs,
 } from "./audit";
-// Backup (FLAT procedures)
+
+// Backup procedures
 import {
   backupCreate,
   backupCreateSchedule,
@@ -64,7 +68,8 @@ import {
   backupUpdateSchedule,
   backupVerify,
 } from "./backup";
-// Clients (FLAT procedures)
+
+// Clients procedures
 import {
   clientBulkAction,
   clientContactCreate,
@@ -91,7 +96,8 @@ import {
   clientWizardStep3,
   clientWizardStep4,
 } from "./clients";
-// Compliance (FLAT procedures)
+
+// Compliance procedures
 import {
   complianceCreateFiling,
   complianceCreateRequirement,
@@ -104,7 +110,8 @@ import {
   complianceUpdateFiling,
   complianceUpdateRequirement,
 } from "./compliance";
-// Dashboard (FLAT procedures)
+
+// Dashboard procedures
 import {
   dashboardClientPerformance,
   dashboardComplianceReport,
@@ -113,7 +120,8 @@ import {
   dashboardOverview,
   dashboardRevenueAnalysis,
 } from "./dashboard";
-// Documents (FLAT procedures)
+
+// Documents procedures
 import {
   documentCreate,
   documentCreateFolder,
@@ -135,7 +143,8 @@ import {
   documentTemplateList,
   documentUpdate,
 } from "./documents";
-// Expediting (FLAT procedures)
+
+// Expediting procedures
 import {
   expeditingActivitiesCreate,
   expeditingActivitiesList,
@@ -153,7 +162,8 @@ import {
   expeditingRequestsStats,
   expeditingRequestsUpdate,
 } from "./expediting";
-// GRA Integration (FLAT procedures)
+
+// GRA Integration procedures
 import {
   graAuthenticate,
   graCheckSubmissionStatus,
@@ -162,7 +172,8 @@ import {
   graSubmitFiling,
   graSyncClient,
 } from "./gra-integration";
-// Immigration (FLAT procedures)
+
+// Immigration procedures
 import {
   immigrationArchiveCase,
   immigrationCreateCase,
@@ -177,7 +188,8 @@ import {
   immigrationUpdateCase,
   immigrationUpdateDocumentRequirement,
 } from "./immigration";
-// Invoices (FLAT procedures)
+
+// Invoices procedures
 import {
   invoiceCreate,
   invoiceDelete,
@@ -186,7 +198,8 @@ import {
   invoiceStats,
   invoiceUpdate,
 } from "./invoices";
-// Local Content (FLAT procedures)
+
+// Local Content procedures
 import {
   localContentChecklistsCreate,
   localContentChecklistsList,
@@ -209,7 +222,8 @@ import {
   localContentVendorsList,
   localContentVendorsUpdate,
 } from "./local-content";
-// Notifications (FLAT procedures)
+
+// Notifications procedures
 import {
   notificationArchive,
   notificationBulkMarkRead,
@@ -223,7 +237,8 @@ import {
   notificationMarkRead,
   notificationUpdatePreferences,
 } from "./notifications";
-// OCR (FLAT procedures)
+
+// OCR procedures
 import {
   ocrBatchProcess,
   ocrGetBatchStatus,
@@ -233,7 +248,8 @@ import {
   ocrProcessDocument,
   ocrValidateResults,
 } from "./ocr";
-// Partner Network (FLAT procedures)
+
+// Partner Network procedures
 import {
   partnerNetworkAgreementsActivate,
   partnerNetworkAgreementsCreate,
@@ -269,7 +285,8 @@ import {
   partnerNetworkReviewsList,
   partnerNetworkReviewsModerate,
 } from "./partner-network";
-// Payroll (FLAT procedures)
+
+// Payroll procedures
 import {
   payrollCalculate,
   payrollDepartments,
@@ -281,7 +298,8 @@ import {
   payrollRunsCreate,
   payrollRunsList,
 } from "./payroll";
-// Property Management (FLAT procedures)
+
+// Property Management procedures
 import {
   propertyManagementInspectionsComplete,
   propertyManagementInspectionsCreate,
@@ -311,7 +329,8 @@ import {
   propertyManagementTenantsList,
   propertyManagementTenantsUpdate,
 } from "./property-management";
-// RBAC (FLAT procedures)
+
+// RBAC procedures
 import {
   rbacAssignRoleToUser,
   rbacCheckPermission,
@@ -324,9 +343,11 @@ import {
   rbacListRoles,
   rbacRemoveRoleFromUser,
 } from "./rbac";
-// Service Catalog (spread - already flat internally)
+
+// Service Catalog procedures
 import { serviceCatalogRouter } from "./service-catalog";
-// Tax (FLAT procedures)
+
+// Tax procedures
 import {
   taxCalculateNis,
   taxCalculatePaye,
@@ -346,7 +367,8 @@ import {
   taxSubmitPayeReturn,
   taxSubmitVatReturn,
 } from "./tax";
-// Training (FLAT procedures)
+
+// Training procedures
 import {
   trainingCertificatesIssue,
   trainingCertificatesList,
@@ -370,7 +392,8 @@ import {
   trainingSessionsOpenRegistration,
   trainingSessionsUpdate,
 } from "./training";
-// Users (FLAT procedures)
+
+// Users procedures
 import {
   userBulkAction,
   userChangePassword,
@@ -386,376 +409,527 @@ import {
   userUpdatePermissions,
 } from "./users";
 
+// ============================================================================
+// NESTED ROUTER STRUCTURE
+// Pattern: orpc.{domain}.{resource}.{action}
+// Example: orpc.training.courses.list
+// ============================================================================
+
 export const appRouter = {
+  // Health check endpoints (public)
   healthCheck: publicProcedure.handler(() => "OK"),
   privateData: protectedProcedure.handler(({ context }) => ({
     message: "This is private",
     user: context.user,
   })),
 
-  // AI (FLAT procedures)
-  aiClassifyDocument,
-  aiValidateTaxCalculation,
-  aiPerformRiskAssessment,
-  aiGenerateClientInsights,
-  aiMonitorCompliance,
-  aiPerformSmartSubmission,
-  aiValidateSubmissionData,
-  aiGetBusinessMetrics,
-  aiGetTaxSeasonAnalytics,
-  aiGetClientInsightsDashboard,
-  aiGenerateExecutiveSummary,
-  aiExecuteSmartIntegration,
-  aiProcessDocumentsIntelligently,
-  aiExecuteSmartFiling,
-  aiGenerateRealTimeInsights,
-  aiManageMLModels,
-  aiGetSystemHealth,
-  aiGetUsageMetrics,
+  // AI domain
+  ai: {
+    classify: aiClassifyDocument,
+    validateTax: aiValidateTaxCalculation,
+    riskAssessment: aiPerformRiskAssessment,
+    clientInsights: aiGenerateClientInsights,
+    monitorCompliance: aiMonitorCompliance,
+    smartSubmission: aiPerformSmartSubmission,
+    validateSubmission: aiValidateSubmissionData,
+    businessMetrics: aiGetBusinessMetrics,
+    taxSeasonAnalytics: aiGetTaxSeasonAnalytics,
+    clientInsightsDashboard: aiGetClientInsightsDashboard,
+    executiveSummary: aiGenerateExecutiveSummary,
+    smartIntegration: aiExecuteSmartIntegration,
+    processDocuments: aiProcessDocumentsIntelligently,
+    smartFiling: aiExecuteSmartFiling,
+    realTimeInsights: aiGenerateRealTimeInsights,
+    mlModels: aiManageMLModels,
+    systemHealth: aiGetSystemHealth,
+    usageMetrics: aiGetUsageMetrics,
+  },
 
-  // Backup (FLAT procedures)
-  backupCreate,
-  backupList,
-  backupGetById,
-  backupDelete,
-  backupVerify,
-  backupRestore,
-  backupCreateSchedule,
-  backupListSchedules,
-  backupUpdateSchedule,
-  backupDeleteSchedule,
-  backupGetStorageStats,
-  backupListRestoreOperations,
-  backupExportSettings,
-  backupGetAuditLog,
+  // Appointments domain
+  appointments: {
+    list: appointmentList,
+    getById: appointmentGetById,
+    create: appointmentCreate,
+    createExternal: appointmentCreateExternal,
+    update: appointmentUpdate,
+    cancel: appointmentCancel,
+    reschedule: appointmentReschedule,
+    checkAvailability: appointmentCheckAvailability,
+    stats: appointmentGetStats,
+  },
 
-  // Audit (FLAT procedures)
-  auditSearchLogs,
-  auditGetLogById,
-  auditExportLogs,
-  auditGetSummary,
-  auditArchiveLogs,
-  auditListSystemEvents,
-  auditCreateSystemEvent,
-  auditListLoginAttempts,
-  auditGetSuspiciousActivity,
-  auditGenerateComplianceReport,
-  auditGetRetentionPolicy,
+  // Audit domain
+  audit: {
+    logs: {
+      search: auditSearchLogs,
+      getById: auditGetLogById,
+      export: auditExportLogs,
+      summary: auditGetSummary,
+      archive: auditArchiveLogs,
+    },
+    systemEvents: {
+      list: auditListSystemEvents,
+      create: auditCreateSystemEvent,
+    },
+    loginAttempts: {
+      list: auditListLoginAttempts,
+    },
+    suspicious: auditGetSuspiciousActivity,
+    complianceReport: auditGenerateComplianceReport,
+    retentionPolicy: auditGetRetentionPolicy,
+  },
 
-  // RBAC (FLAT procedures)
-  rbacCheckPermission,
-  rbacGetUserPermissions,
-  rbacListRoles,
-  rbacCreateRole,
-  rbacAssignRoleToUser,
-  rbacRemoveRoleFromUser,
-  rbacListPermissions,
-  rbacCreatePermission,
-  rbacGrantPermissionToUser,
-  rbacDenyPermissionToUser,
+  // Backup domain
+  backup: {
+    list: backupList,
+    getById: backupGetById,
+    create: backupCreate,
+    delete: backupDelete,
+    verify: backupVerify,
+    restore: backupRestore,
+    schedules: {
+      list: backupListSchedules,
+      create: backupCreateSchedule,
+      update: backupUpdateSchedule,
+      delete: backupDeleteSchedule,
+    },
+    storageStats: backupGetStorageStats,
+    restoreOperations: backupListRestoreOperations,
+    exportSettings: backupExportSettings,
+    auditLog: backupGetAuditLog,
+  },
 
-  // Clients (FLAT procedures)
-  clientGetImmigrationStatus,
-  clientUpdateImmigrationStatus,
-  clientSubmitImmigrationDocuments,
-  clientGetImmigrationWorkflowTemplates,
-  clientList,
-  clientGetById,
-  clientCreate,
-  clientUpdate,
-  clientDelete,
-  clientWizardStep1,
-  clientWizardStep2,
-  clientWizardStep3,
-  clientWizardStep4,
-  clientWizardComplete,
-  clientContactList,
-  clientContactCreate,
-  clientContactUpdate,
-  clientContactDelete,
-  clientServiceList,
-  clientServiceCreate,
-  clientServiceUpdate,
-  clientServiceDelete,
-  clientBulkAction,
-  clientStats,
+  // Clients domain
+  clients: {
+    list: clientList,
+    getById: clientGetById,
+    create: clientCreate,
+    update: clientUpdate,
+    delete: clientDelete,
+    stats: clientStats,
+    bulkAction: clientBulkAction,
+    contacts: {
+      list: clientContactList,
+      create: clientContactCreate,
+      update: clientContactUpdate,
+      delete: clientContactDelete,
+    },
+    services: {
+      list: clientServiceList,
+      create: clientServiceCreate,
+      update: clientServiceUpdate,
+      delete: clientServiceDelete,
+    },
+    wizard: {
+      step1: clientWizardStep1,
+      step2: clientWizardStep2,
+      step3: clientWizardStep3,
+      step4: clientWizardStep4,
+      complete: clientWizardComplete,
+    },
+    immigration: {
+      getStatus: clientGetImmigrationStatus,
+      updateStatus: clientUpdateImmigrationStatus,
+      submitDocuments: clientSubmitImmigrationDocuments,
+      workflowTemplates: clientGetImmigrationWorkflowTemplates,
+    },
+  },
 
-  // Users (FLAT procedures)
-  userList,
-  userGetById,
-  userMe,
-  userCreate,
-  userUpdate,
-  userDelete,
-  userChangePassword,
-  userResetPassword,
-  userUpdatePermissions,
-  userBulkAction,
-  userStats,
-  userRolesAndPermissions,
+  // Compliance domain
+  compliance: {
+    dashboard: complianceGetDashboardOverview,
+    requirements: {
+      list: complianceGetRequirements,
+      create: complianceCreateRequirement,
+      update: complianceUpdateRequirement,
+    },
+    filings: {
+      list: complianceGetFilings,
+      create: complianceCreateFiling,
+      update: complianceUpdateFiling,
+      exportGraForm7B: complianceExportGraForm7B,
+    },
+    alerts: complianceGetAlerts,
+    auditTrail: complianceGetAuditTrail,
+  },
 
-  // Tax (FLAT procedures)
-  taxSubmitVatReturn,
-  taxSubmitPayeReturn,
-  taxSubmitCorporateTaxReturn,
-  taxGetSubmissionStatus,
-  taxGetDeadlines,
-  taxCalculatePaye,
-  taxCalculateNis,
-  taxCalculateVat,
-  taxCalculatePayroll,
-  taxCalculateQuarterly,
-  taxCheckVatRegistration,
-  taxGenerateGraForm,
-  taxSaveCalculation,
-  taxGetCalculationHistory,
-  taxGetSummary,
-  taxGetRates,
-  taxFilingsList,
+  // Dashboard domain
+  dashboard: {
+    overview: dashboardOverview,
+    kpis: dashboardKpis,
+    revenueAnalysis: dashboardRevenueAnalysis,
+    complianceReport: dashboardComplianceReport,
+    clientPerformance: dashboardClientPerformance,
+    financialSummary: dashboardFinancialSummary,
+  },
 
-  // Payroll (FLAT procedures)
-  payrollEmployeeList,
-  payrollEmployeeGetById,
-  payrollEmployeeCreate,
-  payrollEmployeeUpdate,
-  payrollEmployeeDelete,
-  payrollCalculate,
-  payrollRunsList,
-  payrollRunsCreate,
-  payrollDepartments,
+  // Documents domain
+  documents: {
+    list: documentList,
+    getById: documentGetById,
+    create: documentCreate,
+    update: documentUpdate,
+    delete: documentDelete,
+    share: documentShare,
+    search: documentSearch,
+    stats: documentGetStats,
+    versions: {
+      list: documentGetVersions,
+      create: documentCreateVersion,
+    },
+    folders: {
+      list: documentListFolders,
+      create: documentCreateFolder,
+      move: documentMoveDocument,
+    },
+    templates: {
+      list: documentTemplateList,
+      getById: documentTemplateGetById,
+      categories: documentTemplateCategories,
+    },
+    requirements: {
+      list: documentRequirementList,
+      serviceTypes: documentRequirementServiceTypes,
+      checklists: documentRequirementChecklists,
+    },
+  },
 
-  // Invoices (FLAT procedures)
-  invoiceList,
-  invoiceGetById,
-  invoiceCreate,
-  invoiceUpdate,
-  invoiceDelete,
-  invoiceStats,
+  // Expediting domain
+  expediting: {
+    requests: {
+      list: expeditingRequestsList,
+      getById: expeditingRequestsGetById,
+      create: expeditingRequestsCreate,
+      update: expeditingRequestsUpdate,
+      assign: expeditingRequestsAssign,
+      complete: expeditingRequestsComplete,
+      stats: expeditingRequestsStats,
+    },
+    activities: {
+      list: expeditingActivitiesList,
+      create: expeditingActivitiesCreate,
+    },
+    agencyContacts: {
+      list: expeditingAgencyContactsList,
+      create: expeditingAgencyContactsCreate,
+      update: expeditingAgencyContactsUpdate,
+    },
+    queue: {
+      list: expeditingQueueList,
+      create: expeditingQueueCreate,
+      updateStatus: expeditingQueueUpdateStatus,
+    },
+  },
 
-  // Dashboard (FLAT procedures)
-  dashboardOverview,
-  dashboardKpis,
-  dashboardRevenueAnalysis,
-  dashboardComplianceReport,
-  dashboardClientPerformance,
-  dashboardFinancialSummary,
+  // GRA Integration domain
+  gra: {
+    authenticate: graAuthenticate,
+    syncClient: graSyncClient,
+    submitFiling: graSubmitFiling,
+    checkSubmissionStatus: graCheckSubmissionStatus,
+    filingCalendar: graGetFilingCalendar,
+    exportClientData: graExportClientData,
+  },
 
-  // Documents (FLAT procedures)
-  documentCreate,
-  documentList,
-  documentGetVersions,
-  documentGetById,
-  documentUpdate,
-  documentCreateVersion,
-  documentDelete,
-  documentShare,
-  documentCreateFolder,
-  documentListFolders,
-  documentMoveDocument,
-  documentGetStats,
-  documentSearch,
-  documentTemplateList,
-  documentTemplateGetById,
-  documentTemplateCategories,
-  documentRequirementList,
-  documentRequirementServiceTypes,
-  documentRequirementChecklists,
+  // Immigration domain
+  immigration: {
+    cases: {
+      list: immigrationListCases,
+      getById: immigrationGetCaseById,
+      create: immigrationCreateCase,
+      update: immigrationUpdateCase,
+      archive: immigrationArchiveCase,
+    },
+    documentRequirements: {
+      list: immigrationGetDocumentRequirements,
+      create: immigrationCreateDocumentRequirement,
+      update: immigrationUpdateDocumentRequirement,
+    },
+    timeline: {
+      get: immigrationGetCaseTimeline,
+      createEvent: immigrationCreateTimelineEvent,
+    },
+    stats: immigrationGetStats,
+    upcomingDeadlines: immigrationGetUpcomingDeadlines,
+  },
 
-  // Compliance (FLAT procedures)
-  complianceGetDashboardOverview,
-  complianceGetRequirements,
-  complianceGetFilings,
-  complianceCreateRequirement,
-  complianceUpdateRequirement,
-  complianceCreateFiling,
-  complianceUpdateFiling,
-  complianceExportGraForm7B,
-  complianceGetAlerts,
-  complianceGetAuditTrail,
+  // Invoices domain
+  invoices: {
+    list: invoiceList,
+    getById: invoiceGetById,
+    create: invoiceCreate,
+    update: invoiceUpdate,
+    delete: invoiceDelete,
+    stats: invoiceStats,
+  },
 
-  // Appointments (FLAT procedures)
-  appointmentCreate,
-  appointmentCreateExternal,
-  appointmentList,
-  appointmentGetById,
-  appointmentUpdate,
-  appointmentCancel,
-  appointmentReschedule,
-  appointmentCheckAvailability,
-  appointmentGetStats,
+  // Local Content domain
+  localContent: {
+    registrations: {
+      list: localContentRegistrationsList,
+      getById: localContentRegistrationsGetById,
+      create: localContentRegistrationsCreate,
+      update: localContentRegistrationsUpdate,
+      approve: localContentRegistrationsApprove,
+      stats: localContentRegistrationsStats,
+    },
+    plans: {
+      list: localContentPlansList,
+      create: localContentPlansCreate,
+      update: localContentPlansUpdate,
+      submit: localContentPlansSubmit,
+    },
+    reports: {
+      list: localContentReportsList,
+      create: localContentReportsCreate,
+      update: localContentReportsUpdate,
+      submit: localContentReportsSubmit,
+    },
+    vendors: {
+      list: localContentVendorsList,
+      create: localContentVendorsCreate,
+      update: localContentVendorsUpdate,
+    },
+    checklists: {
+      list: localContentChecklistsList,
+      create: localContentChecklistsCreate,
+      update: localContentChecklistsUpdate,
+    },
+  },
 
-  // Notifications (FLAT procedures)
-  notificationCreate,
-  notificationGetMine,
-  notificationMarkRead,
-  notificationBulkMarkRead,
-  notificationMarkAllRead,
-  notificationArchive,
-  notificationGetStats,
-  notificationGetPreferences,
-  notificationUpdatePreferences,
-  notificationCreateTemplate,
-  notificationGetTemplates,
+  // Notifications domain
+  notifications: {
+    list: notificationGetMine,
+    create: notificationCreate,
+    markRead: notificationMarkRead,
+    bulkMarkRead: notificationBulkMarkRead,
+    markAllRead: notificationMarkAllRead,
+    archive: notificationArchive,
+    stats: notificationGetStats,
+    preferences: {
+      get: notificationGetPreferences,
+      update: notificationUpdatePreferences,
+    },
+    templates: {
+      list: notificationGetTemplates,
+      create: notificationCreateTemplate,
+    },
+  },
 
-  // Immigration (FLAT procedures)
-  immigrationCreateCase,
-  immigrationListCases,
-  immigrationGetCaseById,
-  immigrationUpdateCase,
-  immigrationArchiveCase,
-  immigrationGetDocumentRequirements,
-  immigrationCreateDocumentRequirement,
-  immigrationUpdateDocumentRequirement,
-  immigrationGetCaseTimeline,
-  immigrationCreateTimelineEvent,
-  immigrationGetStats,
-  immigrationGetUpcomingDeadlines,
+  // OCR domain
+  ocr: {
+    process: ocrProcessDocument,
+    status: ocrGetProcessingStatus,
+    extractedData: ocrGetExtractedData,
+    validate: ocrValidateResults,
+    stats: ocrGetProcessingStats,
+    batch: {
+      process: ocrBatchProcess,
+      status: ocrGetBatchStatus,
+    },
+  },
 
-  // GRA Integration (FLAT procedures)
-  graAuthenticate,
-  graSyncClient,
-  graSubmitFiling,
-  graCheckSubmissionStatus,
-  graGetFilingCalendar,
-  graExportClientData,
+  // Partner Network domain
+  partnerNetwork: {
+    partners: {
+      list: partnerNetworkPartnersList,
+      getById: partnerNetworkPartnersGetById,
+      create: partnerNetworkPartnersCreate,
+      update: partnerNetworkPartnersUpdate,
+      delete: partnerNetworkPartnersDelete,
+      verify: partnerNetworkPartnersVerify,
+      updateTier: partnerNetworkPartnersUpdateTier,
+      stats: partnerNetworkPartnersStats,
+    },
+    referrals: {
+      list: partnerNetworkReferralsList,
+      getById: partnerNetworkReferralsGetById,
+      create: partnerNetworkReferralsCreate,
+      update: partnerNetworkReferralsUpdate,
+      accept: partnerNetworkReferralsAccept,
+      complete: partnerNetworkReferralsComplete,
+      delete: partnerNetworkReferralsDelete,
+    },
+    agreements: {
+      list: partnerNetworkAgreementsList,
+      getById: partnerNetworkAgreementsGetById,
+      create: partnerNetworkAgreementsCreate,
+      update: partnerNetworkAgreementsUpdate,
+      delete: partnerNetworkAgreementsDelete,
+      activate: partnerNetworkAgreementsActivate,
+    },
+    reviews: {
+      list: partnerNetworkReviewsList,
+      getById: partnerNetworkReviewsGetById,
+      create: partnerNetworkReviewsCreate,
+      moderate: partnerNetworkReviewsModerate,
+      addResponse: partnerNetworkReviewsAddResponse,
+      delete: partnerNetworkReviewsDelete,
+    },
+    communications: {
+      list: partnerNetworkCommunicationsList,
+      getById: partnerNetworkCommunicationsGetById,
+      create: partnerNetworkCommunicationsCreate,
+      markFollowUpComplete: partnerNetworkCommunicationsMarkFollowUpComplete,
+      pendingFollowUps: partnerNetworkCommunicationsGetPendingFollowUps,
+      delete: partnerNetworkCommunicationsDelete,
+    },
+  },
 
-  // OCR (FLAT procedures)
-  ocrProcessDocument,
-  ocrGetProcessingStatus,
-  ocrGetExtractedData,
-  ocrValidateResults,
-  ocrGetProcessingStats,
-  ocrBatchProcess,
-  ocrGetBatchStatus,
+  // Payroll domain
+  payroll: {
+    employees: {
+      list: payrollEmployeeList,
+      getById: payrollEmployeeGetById,
+      create: payrollEmployeeCreate,
+      update: payrollEmployeeUpdate,
+      delete: payrollEmployeeDelete,
+    },
+    calculate: payrollCalculate,
+    runs: {
+      list: payrollRunsList,
+      create: payrollRunsCreate,
+    },
+    departments: payrollDepartments,
+  },
 
-  // Property Management (FLAT procedures)
-  propertyManagementPropertiesList,
-  propertyManagementPropertiesGetById,
-  propertyManagementPropertiesCreate,
-  propertyManagementPropertiesUpdate,
-  propertyManagementPropertiesDelete,
-  propertyManagementPropertiesStats,
-  propertyManagementTenantsList,
-  propertyManagementTenantsGetById,
-  propertyManagementTenantsCreate,
-  propertyManagementTenantsUpdate,
-  propertyManagementTenantsDelete,
-  propertyManagementLeasesList,
-  propertyManagementLeasesGetById,
-  propertyManagementLeasesCreate,
-  propertyManagementLeasesUpdate,
-  propertyManagementLeasesTerminate,
-  propertyManagementLeasesGetExpiring,
-  propertyManagementPaymentsList,
-  propertyManagementPaymentsRecordPayment,
-  propertyManagementPaymentsUpdatePayment,
-  propertyManagementPaymentsGetOverdue,
-  propertyManagementMaintenanceList,
-  propertyManagementMaintenanceCreate,
-  propertyManagementMaintenanceUpdate,
-  propertyManagementInspectionsList,
-  propertyManagementInspectionsCreate,
-  propertyManagementInspectionsComplete,
+  // Property Management domain (aliased as 'properties' for frontend)
+  properties: {
+    list: propertyManagementPropertiesList,
+    getById: propertyManagementPropertiesGetById,
+    create: propertyManagementPropertiesCreate,
+    update: propertyManagementPropertiesUpdate,
+    delete: propertyManagementPropertiesDelete,
+    stats: propertyManagementPropertiesStats,
+    tenants: {
+      list: propertyManagementTenantsList,
+      getById: propertyManagementTenantsGetById,
+      create: propertyManagementTenantsCreate,
+      update: propertyManagementTenantsUpdate,
+      delete: propertyManagementTenantsDelete,
+    },
+    leases: {
+      list: propertyManagementLeasesList,
+      getById: propertyManagementLeasesGetById,
+      create: propertyManagementLeasesCreate,
+      update: propertyManagementLeasesUpdate,
+      terminate: propertyManagementLeasesTerminate,
+      expiring: propertyManagementLeasesGetExpiring,
+    },
+    payments: {
+      list: propertyManagementPaymentsList,
+      record: propertyManagementPaymentsRecordPayment,
+      update: propertyManagementPaymentsUpdatePayment,
+      overdue: propertyManagementPaymentsGetOverdue,
+    },
+    maintenance: {
+      list: propertyManagementMaintenanceList,
+      create: propertyManagementMaintenanceCreate,
+      update: propertyManagementMaintenanceUpdate,
+    },
+    inspections: {
+      list: propertyManagementInspectionsList,
+      create: propertyManagementInspectionsCreate,
+      complete: propertyManagementInspectionsComplete,
+    },
+  },
 
-  // Training (FLAT procedures)
-  trainingCoursesList,
-  trainingCoursesGetById,
-  trainingCoursesCreate,
-  trainingCoursesUpdate,
-  trainingCoursesPublish,
-  trainingCoursesStats,
-  trainingSessionsList,
-  trainingSessionsGetById,
-  trainingSessionsCreate,
-  trainingSessionsUpdate,
-  trainingSessionsOpenRegistration,
-  trainingRegistrationsList,
-  trainingRegistrationsCreate,
-  trainingRegistrationsUpdateStatus,
-  trainingRegistrationsMarkAttendance,
-  trainingCertificatesList,
-  trainingCertificatesIssue,
-  trainingCertificatesVerify,
-  trainingInstructorsList,
-  trainingInstructorsCreate,
-  trainingInstructorsUpdate,
+  // RBAC domain
+  rbac: {
+    checkPermission: rbacCheckPermission,
+    userPermissions: rbacGetUserPermissions,
+    roles: {
+      list: rbacListRoles,
+      create: rbacCreateRole,
+      assignToUser: rbacAssignRoleToUser,
+      removeFromUser: rbacRemoveRoleFromUser,
+    },
+    permissions: {
+      list: rbacListPermissions,
+      create: rbacCreatePermission,
+      grantToUser: rbacGrantPermissionToUser,
+      denyToUser: rbacDenyPermissionToUser,
+    },
+  },
 
-  // Expediting (FLAT procedures)
-  expeditingRequestsList,
-  expeditingRequestsGetById,
-  expeditingRequestsCreate,
-  expeditingRequestsUpdate,
-  expeditingRequestsAssign,
-  expeditingRequestsComplete,
-  expeditingRequestsStats,
-  expeditingActivitiesList,
-  expeditingActivitiesCreate,
-  expeditingAgencyContactsList,
-  expeditingAgencyContactsCreate,
-  expeditingAgencyContactsUpdate,
-  expeditingQueueList,
-  expeditingQueueCreate,
-  expeditingQueueUpdateStatus,
+  // Service Catalog domain (spread existing router)
+  serviceCatalog: serviceCatalogRouter,
 
-  // Local Content (FLAT procedures)
-  localContentRegistrationsList,
-  localContentRegistrationsGetById,
-  localContentRegistrationsCreate,
-  localContentRegistrationsUpdate,
-  localContentRegistrationsApprove,
-  localContentRegistrationsStats,
-  localContentPlansList,
-  localContentPlansCreate,
-  localContentPlansUpdate,
-  localContentPlansSubmit,
-  localContentReportsList,
-  localContentReportsCreate,
-  localContentReportsUpdate,
-  localContentReportsSubmit,
-  localContentVendorsList,
-  localContentVendorsCreate,
-  localContentVendorsUpdate,
-  localContentChecklistsList,
-  localContentChecklistsCreate,
-  localContentChecklistsUpdate,
+  // Tax domain
+  tax: {
+    filings: {
+      list: taxFilingsList,
+      submitVat: taxSubmitVatReturn,
+      submitPaye: taxSubmitPayeReturn,
+      submitCorporate: taxSubmitCorporateTaxReturn,
+      status: taxGetSubmissionStatus,
+    },
+    calculate: {
+      paye: taxCalculatePaye,
+      nis: taxCalculateNis,
+      vat: taxCalculateVat,
+      payroll: taxCalculatePayroll,
+      quarterly: taxCalculateQuarterly,
+    },
+    deadlines: taxGetDeadlines,
+    vatRegistration: taxCheckVatRegistration,
+    graForm: taxGenerateGraForm,
+    saveCalculation: taxSaveCalculation,
+    calculationHistory: taxGetCalculationHistory,
+    summary: taxGetSummary,
+    rates: taxGetRates,
+  },
 
-  // Partner Network (FLAT procedures)
-  partnerNetworkPartnersList,
-  partnerNetworkPartnersGetById,
-  partnerNetworkPartnersCreate,
-  partnerNetworkPartnersUpdate,
-  partnerNetworkPartnersDelete,
-  partnerNetworkPartnersVerify,
-  partnerNetworkPartnersUpdateTier,
-  partnerNetworkPartnersStats,
-  partnerNetworkReferralsList,
-  partnerNetworkReferralsGetById,
-  partnerNetworkReferralsCreate,
-  partnerNetworkReferralsUpdate,
-  partnerNetworkReferralsAccept,
-  partnerNetworkReferralsComplete,
-  partnerNetworkReferralsDelete,
-  partnerNetworkAgreementsList,
-  partnerNetworkAgreementsGetById,
-  partnerNetworkAgreementsCreate,
-  partnerNetworkAgreementsUpdate,
-  partnerNetworkAgreementsDelete,
-  partnerNetworkAgreementsActivate,
-  partnerNetworkReviewsList,
-  partnerNetworkReviewsGetById,
-  partnerNetworkReviewsCreate,
-  partnerNetworkReviewsModerate,
-  partnerNetworkReviewsAddResponse,
-  partnerNetworkReviewsDelete,
-  partnerNetworkCommunicationsList,
-  partnerNetworkCommunicationsGetById,
-  partnerNetworkCommunicationsCreate,
-  partnerNetworkCommunicationsMarkFollowUpComplete,
-  partnerNetworkCommunicationsGetPendingFollowUps,
-  partnerNetworkCommunicationsDelete,
+  // Training domain
+  training: {
+    courses: {
+      list: trainingCoursesList,
+      getById: trainingCoursesGetById,
+      create: trainingCoursesCreate,
+      update: trainingCoursesUpdate,
+      publish: trainingCoursesPublish,
+      stats: trainingCoursesStats,
+    },
+    sessions: {
+      list: trainingSessionsList,
+      getById: trainingSessionsGetById,
+      create: trainingSessionsCreate,
+      update: trainingSessionsUpdate,
+      openRegistration: trainingSessionsOpenRegistration,
+    },
+    registrations: {
+      list: trainingRegistrationsList,
+      create: trainingRegistrationsCreate,
+      updateStatus: trainingRegistrationsUpdateStatus,
+      markAttendance: trainingRegistrationsMarkAttendance,
+    },
+    certificates: {
+      list: trainingCertificatesList,
+      issue: trainingCertificatesIssue,
+      verify: trainingCertificatesVerify,
+    },
+    instructors: {
+      list: trainingInstructorsList,
+      create: trainingInstructorsCreate,
+      update: trainingInstructorsUpdate,
+    },
+  },
 
-  // Service Catalog (spread - flat internally)
-  ...serviceCatalogRouter,
+  // Users domain
+  users: {
+    list: userList,
+    getById: userGetById,
+    me: userMe,
+    create: userCreate,
+    update: userUpdate,
+    delete: userDelete,
+    changePassword: userChangePassword,
+    resetPassword: userResetPassword,
+    updatePermissions: userUpdatePermissions,
+    bulkAction: userBulkAction,
+    stats: userStats,
+    rolesAndPermissions: userRolesAndPermissions,
+  },
 };
 
 export type AppRouter = typeof appRouter;

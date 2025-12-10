@@ -502,27 +502,19 @@ export class AnalyticsReportingService {
     // TODO: Implement actual data generation based on template configuration
     // This would execute queries, apply filters, and aggregate data
 
-    // Placeholder implementation
-    const mockData = {
+    // Return empty structure - actual implementation pending
+    return {
       summary: {
-        totalRevenue: 125_000,
-        totalExpenses: 75_000,
-        netProfit: 50_000,
-        clientCount: 45,
+        totalRevenue: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        clientCount: 0,
+        message:
+          "Report generation not yet implemented. Data will appear here once analytics are configured.",
       },
-      details: [
-        {
-          date: "2024-01-01",
-          revenue: 5000,
-          expenses: 3000,
-          profit: 2000,
-        },
-        // More data rows...
-      ],
-      totalRecords: 1,
+      details: [],
+      totalRecords: 0,
     };
-
-    return mockData;
   }
 
   private async generateOutputFiles(

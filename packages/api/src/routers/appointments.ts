@@ -6,7 +6,7 @@ import {
   adminProcedure,
   protectedProcedure,
   publicProcedure,
-  // requirePermission,
+  requirePermission,
 } from "../index";
 
 const { appointment } = businessSchema;
@@ -74,7 +74,7 @@ const rescheduleSchema = z.object({
 
 // Create new appointment
 export const appointmentCreate = protectedProcedure
-  // .use(requirePermission("appointments.create"))
+  .use(requirePermission("appointments.create"))
   .input(createAppointmentSchema)
   .handler(async ({ input, context }) => {
     const user = context.user;
@@ -202,7 +202,7 @@ export const appointmentCreateExternal = publicProcedure
 
 // List appointments with filtering
 export const appointmentList = protectedProcedure
-  // .use(requirePermission("appointments.read"))
+  .use(requirePermission("appointments.read"))
   .input(appointmentQuerySchema)
   .handler(async ({ input, context }) => {
     const {
@@ -283,7 +283,7 @@ export const appointmentList = protectedProcedure
 
 // Get appointment by ID
 export const appointmentGetById = protectedProcedure
-  // .use(requirePermission("appointments.read"))
+  .use(requirePermission("appointments.read"))
   .input(z.object({ id: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const [appt] = await context.db
@@ -304,7 +304,7 @@ export const appointmentGetById = protectedProcedure
 
 // Update appointment
 export const appointmentUpdate = protectedProcedure
-  // .use(requirePermission("appointments.update"))
+  .use(requirePermission("appointments.update"))
   .input(updateAppointmentSchema)
   .handler(async ({ input, context }) => {
     const { id, ...updateData } = input;
@@ -356,7 +356,7 @@ export const appointmentUpdate = protectedProcedure
 
 // Cancel appointment
 export const appointmentCancel = protectedProcedure
-  // .use(requirePermission("appointments.update"))
+  .use(requirePermission("appointments.update"))
   .input(
     z.object({
       id: z.string().uuid(),
@@ -395,7 +395,7 @@ export const appointmentCancel = protectedProcedure
 
 // Reschedule appointment
 export const appointmentReschedule = protectedProcedure
-  // .use(requirePermission("appointments.update"))
+  .use(requirePermission("appointments.update"))
   .input(rescheduleSchema)
   .handler(async ({ input, context }) => {
     const { appointmentId, newScheduledDate, newDuration, reason } = input;
@@ -443,7 +443,7 @@ export const appointmentReschedule = protectedProcedure
 
 // Check availability for scheduling
 export const appointmentCheckAvailability = protectedProcedure
-  // .use(requirePermission("appointments.read"))
+  .use(requirePermission("appointments.read"))
   .input(
     z.object({
       staffId: z.string().uuid().optional(),

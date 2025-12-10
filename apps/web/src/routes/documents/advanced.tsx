@@ -229,7 +229,7 @@ function AdvancedDocumentManagementPage() {
     queryKey: ["documents", "list"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.documentList({});
+      return client.documents.list({});
     },
   });
 

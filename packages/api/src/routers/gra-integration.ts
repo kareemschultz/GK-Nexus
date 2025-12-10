@@ -2,13 +2,13 @@ import { businessSchema, graIntegrationSchema } from "@GK-Nexus/db";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // GRA eServices Integration API - FLAT procedures
 
 // Authenticate with GRA eServices
 export const graAuthenticate = protectedProcedure
-  // .use(requirePermission("taxes.file"))
+  .use(requirePermission("taxes.file"))
   .input(
     z.object({
       clientId: z.string().uuid(),
@@ -76,7 +76,7 @@ export const graAuthenticate = protectedProcedure
 
 // Sync client data with GRA records
 export const graSyncClient = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(
     z.object({
       clientId: z.string().uuid(),
@@ -215,7 +215,7 @@ export const graSyncClient = protectedProcedure
 
 // Submit filing directly to GRA
 export const graSubmitFiling = protectedProcedure
-  // .use(requirePermission("taxes.file"))
+  .use(requirePermission("taxes.file"))
   .input(
     z.object({
       submissionId: z.string().uuid(),
@@ -318,7 +318,7 @@ export const graSubmitFiling = protectedProcedure
 
 // Check GRA submission status
 export const graCheckSubmissionStatus = protectedProcedure
-  // .use(requirePermission("taxes.read"))
+  .use(requirePermission("taxes.read"))
   .input(
     z.object({
       graReference: z.string().min(1),
@@ -399,7 +399,7 @@ export const graCheckSubmissionStatus = protectedProcedure
 
 // Get GRA filing calendar and deadlines
 export const graGetFilingCalendar = protectedProcedure
-  // .use(requirePermission("taxes.read"))
+  .use(requirePermission("taxes.read"))
   .input(
     z.object({
       year: z.number().min(2020).max(2030).default(new Date().getFullYear()),
@@ -529,7 +529,7 @@ export const graGetFilingCalendar = protectedProcedure
 
 // Bulk export client data for GRA compliance
 export const graExportClientData = protectedProcedure
-  // .use(requirePermission("taxes.read"))
+  .use(requirePermission("taxes.read"))
   .input(
     z.object({
       clientIds: z

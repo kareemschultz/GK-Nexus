@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   adminProcedure,
   protectedProcedure,
-  // requirePermission,
+  requirePermission,
 } from "../index";
 
 // Input schemas
@@ -99,7 +99,7 @@ const defaultInvoiceSummary = {
 
 // Get main dashboard overview
 export const dashboardOverview = protectedProcedure
-  // .use(requirePermission("dashboard.read"))
+  .use(requirePermission("dashboard.read"))
   .input(dashboardQuerySchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -309,7 +309,7 @@ export const dashboardOverview = protectedProcedure
 
 // Get KPI metrics
 export const dashboardKpis = protectedProcedure
-  // .use(requirePermission("dashboard.read"))
+  .use(requirePermission("dashboard.read"))
   .input(kpiQuerySchema)
   .handler(async ({ input }) => {
     const { period, year, month, quarter } = input;
@@ -330,7 +330,7 @@ export const dashboardKpis = protectedProcedure
 
 // Get revenue analysis
 export const dashboardRevenueAnalysis = protectedProcedure
-  // .use(requirePermission("dashboard.read"))
+  .use(requirePermission("dashboard.read"))
   .input(revenueAnalysisSchema)
   .handler(async ({ input }) => {
     const { startDate, endDate, groupBy } = input;
@@ -354,7 +354,7 @@ export const dashboardRevenueAnalysis = protectedProcedure
 
 // Get compliance dashboard
 export const dashboardComplianceReport = protectedProcedure
-  // .use(requirePermission("compliance.read"))
+  .use(requirePermission("compliance.read"))
   .input(complianceReportSchema)
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -540,7 +540,7 @@ export const dashboardClientPerformance = adminProcedure
 
 // Get financial summary
 export const dashboardFinancialSummary = protectedProcedure
-  // .use(requirePermission("dashboard.read"))
+  .use(requirePermission("dashboard.read"))
   .input(dashboardQuerySchema)
   .handler(async ({ input }) => {
     const { timeRange, clientId: _clientId } = input;

@@ -82,7 +82,7 @@ function RouteComponent() {
     queryKey: ["users", "rolesAndPermissions"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userRolesAndPermissions();
+      return client.users.rolesAndPermissions();
     },
   });
 
@@ -103,7 +103,7 @@ function RouteComponent() {
       status: "active" | "inactive" | "suspended" | "pending";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.userCreate(data);
+      return client.users.create(data);
     },
   });
 

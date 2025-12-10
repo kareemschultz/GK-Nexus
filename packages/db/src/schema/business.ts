@@ -749,6 +749,100 @@ export const invoice = pgTable(
   ]
 );
 
+// Businesses Table - KAJ Financial Services & Green Crescent Management Consultancy
+export const businesses = pgTable(
+  "businesses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 255 }).notNull(),
+    code: varchar("code", { length: 10 }).notNull().unique(), // "KAJ" or "GCMC"
+    type: varchar("type", { length: 50 }).notNull(), // "tax_accounting", "business_consulting"
+    description: text("description"),
+    isActive: boolean("is_active").notNull().default(true),
+    settings: text("settings"), // JSON for business-specific settings (branding, defaults)
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("businesses_code_idx").on(table.code),
+    index("businesses_active_idx").on(table.isActive),
+  ]
+);
+
+// User-Business Join Table (Many-to-Many: Users can work for multiple businesses)
+export const userBusinesses = pgTable(
+  "user_businesses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    role: varchar("role", { length: 50 }).notNull().default("employee"), // Role within this business
+    assignedAt: timestamp("assigned_at").defaultNow().notNull(),
+    assignedBy: text("assigned_by").references(() => user.id),
+  },
+  (table) => [
+    index("user_businesses_user_idx").on(table.userId),
+    index("user_businesses_business_idx").on(table.businessId),
+  ]
+);
+
+// Client-Business Join Table (Many-to-Many: Clients can be served by both businesses)
+export const clientBusinesses = pgTable(
+  "client_businesses",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => client.id, { onDelete: "cascade" }),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id, { onDelete: "cascade" }),
+    isPrimary: boolean("is_primary").notNull().default(false), // Primary business relationship
+    addedAt: timestamp("added_at").defaultNow().notNull(),
+    addedBy: text("added_by").references(() => user.id),
+  },
+  (table) => [
+    index("client_businesses_client_idx").on(table.clientId),
+    index("client_businesses_business_idx").on(table.businessId),
+  ]
+);
+
+// Invoice Line Items - Supports cross-business invoicing (KAJ + GCMC on same invoice)
+export const invoiceLineItem = pgTable(
+  "invoice_line_item",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoice.id, { onDelete: "cascade" }),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => businesses.id), // Which business this line item belongs to
+    serviceId: uuid("service_id"), // Optional link to service catalog
+    description: text("description").notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 2 })
+      .notNull()
+      .default("1"),
+    unitPrice: numeric("unit_price", { precision: 15, scale: 2 }).notNull(),
+    amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
+    taxRate: numeric("tax_rate", { precision: 5, scale: 2 }), // e.g., 14 for VAT
+    taxAmount: numeric("tax_amount", { precision: 15, scale: 2 }),
+    sortOrder: integer("sort_order").default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("invoice_line_item_invoice_idx").on(table.invoiceId),
+    index("invoice_line_item_business_idx").on(table.businessId),
+  ]
+);
+
 // Payroll Record Table
 export const payrollRecord = pgTable(
   "payroll_record",
@@ -847,7 +941,7 @@ export const graSubmission = pgTable(
 );
 
 // Relations for new tables
-export const invoiceRelations = relations(invoice, ({ one }) => ({
+export const invoiceRelations = relations(invoice, ({ one, many }) => ({
   client: one(client, {
     fields: [invoice.clientId],
     references: [client.id],
@@ -856,6 +950,7 @@ export const invoiceRelations = relations(invoice, ({ one }) => ({
     fields: [invoice.createdBy],
     references: [user.id],
   }),
+  lineItems: many(invoiceLineItem),
 }));
 
 export const payrollRecordRelations = relations(payrollRecord, ({ one }) => ({
@@ -890,3 +985,57 @@ export const graSubmissionRelations = relations(graSubmission, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+// Relations for businesses
+export const businessesRelations = relations(businesses, ({ many }) => ({
+  userBusinesses: many(userBusinesses),
+  clientBusinesses: many(clientBusinesses),
+  invoiceLineItems: many(invoiceLineItem),
+}));
+
+export const userBusinessesRelations = relations(userBusinesses, ({ one }) => ({
+  user: one(user, {
+    fields: [userBusinesses.userId],
+    references: [user.id],
+  }),
+  business: one(businesses, {
+    fields: [userBusinesses.businessId],
+    references: [businesses.id],
+  }),
+  assignedByUser: one(user, {
+    fields: [userBusinesses.assignedBy],
+    references: [user.id],
+  }),
+}));
+
+export const clientBusinessesRelations = relations(
+  clientBusinesses,
+  ({ one }) => ({
+    client: one(client, {
+      fields: [clientBusinesses.clientId],
+      references: [client.id],
+    }),
+    business: one(businesses, {
+      fields: [clientBusinesses.businessId],
+      references: [businesses.id],
+    }),
+    addedByUser: one(user, {
+      fields: [clientBusinesses.addedBy],
+      references: [user.id],
+    }),
+  })
+);
+
+export const invoiceLineItemRelations = relations(
+  invoiceLineItem,
+  ({ one }) => ({
+    invoice: one(invoice, {
+      fields: [invoiceLineItem.invoiceId],
+      references: [invoice.id],
+    }),
+    business: one(businesses, {
+      fields: [invoiceLineItem.businessId],
+      references: [businesses.id],
+    }),
+  })
+);

@@ -32,7 +32,10 @@ setInterval(() => {
 }, 300_000);
 
 // Rate limiting middleware
-const rateLimiter = (c: Context, next: Next) => {
+const rateLimiter = async (
+  c: Context,
+  next: Next
+): Promise<void | Response> => {
   const ip =
     c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
     c.req.header("x-real-ip") ||
@@ -42,7 +45,8 @@ const rateLimiter = (c: Context, next: Next) => {
 
   if (!record || now > record.resetTime) {
     rateLimitStore.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return next();
+    await next();
+    return;
   }
 
   if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
@@ -61,7 +65,7 @@ const rateLimiter = (c: Context, next: Next) => {
     String(RATE_LIMIT_MAX_REQUESTS - record.count)
   );
   c.header("X-RateLimit-Reset", String(Math.ceil(record.resetTime / 1000)));
-  return next();
+  await next();
 };
 
 const app = new Hono();

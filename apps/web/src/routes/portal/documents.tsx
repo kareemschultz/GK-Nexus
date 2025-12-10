@@ -120,7 +120,7 @@ function DocumentsPage() {
     queryKey: ["documents"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.documentList({ page: 1, limit: 100 });
+      return client.documents.list({ page: 1, limit: 100 });
     },
   });
 

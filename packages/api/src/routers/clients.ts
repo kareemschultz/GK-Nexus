@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 import {
   bulkClientActionSchema,
   clientQuerySchema,
@@ -125,7 +125,7 @@ function generateClientNumber(): string {
 
 // Get immigration status workflow for client
 export const clientGetImmigrationStatus = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(z.object({ clientId: z.string().uuid() }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -205,7 +205,7 @@ export const clientGetImmigrationStatus = protectedProcedure
 
 // Update immigration status
 export const clientUpdateImmigrationStatus = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(
     z.object({
       clientId: z.string().uuid(),
@@ -357,7 +357,7 @@ export const clientUpdateImmigrationStatus = protectedProcedure
 
 // Submit required documents for immigration
 export const clientSubmitImmigrationDocuments = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(
     z.object({
       clientId: z.string().uuid(),
@@ -436,7 +436,7 @@ export const clientSubmitImmigrationDocuments = protectedProcedure
 
 // Get immigration workflow templates
 export const clientGetImmigrationWorkflowTemplates = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(
     z.object({
       visaType: z
@@ -549,7 +549,7 @@ export const clientGetImmigrationWorkflowTemplates = protectedProcedure
 
 // Get all clients with filtering and pagination
 export const clientList = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(clientQuerySchema)
   .handler(async ({ input, context }) => {
     const {
@@ -699,7 +699,7 @@ export const clientList = protectedProcedure
 
 // Get client by ID
 export const clientGetById = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -728,7 +728,7 @@ export const clientGetById = protectedProcedure
 
 // Create new client
 export const clientCreate = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(createClientSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -812,7 +812,7 @@ export const clientCreate = protectedProcedure
 
 // Update client
 export const clientUpdate = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(z.object({ id: z.string().min(1), data: updateClientSchema }))
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -902,7 +902,7 @@ export const clientUpdate = protectedProcedure
 
 // Delete client (soft delete)
 export const clientDelete = protectedProcedure
-  // .use(requirePermission("clients.delete"))
+  .use(requirePermission("clients.delete"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -934,7 +934,7 @@ export const clientDelete = protectedProcedure
 
 // Client wizard endpoints
 export const clientWizardStep1 = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(clientWizardStep1Schema)
   .handler(async ({ input }) => ({
     success: true,
@@ -943,7 +943,7 @@ export const clientWizardStep1 = protectedProcedure
   }));
 
 export const clientWizardStep2 = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(clientWizardStep2Schema)
   .handler(async ({ input }) => ({
     success: true,
@@ -952,7 +952,7 @@ export const clientWizardStep2 = protectedProcedure
   }));
 
 export const clientWizardStep3 = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(clientWizardStep3Schema)
   .handler(async ({ input }) => ({
     success: true,
@@ -961,7 +961,7 @@ export const clientWizardStep3 = protectedProcedure
   }));
 
 export const clientWizardStep4 = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(clientWizardStep4Schema)
   .handler(async ({ input }) => ({
     success: true,
@@ -970,7 +970,7 @@ export const clientWizardStep4 = protectedProcedure
   }));
 
 export const clientWizardComplete = protectedProcedure
-  // .use(requirePermission("clients.create"))
+  .use(requirePermission("clients.create"))
   .input(
     z.object({
       step1: clientWizardStep1Schema,
@@ -1020,7 +1020,7 @@ export const clientWizardComplete = protectedProcedure
 
 // Client contacts
 export const clientContactList = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(z.object({ clientId: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1047,7 +1047,7 @@ export const clientContactList = protectedProcedure
   });
 
 export const clientContactCreate = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(createClientContactSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1084,7 +1084,7 @@ export const clientContactCreate = protectedProcedure
   });
 
 export const clientContactUpdate = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(z.object({ id: z.string().min(1), data: updateClientContactSchema }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1108,7 +1108,7 @@ export const clientContactUpdate = protectedProcedure
   });
 
 export const clientContactDelete = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1132,7 +1132,7 @@ export const clientContactDelete = protectedProcedure
 
 // Client services
 export const clientServiceList = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .input(z.object({ clientId: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1154,7 +1154,7 @@ export const clientServiceList = protectedProcedure
   });
 
 export const clientServiceCreate = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(createClientServiceSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1188,7 +1188,7 @@ export const clientServiceCreate = protectedProcedure
   });
 
 export const clientServiceUpdate = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(z.object({ id: z.string().min(1), data: updateClientServiceSchema }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1234,7 +1234,7 @@ export const clientServiceUpdate = protectedProcedure
   });
 
 export const clientServiceDelete = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -1257,7 +1257,7 @@ export const clientServiceDelete = protectedProcedure
 
 // Bulk operations
 export const clientBulkAction = protectedProcedure
-  // .use(requirePermission("clients.update"))
+  .use(requirePermission("clients.update"))
   .input(bulkClientActionSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -1322,7 +1322,7 @@ export const clientBulkAction = protectedProcedure
 
 // Get client statistics
 export const clientStats = protectedProcedure
-  // .use(requirePermission("clients.read"))
+  .use(requirePermission("clients.read"))
   .handler(async ({ context }) => {
     const { db } = context;
 

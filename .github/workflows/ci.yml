@@ -65,14 +65,22 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    timeout-minutes: 5
-    continue-on-error: true
+    timeout-minutes: 10
 
     steps:
-      - name: Skip lint in CI
-        run: |
-          echo "⚠️ Lint skipped in CI - run locally with: bun run check"
-          echo "Reason: ultracite check takes too long in CI environment"
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run lint
+        run: bun run check
 
   test:
     name: Test
@@ -93,7 +101,6 @@ jobs:
 
       - name: Run unit tests
         run: bun run test
-        continue-on-error: true
 
   docker:
     name: Docker Build

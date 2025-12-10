@@ -394,7 +394,8 @@ export class MonitoringObservabilityService {
         await this.sendSmsNotification(channel, rule, metricData, condition);
         break;
       default:
-        console.warn(`Unknown notification channel type: ${channel.type}`);
+        // Unsupported notification channel type - skip silently
+        break;
     }
   }
 
@@ -627,50 +628,45 @@ export class MonitoringObservabilityService {
 
   private async sendEmailNotification(
     _channel: any,
-    rule: AlertRule,
+    _rule: AlertRule,
     _metricData: MetricData,
     _condition: any
   ): Promise<void> {
-    // TODO: Implement email notification
-    console.log("Sending email notification for alert:", rule.ruleName);
+    // TODO: Implement email notification via email service
   }
 
   private async sendSlackNotification(
     _channel: any,
-    rule: AlertRule,
+    _rule: AlertRule,
     _metricData: MetricData,
     _condition: any
   ): Promise<void> {
-    // TODO: Implement Slack notification
-    console.log("Sending Slack notification for alert:", rule.ruleName);
+    // TODO: Implement Slack notification via Slack webhook
   }
 
   private async sendWebhookNotification(
     _channel: any,
-    rule: AlertRule,
+    _rule: AlertRule,
     _metricData: MetricData,
     _condition: any
   ): Promise<void> {
     // TODO: Implement webhook notification
-    console.log("Sending webhook notification for alert:", rule.ruleName);
   }
 
   private async sendSmsNotification(
     _channel: any,
-    rule: AlertRule,
+    _rule: AlertRule,
     _metricData: MetricData,
     _condition: any
   ): Promise<void> {
-    // TODO: Implement SMS notification
-    console.log("Sending SMS notification for alert:", rule.ruleName);
+    // TODO: Implement SMS notification via SMS gateway
   }
 
   private async analyzeSecurityEvent(
-    eventId: string,
+    _eventId: string,
     _eventData: SecurityEventData
   ): Promise<void> {
     // TODO: Implement security event analysis for correlation and pattern detection
-    console.log("Analyzing security event:", eventId);
   }
 
   private getBaselineStartDate(endDate: Date, timeFrame: string): Date {

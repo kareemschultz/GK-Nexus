@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Note: No dedicated employee table exists in the schema.
 // This router returns static reference data for the payroll UI.
@@ -12,7 +12,7 @@ import { protectedProcedure } from "../index";
 
 // Employee management - returns static reference data
 export const payrollEmployeeList = protectedProcedure
-  // .use(requirePermission("payroll.read"))
+  .use(requirePermission("payroll.read"))
   .input(
     z.object({
       search: z.string().nullish(),
@@ -120,7 +120,7 @@ export const payrollEmployeeList = protectedProcedure
   });
 
 export const payrollEmployeeGetById = protectedProcedure
-  // .use(requirePermission("payroll.read"))
+  .use(requirePermission("payroll.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input }) => {
     const employees: Record<string, any> = {
@@ -149,7 +149,7 @@ export const payrollEmployeeGetById = protectedProcedure
   });
 
 export const payrollEmployeeCreate = protectedProcedure
-  // .use(requirePermission("payroll.create"))
+  .use(requirePermission("payroll.create"))
   .input(
     z.object({
       firstName: z.string().min(1),
@@ -183,7 +183,7 @@ export const payrollEmployeeCreate = protectedProcedure
   });
 
 export const payrollEmployeeUpdate = protectedProcedure
-  // .use(requirePermission("payroll.update"))
+  .use(requirePermission("payroll.update"))
   .input(
     z.object({
       id: z.string(),
@@ -206,13 +206,13 @@ export const payrollEmployeeUpdate = protectedProcedure
   });
 
 export const payrollEmployeeDelete = protectedProcedure
-  // .use(requirePermission("payroll.delete"))
+  .use(requirePermission("payroll.delete"))
   .input(z.object({ id: z.string() }))
   .handler(async () => ({ success: true, message: "Employee deleted" }));
 
 // Payroll calculation for a single employee
 export const payrollCalculate = protectedProcedure
-  // .use(requirePermission("payroll.calculate"))
+  .use(requirePermission("payroll.calculate"))
   .input(
     z.object({
       employeeId: z.string(),
@@ -280,7 +280,7 @@ export const payrollCalculate = protectedProcedure
 
 // Payroll runs
 export const payrollRunsList = protectedProcedure
-  // .use(requirePermission("payroll.read"))
+  .use(requirePermission("payroll.read"))
   .input(
     z.object({
       year: z.number().optional(),
@@ -323,7 +323,7 @@ export const payrollRunsList = protectedProcedure
   });
 
 export const payrollRunsCreate = protectedProcedure
-  // .use(requirePermission("payroll.create"))
+  .use(requirePermission("payroll.create"))
   .input(
     z.object({
       payPeriodStart: z.string(),
@@ -347,7 +347,7 @@ export const payrollRunsCreate = protectedProcedure
 
 // Get departments list
 export const payrollDepartments = protectedProcedure
-  // .use(requirePermission("payroll.read"))
+  .use(requirePermission("payroll.read"))
   .handler(async () => ({
     success: true,
     data: [

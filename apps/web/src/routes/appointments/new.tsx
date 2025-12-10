@@ -74,7 +74,7 @@ function NewAppointmentPage() {
     queryKey: ["clients"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.clientList({ page: 1, limit: 100 });
+      return client.clients.list({ page: 1, limit: 100 });
     },
   });
 
@@ -83,7 +83,7 @@ function NewAppointmentPage() {
     queryKey: ["users"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.userList({ page: 1, limit: 100 });
+      return client.users.list({ page: 1, limit: 100 });
     },
   });
 
@@ -156,7 +156,7 @@ function NewAppointmentPage() {
       duration?: number;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.appointmentCreate({
+      return client.appointments.create({
         title: data.title,
         clientId: data.clientId,
         scheduledDate: data.startTime,

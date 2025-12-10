@@ -1,3 +1,4 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -68,7 +69,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { authClient } from "@/lib/auth-client";
-import { orpc } from "@/utils/orpc";
+import { queryClient } from "@/utils/orpc";
 
 export const Route = createFileRoute("/local-content")({
   component: LocalContentPage,
@@ -154,66 +155,113 @@ function LocalContentPage() {
   const [sectorFilter, setSectorFilter] = useState<string>("all");
   const [showNewPlanDialog, setShowNewPlanDialog] = useState(false);
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
-  const utils = orpc.useUtils();
 
   // Fetch plans
-  const plansQuery = useQuery(
-    orpc.localContent.plans.list.queryOptions({
-      input: {
+  const plansQuery = useQuery({
+    queryKey: ["localContent", "plans"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.list({
         page: 1,
         limit: 50,
-      },
-    })
-  );
+      });
+    },
+  });
 
   // Fetch suppliers
-  const suppliersQuery = useQuery(
-    orpc.localContent.vendors.list.queryOptions({ input: {} })
-  );
+  const suppliersQuery = useQuery({
+    queryKey: ["localContent", "vendors"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.vendors.list({});
+    },
+  });
 
   // Fetch reports
-  const reportsQuery = useQuery(
-    orpc.localContent.reports.list.queryOptions({
-      input: {
+  const reportsQuery = useQuery({
+    queryKey: ["localContent", "reports"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.reports.list({
         page: 1,
         limit: 50,
-      },
-    })
-  );
+      });
+    },
+  });
 
   // Fetch stats
-  const statsQuery = useQuery(
-    orpc.localContent.registrations.stats.queryOptions()
-  );
+  const statsQuery = useQuery({
+    queryKey: ["localContent", "stats"],
+    queryFn: async () => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.registrations.stats({});
+    },
+  });
 
   // Create plan mutation
-  const createPlanMutation = useMutation(
-    orpc.localContent.plans.create.mutationOptions({
-      onSuccess: () => {
-        toast.success("Local content plan created successfully");
-        setShowNewPlanDialog(false);
-        utils.localContent.plans.list.invalidate();
-        utils.localContent.registrations.stats.invalidate();
-      },
-      onError: (error) => {
-        toast.error(`Failed to create plan: ${error.message}`);
-      },
-    })
-  );
+  const createPlanMutation = useMutation({
+    mutationFn: async (data: {
+      registrationId: string;
+      planYear: number;
+      planTitle: string;
+      planDescription?: string;
+      employmentTargets?: { targetPercent?: string };
+      procurementTargets?: { targetPercent?: string };
+      trainingTargets?: { totalTrainingHours?: number };
+      notes?: string;
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.plans.create({
+        registrationId: data.registrationId,
+        planYear: data.planYear,
+        planTitle: data.planTitle,
+        planDescription: data.planDescription,
+        employmentTargets: data.employmentTargets,
+        procurementTargets: data.procurementTargets,
+        trainingTargets: data.trainingTargets,
+        notes: data.notes,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Local content plan created successfully");
+      setShowNewPlanDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["localContent", "plans"] });
+      queryClient.invalidateQueries({ queryKey: ["localContent", "stats"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create plan: ${error.message}`);
+    },
+  });
 
   // Create supplier mutation
-  const createSupplierMutation = useMutation(
-    orpc.localContent.vendors.create.mutationOptions({
-      onSuccess: () => {
-        toast.success("Supplier registered successfully");
-        setShowNewSupplierDialog(false);
-        utils.localContent.vendors.list.invalidate();
-      },
-      onError: (error) => {
-        toast.error(`Failed to register supplier: ${error.message}`);
-      },
-    })
-  );
+  const createSupplierMutation = useMutation({
+    mutationFn: async (data: {
+      vendorName: string;
+      vendorType: string;
+      tradingName?: string;
+      email?: string;
+      phone?: string;
+      notes?: string;
+    }) => {
+      const { client } = await import("@/utils/orpc");
+      return client.localContent.vendors.create({
+        vendorName: data.vendorName,
+        vendorType: data.vendorType,
+        tradingName: data.tradingName,
+        email: data.email,
+        phone: data.phone,
+        notes: data.notes,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Supplier registered successfully");
+      setShowNewSupplierDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["localContent", "vendors"] });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to register supplier: ${error.message}`);
+    },
+  });
 
   const handleCreatePlan = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -256,9 +304,6 @@ function LocalContentPage() {
       vendorName: formData.get("companyName") as string,
       tradingName: (formData.get("tradeName") as string) || undefined,
       vendorType: formData.get("industrySector") as string,
-      guyaneseOwnershipPercent: formData.get("localOwnershipPercent") as string,
-      address: (formData.get("address") as string) || undefined,
-      contactName: (formData.get("contactPerson") as string) || undefined,
       email: (formData.get("contactEmail") as string) || undefined,
       phone: (formData.get("contactPhone") as string) || undefined,
       notes: (formData.get("notes") as string) || undefined,

@@ -7,7 +7,7 @@ import { z } from "zod";
 import {
   adminProcedure,
   protectedProcedure,
-  // requirePermission,
+  requirePermission,
 } from "../index";
 import { getUserPermissions } from "../middleware/rbac";
 import {
@@ -26,7 +26,7 @@ import {
 
 // Get all users with filtering and pagination
 export const userList = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(userQuerySchema)
   .handler(async ({ input, context }) => {
     const { page, limit, search, role, status, department, sortBy, sortOrder } =
@@ -115,7 +115,7 @@ export const userList = protectedProcedure
 
 // Get user by ID
 export const userGetById = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db, user: currentUser } = context;
@@ -193,7 +193,7 @@ export const userMe = protectedProcedure.handler(async ({ context }) => {
 
 // Create new user
 export const userCreate = protectedProcedure
-  // .use(requirePermission("users.create"))
+  .use(requirePermission("users.create"))
   .input(createUserSchema)
   .handler(async ({ input, context }) => {
     const { db, user: currentUser } = context;
@@ -243,7 +243,7 @@ export const userCreate = protectedProcedure
 
 // Update user
 export const userUpdate = protectedProcedure
-  // .use(requirePermission("users.update"))
+  .use(requirePermission("users.update"))
   .input(z.object({ id: z.string().min(1), data: updateUserSchema }))
   .handler(async ({ input, context }) => {
     const { db, user: currentUser } = context;
@@ -325,7 +325,7 @@ export const userUpdate = protectedProcedure
 
 // Delete user (deactivate)
 export const userDelete = protectedProcedure
-  // .use(requirePermission("users.delete"))
+  .use(requirePermission("users.delete"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db, user: currentUser } = context;
@@ -427,7 +427,7 @@ export const userResetPassword = adminProcedure
 
 // Update user permissions
 export const userUpdatePermissions = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(updatePermissionsSchema)
   .handler(async ({ input, context }) => {
     const { db, user: currentUser } = context;
@@ -569,7 +569,7 @@ export const userStats = adminProcedure.handler(async ({ context }) => {
 
 // Get available roles and permissions
 export const userRolesAndPermissions = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .handler(async () => {
     const { ROLE_PERMISSIONS } = await import("../middleware/rbac");
 

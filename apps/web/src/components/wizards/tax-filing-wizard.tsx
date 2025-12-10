@@ -234,7 +234,7 @@ function ClientSelectionStep({
     queryKey: ["clients", "tax-filing"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      const result = await client.clientList({
+      const result = await client.clients.list({
         page: 1,
         limit: 100,
         status: "active",

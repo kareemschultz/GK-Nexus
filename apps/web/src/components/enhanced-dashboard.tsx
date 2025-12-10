@@ -219,10 +219,10 @@ export function EnhancedDashboard() {
   const dashboardQuery = useQuery({
     queryKey: ["dashboard", "overview"],
     queryFn: () =>
-      safeApiCall(() => client.dashboardOverview({ timeRange: "30d" }), {
+      safeApiCall(() => client.dashboard.overview({ timeRange: "30d" }), {
         success: true,
         data: mockDashboard,
-      } as unknown as Awaited<ReturnType<typeof client.dashboardOverview>>),
+      } as unknown as Awaited<ReturnType<typeof client.dashboard.overview>>),
     refetchInterval: 30_000, // Refresh every 30 seconds
     retry: 1,
     staleTime: 30_000,
@@ -233,7 +233,7 @@ export function EnhancedDashboard() {
     queryFn: () =>
       safeApiCall(
         () =>
-          client.dashboardKpis({
+          client.dashboard.kpis({
             period: "monthly",
             year: new Date().getFullYear(),
           }),
@@ -247,7 +247,7 @@ export function EnhancedDashboard() {
             revenue: [],
             clients: [],
           },
-        } as Awaited<ReturnType<typeof client.dashboardKpis>>
+        } as Awaited<ReturnType<typeof client.dashboard.kpis>>
       ),
     refetchInterval: 60_000, // Refresh every minute
     retry: 1,
@@ -258,7 +258,7 @@ export function EnhancedDashboard() {
     queryKey: ["dashboard", "financial"],
     queryFn: () =>
       safeApiCall(
-        () => client.dashboardFinancialSummary({ timeRange: "30d" }),
+        () => client.dashboard.financialSummary({ timeRange: "30d" }),
         {
           success: true,
           data: {
@@ -266,7 +266,7 @@ export function EnhancedDashboard() {
             invoiceSummary: {},
             cashFlow: [],
           },
-        } as Awaited<ReturnType<typeof client.dashboardFinancialSummary>>
+        } as Awaited<ReturnType<typeof client.dashboard.financialSummary>>
       ),
     refetchInterval: 30_000,
     retry: 1,
@@ -278,7 +278,7 @@ export function EnhancedDashboard() {
     queryFn: () =>
       safeApiCall(
         () =>
-          client.dashboardComplianceReport({
+          client.dashboard.complianceReport({
             year: new Date().getFullYear(),
           }),
         {
@@ -291,7 +291,7 @@ export function EnhancedDashboard() {
             clientCompliance: [],
           },
         } as unknown as Awaited<
-          ReturnType<typeof client.dashboardComplianceReport>
+          ReturnType<typeof client.dashboard.complianceReport>
         >
       ),
     refetchInterval: 60_000,

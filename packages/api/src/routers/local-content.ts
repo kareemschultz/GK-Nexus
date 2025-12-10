@@ -3,7 +3,7 @@ import { ORPCError } from "@orpc/server";
 import { and, asc, count, desc, eq, ilike, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Helper functions
 function generateRegistrationNumber(): string {
@@ -174,7 +174,7 @@ const createReportSchema = z.object({
 // ========================================
 
 export const localContentRegistrationsList = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(registrationQuerySchema)
   .handler(async ({ input, context }) => {
     const {
@@ -274,7 +274,7 @@ export const localContentRegistrationsList = protectedProcedure
   });
 
 export const localContentRegistrationsGetById = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -314,7 +314,7 @@ export const localContentRegistrationsGetById = protectedProcedure
   });
 
 export const localContentRegistrationsCreate = protectedProcedure
-  // .use(requirePermission("localcontent.create"))
+  .use(requirePermission("localcontent.create"))
   .input(createRegistrationSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -348,7 +348,7 @@ export const localContentRegistrationsCreate = protectedProcedure
   });
 
 export const localContentRegistrationsUpdate = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -395,7 +395,7 @@ export const localContentRegistrationsUpdate = protectedProcedure
   });
 
 export const localContentRegistrationsApprove = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -430,7 +430,7 @@ export const localContentRegistrationsApprove = protectedProcedure
   });
 
 export const localContentRegistrationsStats = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .handler(async ({ context }) => {
     const { db } = context;
 
@@ -471,7 +471,7 @@ export const localContentRegistrationsStats = protectedProcedure
 // ========================================
 
 export const localContentPlansList = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(
     z.object({
       page: z.number().min(1).default(1),
@@ -550,7 +550,7 @@ export const localContentPlansList = protectedProcedure
   });
 
 export const localContentPlansCreate = protectedProcedure
-  // .use(requirePermission("localcontent.create"))
+  .use(requirePermission("localcontent.create"))
   .input(createPlanSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -617,7 +617,7 @@ export const localContentPlansCreate = protectedProcedure
   });
 
 export const localContentPlansUpdate = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -671,7 +671,7 @@ export const localContentPlansUpdate = protectedProcedure
   });
 
 export const localContentPlansSubmit = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -702,7 +702,7 @@ export const localContentPlansSubmit = protectedProcedure
 // ========================================
 
 export const localContentReportsList = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(
     z.object({
       page: z.number().min(1).default(1),
@@ -786,7 +786,7 @@ export const localContentReportsList = protectedProcedure
   });
 
 export const localContentReportsCreate = protectedProcedure
-  // .use(requirePermission("localcontent.create"))
+  .use(requirePermission("localcontent.create"))
   .input(createReportSchema)
   .handler(async ({ input, context }) => {
     const { db, user } = context;
@@ -846,7 +846,7 @@ export const localContentReportsCreate = protectedProcedure
   });
 
 export const localContentReportsUpdate = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -897,7 +897,7 @@ export const localContentReportsUpdate = protectedProcedure
   });
 
 export const localContentReportsSubmit = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(z.object({ id: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { db } = context;
@@ -928,7 +928,7 @@ export const localContentReportsSubmit = protectedProcedure
 // ========================================
 
 export const localContentVendorsList = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(
     z.object({
       search: z.string().optional(),
@@ -982,7 +982,7 @@ export const localContentVendorsList = protectedProcedure
   });
 
 export const localContentVendorsCreate = protectedProcedure
-  // .use(requirePermission("localcontent.create"))
+  .use(requirePermission("localcontent.create"))
   .input(
     z.object({
       vendorName: z.string().min(1),
@@ -1048,7 +1048,7 @@ export const localContentVendorsCreate = protectedProcedure
   });
 
 export const localContentVendorsUpdate = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),
@@ -1123,7 +1123,7 @@ export const localContentVendorsUpdate = protectedProcedure
 // ========================================
 
 export const localContentChecklistsList = protectedProcedure
-  // .use(requirePermission("localcontent.read"))
+  .use(requirePermission("localcontent.read"))
   .input(z.object({ registrationId: z.string().min(1) }))
   .handler(async ({ input, context }) => {
     const { registrationId } = input;
@@ -1144,7 +1144,7 @@ export const localContentChecklistsList = protectedProcedure
   });
 
 export const localContentChecklistsCreate = protectedProcedure
-  // .use(requirePermission("localcontent.create"))
+  .use(requirePermission("localcontent.create"))
   .input(
     z.object({
       registrationId: z.string().min(1),
@@ -1208,7 +1208,7 @@ export const localContentChecklistsCreate = protectedProcedure
   });
 
 export const localContentChecklistsUpdate = protectedProcedure
-  // .use(requirePermission("localcontent.update"))
+  .use(requirePermission("localcontent.update"))
   .input(
     z.object({
       id: z.string().min(1),

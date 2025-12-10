@@ -43,7 +43,14 @@ async function seed() {
   // Create super admin user
   const superAdminId = crypto.randomUUID();
   const superAdminAccountId = crypto.randomUUID();
-  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD || "Admin123!@#";
+  const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+  if (!superAdminPassword) {
+    console.error(
+      "SUPER_ADMIN_PASSWORD environment variable is required for seeding."
+    );
+    console.error("Please set SUPER_ADMIN_PASSWORD in your .env file.");
+    process.exit(1);
+  }
   const superAdminName = process.env.SUPER_ADMIN_NAME || "Super Admin";
 
   // Hash password using the same method as better-auth
@@ -73,10 +80,74 @@ async function seed() {
 
     console.log("Super admin user created successfully!");
     console.log(`Email: ${superAdminEmail}`);
-    console.log(`Password: ${superAdminPassword}`);
+    console.log(
+      "Password was set from SUPER_ADMIN_PASSWORD environment variable."
+    );
     console.log(
       "\nIMPORTANT: Please change this password immediately after first login!"
     );
+
+    // Seed businesses (KAJ Financial Services & GCMC)
+    console.log("\nSeeding businesses...");
+
+    // Check if businesses already exist
+    const existingBusinesses = await db.select().from(businesses).limit(1);
+
+    if (existingBusinesses.length === 0) {
+      const [kajBusiness] = await db
+        .insert(businesses)
+        .values({
+          name: "KAJ Financial Services",
+          code: "KAJ",
+          type: "tax_accounting",
+          description:
+            "GRA Licensed Accountant Practice - Tax, NIS, Compliance, Audits",
+          isActive: true,
+          settings: JSON.stringify({
+            primaryColor: "#1a365d",
+            logo: "/logos/kaj.png",
+          }),
+        })
+        .returning();
+
+      const [gcmcBusiness] = await db
+        .insert(businesses)
+        .values({
+          name: "Green Crescent Management Consultancy",
+          code: "GCMC",
+          type: "business_consulting",
+          description:
+            "Training, Incorporation, Paralegal, Immigration, Business Proposals",
+          isActive: true,
+          settings: JSON.stringify({
+            primaryColor: "#276749",
+            logo: "/logos/gcmc.png",
+          }),
+        })
+        .returning();
+
+      console.log(
+        `Businesses seeded: ${kajBusiness.code}, ${gcmcBusiness.code}`
+      );
+
+      // Assign super admin to both businesses
+      await db.insert(userBusinesses).values([
+        {
+          userId: superAdminId,
+          businessId: kajBusiness.id,
+          role: "super_admin",
+        },
+        {
+          userId: superAdminId,
+          businessId: gcmcBusiness.id,
+          role: "super_admin",
+        },
+      ]);
+
+      console.log("Super admin assigned to both businesses");
+    } else {
+      console.log("Businesses already exist, skipping business seed");
+    }
   } catch (error) {
     console.error("Error creating super admin:", error);
     throw error;

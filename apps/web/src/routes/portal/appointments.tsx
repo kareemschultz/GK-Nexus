@@ -184,7 +184,7 @@ function AppointmentsPage() {
     queryKey: ["appointments"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.appointmentList({ page: 1, limit: 100 });
+      return client.appointments.list({ page: 1, limit: 100 });
     },
   });
 
@@ -229,7 +229,7 @@ function AppointmentsPage() {
     }) => {
       const { client } = await import("@/utils/orpc");
       // Transform portal data to match API schema
-      return client.appointmentCreate({
+      return client.appointments.create({
         clientId: data.staffId || "00000000-0000-0000-0000-000000000000", // Placeholder - portal user ID would come from auth
         title: data.title,
         scheduledDate: data.scheduledAt,

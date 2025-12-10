@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Guyana VAT rate is 14%
 const GUYANA_VAT_RATE = 14;
@@ -170,7 +170,7 @@ const mockInvoices: Invoice[] = [
 
 // Get all invoices
 export const invoiceList = protectedProcedure
-  // .use(requirePermission("invoices.read"))
+  .use(requirePermission("invoices.read"))
   .input(
     z.object({
       status: z
@@ -216,7 +216,7 @@ export const invoiceList = protectedProcedure
 
 // Get single invoice by ID
 export const invoiceGetById = protectedProcedure
-  // .use(requirePermission("invoices.read"))
+  .use(requirePermission("invoices.read"))
   .input(z.object({ id: z.string() }))
   .handler(({ input }) => {
     const invoice = mockInvoices.find((inv) => inv.id === input.id);
@@ -228,7 +228,7 @@ export const invoiceGetById = protectedProcedure
 
 // Create new invoice
 export const invoiceCreate = protectedProcedure
-  // .use(requirePermission("invoices.create"))
+  .use(requirePermission("invoices.create"))
   .input(createInvoiceSchema)
   .handler(({ input }) => {
     const invoiceNumber = `INV-2024-${String(mockInvoices.length + 1).padStart(3, "0")}`;
@@ -280,7 +280,7 @@ export const invoiceCreate = protectedProcedure
 
 // Update invoice
 export const invoiceUpdate = protectedProcedure
-  // .use(requirePermission("invoices.update"))
+  .use(requirePermission("invoices.update"))
   .input(updateInvoiceSchema)
   .handler(({ input }) => {
     const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
@@ -330,7 +330,7 @@ export const invoiceUpdate = protectedProcedure
 
 // Delete invoice
 export const invoiceDelete = protectedProcedure
-  // .use(requirePermission("invoices.delete"))
+  .use(requirePermission("invoices.delete"))
   .input(z.object({ id: z.string() }))
   .handler(({ input }) => {
     const invoiceIndex = mockInvoices.findIndex((inv) => inv.id === input.id);
@@ -344,7 +344,7 @@ export const invoiceDelete = protectedProcedure
 
 // Get invoice statistics
 export const invoiceStats = protectedProcedure
-  // .use(requirePermission("invoices.read"))
+  .use(requirePermission("invoices.read"))
   .handler(() => {
     const totalInvoices = mockInvoices.length;
     const paidInvoices = mockInvoices.filter(

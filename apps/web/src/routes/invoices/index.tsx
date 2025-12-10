@@ -106,7 +106,7 @@ function RouteComponent() {
     queryKey: ["invoices", { status: statusFilter, search: searchTerm }],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.invoiceList({ status: statusFilter });
+      return client.invoices.list({ status: statusFilter });
     },
   });
 
@@ -114,7 +114,7 @@ function RouteComponent() {
     queryKey: ["invoiceStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.invoiceStats();
+      return client.invoices.stats();
     },
   });
 
@@ -204,7 +204,7 @@ function RouteComponent() {
   ) => {
     try {
       const { client } = await import("@/utils/orpc");
-      await client.invoiceUpdate({ id: invoiceId, status: newStatus });
+      await client.invoices.update({ id: invoiceId, status: newStatus });
       // Refetch data
       await invoicesQuery.refetch();
       await statsQuery.refetch();
@@ -216,7 +216,7 @@ function RouteComponent() {
   const handleDeleteInvoice = async (invoiceId: string) => {
     try {
       const { client } = await import("@/utils/orpc");
-      await client.invoiceDelete({ id: invoiceId });
+      await client.invoices.delete({ id: invoiceId });
       // Refetch data
       await invoicesQuery.refetch();
       await statsQuery.refetch();

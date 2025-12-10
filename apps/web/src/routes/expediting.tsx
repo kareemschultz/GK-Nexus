@@ -159,7 +159,7 @@ function ExpeditingPage() {
     ],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingRequestsList({
+      return client.expediting.requests.list({
         search: searchTerm || undefined,
         status:
           statusFilter !== "all"
@@ -187,7 +187,7 @@ function ExpeditingPage() {
     queryKey: ["expediteAgencies"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingAgencyContactsList({});
+      return client.expediting.agencyContacts.list({});
     },
   });
 
@@ -196,7 +196,7 @@ function ExpeditingPage() {
     queryKey: ["expediteStats"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingRequestsStats();
+      return client.expediting.requests.stats();
     },
   });
 
@@ -213,8 +213,8 @@ function ExpeditingPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingRequestsCreate(
-        data as Parameters<typeof client.expeditingRequestsCreate>[0]
+      return client.expediting.requests.create(
+        data as Parameters<typeof client.expediting.requests.create>[0]
       );
     },
     onSuccess: () => {
@@ -240,8 +240,8 @@ function ExpeditingPage() {
       notes?: string;
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingAgencyContactsCreate(
-        data as Parameters<typeof client.expeditingAgencyContactsCreate>[0]
+      return client.expediting.agencyContacts.create(
+        data as Parameters<typeof client.expediting.agencyContacts.create>[0]
       );
     },
     onSuccess: () => {
@@ -272,7 +272,7 @@ function ExpeditingPage() {
         | "ON_HOLD";
     }) => {
       const { client } = await import("@/utils/orpc");
-      return client.expeditingRequestsUpdate({
+      return client.expediting.requests.update({
         id: data.id,
         data: { status: data.status },
       });

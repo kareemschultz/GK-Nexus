@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AuditService } from "../business-logic/audit-service";
 import { RbacService } from "../business-logic/rbac-service";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Validation schemas (unused variables - kept for reference)
 // These schemas were used for validation but are currently not being used
@@ -13,7 +13,7 @@ import { protectedProcedure } from "../index";
 
 // Check permission for a user
 export const rbacCheckPermission = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(
     z.object({
       userId: z.string(),
@@ -72,7 +72,7 @@ export const rbacCheckPermission = protectedProcedure
 
 // Get user permissions summary
 export const rbacGetUserPermissions = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(z.object({ userId: z.string() }))
   .handler(async ({ input, context }) => {
     const currentUser = context.user;
@@ -109,7 +109,7 @@ export const rbacGetUserPermissions = protectedProcedure
 
 // List all roles
 export const rbacListRoles = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(z.object({ includeInactive: z.boolean().optional().default(false) }))
   .handler(async ({ input, context }) => {
     const currentUser = context.user;
@@ -142,7 +142,7 @@ export const rbacListRoles = protectedProcedure
 
 // Create a new role
 export const rbacCreateRole = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       name: z.string(),
@@ -189,7 +189,7 @@ export const rbacCreateRole = protectedProcedure
 
 // Assign role to user
 export const rbacAssignRoleToUser = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       userId: z.string(),
@@ -249,7 +249,7 @@ export const rbacAssignRoleToUser = protectedProcedure
 
 // Remove role from user
 export const rbacRemoveRoleFromUser = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       userId: z.string(),
@@ -300,7 +300,7 @@ export const rbacRemoveRoleFromUser = protectedProcedure
 
 // List all permissions
 export const rbacListPermissions = protectedProcedure
-  // .use(requirePermission("users.read"))
+  .use(requirePermission("users.read"))
   .input(z.object({ includeInactive: z.boolean().optional().default(false) }))
   .handler(async ({ input, context }) => {
     const currentUser = context.user;
@@ -336,7 +336,7 @@ export const rbacListPermissions = protectedProcedure
 
 // Create a new permission
 export const rbacCreatePermission = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       name: z.string(),
@@ -422,7 +422,7 @@ export const rbacCreatePermission = protectedProcedure
 
 // Grant permission directly to user
 export const rbacGrantPermissionToUser = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       userId: z.string(),
@@ -482,7 +482,7 @@ export const rbacGrantPermissionToUser = protectedProcedure
 
 // Deny permission to user
 export const rbacDenyPermissionToUser = protectedProcedure
-  // .use(requirePermission("users.manage_permissions"))
+  .use(requirePermission("users.manage_permissions"))
   .input(
     z.object({
       userId: z.string(),

@@ -76,7 +76,7 @@ function ComplianceAlertsPage() {
     queryKey: ["compliance", "alerts"],
     queryFn: async () => {
       const { client } = await import("@/utils/orpc");
-      return client.complianceGetAlerts({
+      return client.compliance.alerts({
         daysAhead: 30,
         limit: 50,
       });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { AuditService } from "../business-logic/audit-service";
 import { RbacService } from "../business-logic/rbac-service";
-import { protectedProcedure } from "../index";
+import { protectedProcedure, requirePermission } from "../index";
 
 // Validation schemas
 export const auditLogSchema = z.object({
@@ -127,7 +127,7 @@ const auditSearchFiltersSchema = z.object({
 
 // Search audit logs
 export const auditSearchLogs = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(auditSearchFiltersSchema)
   .handler(async ({ input, context }) => {
     const currentUser = context.user;
@@ -167,7 +167,7 @@ export const auditSearchLogs = protectedProcedure
 
 // Get audit log by ID
 export const auditGetLogById = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(z.object({ id: z.string() }))
   .handler(async ({ input, context }) => {
     const currentUser = context.user;
@@ -207,7 +207,7 @@ export const auditGetLogById = protectedProcedure
 
 // Export audit logs
 export const auditExportLogs = protectedProcedure
-  // .use(requirePermission("audit.export"))
+  .use(requirePermission("audit.export"))
   .input(
     z.object({
       filters: auditSearchFiltersSchema,
@@ -258,7 +258,7 @@ export const auditExportLogs = protectedProcedure
 
 // Get audit summary
 export const auditGetSummary = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(
     z.object({
       startDate: z.date(),
@@ -315,7 +315,7 @@ export const auditGetSummary = protectedProcedure
 
 // Archive old audit logs
 export const auditArchiveLogs = protectedProcedure
-  // .use(requirePermission("audit.archive"))
+  .use(requirePermission("audit.archive"))
   .input(
     z.object({
       daysToKeep: z.number().min(1).max(3650).optional().default(2555),
@@ -358,7 +358,7 @@ export const auditArchiveLogs = protectedProcedure
 
 // List system events
 export const auditListSystemEvents = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(
     z.object({
       eventType: z.string().optional(),
@@ -406,7 +406,7 @@ export const auditListSystemEvents = protectedProcedure
 
 // Create system event
 export const auditCreateSystemEvent = protectedProcedure
-  // .use(requirePermission("audit.create"))
+  .use(requirePermission("audit.create"))
   .input(
     z.object({
       eventType: z.string(),
@@ -444,7 +444,7 @@ export const auditCreateSystemEvent = protectedProcedure
 
 // List login attempts
 export const auditListLoginAttempts = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(
     z.object({
       email: z.string().optional(),
@@ -490,7 +490,7 @@ export const auditListLoginAttempts = protectedProcedure
 
 // Get suspicious activity
 export const auditGetSuspiciousActivity = protectedProcedure
-  // .use(requirePermission("audit.read"))
+  .use(requirePermission("audit.read"))
   .input(
     z.object({
       timeRange: z.enum(["1h", "24h", "7d", "30d"]).optional().default("24h"),
@@ -543,7 +543,7 @@ export const auditGetSuspiciousActivity = protectedProcedure
 
 // Generate compliance report
 export const auditGenerateComplianceReport = protectedProcedure
-  // .use(requirePermission("reports.create"))
+  .use(requirePermission("reports.create"))
   .input(
     z.object({
       reportType: z.enum(["soc2", "gdpr", "hipaa", "custom"]),
@@ -605,7 +605,7 @@ export const auditGenerateComplianceReport = protectedProcedure
 
 // Get retention policy
 export const auditGetRetentionPolicy = protectedProcedure
-  // .use(requirePermission("settings.read"))
+  .use(requirePermission("settings.read"))
   .handler(async ({ context }) => {
     const currentUser = context.user;
 
