@@ -42,12 +42,22 @@ lerna-debug.log*
 # Testing
 coverage
 .nyc_output
+test-results/
+test-artifacts/
+playwright-report/
+audit-screenshots/
+apps/web/test-results/
 
 # Misc
 *.tgz
 .cache
 tmp
 temp
+session_log.txt
+*.Zone.Identifier
+*:Zone.Identifier
+.gemini_backup/
+.env.test
 
 # START Ruler Generated Files
 /.codex/config.json

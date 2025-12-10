@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🔧 **v1.3.0 - API Restructure & Documentation** (2025-12-10)
+
+#### **Major Changes**
+- 🏗️ **Nested oRPC Router Pattern** - Complete API restructure to use nested routers
+  - Pattern: `client.domain.resource.action()` (e.g., `client.clients.list()`)
+  - All frontend components updated to use new API patterns
+  - Fixed 115+ TypeScript errors from API pattern migration
+
+#### **Frontend Updates**
+- 🔧 **API Call Standardization** - All components use consistent patterns:
+  - `useQuery` with dynamic imports for lazy loading
+  - `useMutation` with `queryClient.invalidateQueries()` for cache management
+  - Example: `const { client } = await import("@/utils/orpc")`
+
+#### **New Routes**
+- 🆕 `/forgot-password` - Password reset flow (placeholder - requires email provider)
+- 🆕 `/register` - User registration page
+- 🆕 `/reset-password` - Password reset confirmation
+- 🆕 `/payroll/employees/new` - Employee creation form
+
+#### **Compatibility Fixes**
+- 🔧 **Zod v3 Override** - Added Zod v3 override in docs app for Astro/Starlight compatibility
+- 🔧 **Service Catalog Special Case** - Documented that serviceCatalog uses flat procedure names internally
+
+#### **Documentation**
+- 📝 **ARCHITECTURE.md** - Updated with implementation notes, API patterns, and version history
+- 📝 **CONTRIBUTING.md** - Created comprehensive contribution guidelines
+- 📝 **README.md** - Added API architecture section and production deployment instructions
+- 📚 **Archived obsolete files** - Moved audit/session docs to `docs/archive/`
+
+#### **Cleanup**
+- 🧹 **Removed obsolete files** - Cleaned up `.bak`, Zone.Identifier, and test artifacts
+- 🧹 **Updated .gitignore** - Added patterns for test artifacts and temporary files
+
+#### **Known Limitations**
+- Password reset requires Better-Auth email provider configuration
+- Docs app requires Zod v3 due to Astro/Starlight incompatibility with Zod v4
+
+---
+
 ### 🔧 **v1.2.4 - Route Fixes & Wizard API Integration** (2025-12-08)
 
 #### **Critical Bug Fixes**

@@ -50,10 +50,20 @@ GK-Nexus Suite is a complete multi-tenant business management solution that prov
 
 ### **Better-T-Stack Foundation**
 - **Frontend**: React 19 + TanStack Router + TailwindCSS + shadcn/ui
-- **Backend**: Hono.js + oRPC + Better-auth
+- **Backend**: Hono.js + oRPC (nested router pattern) + Better-auth
 - **Database**: PostgreSQL + Drizzle ORM + Row-Level Security
 - **Build System**: Vite + Turbo monorepo + Bun runtime
 - **Code Quality**: Ultracite (Biome) + TypeScript strict mode
+
+### **API Architecture**
+The API uses **nested oRPC routers** for clean, hierarchical organization:
+```typescript
+// Pattern: client.domain.resource.action()
+client.clients.list({ page: 1, limit: 20 })
+client.payroll.employees.create({ firstName, lastName, email })
+client.tax.filings.submitVat({ ... })
+client.training.courses.list({ ... })
+```
 
 ### **Advanced Features**
 - **Multi-Tenant Database** - Complete data isolation with PostgreSQL RLS
@@ -192,6 +202,18 @@ SUPER_ADMIN_PASSWORD=YourSecurePassword123!
 - **Documentation:** http://localhost:4321
 
 ### **Production Deployment**
+
+#### **Docker Production Build**
+```bash
+# Build and deploy with Docker Compose
+docker compose -f docker-compose.production.yml up -d
+
+# Or build individual images
+docker build -t gk-nexus-server -f apps/server/Dockerfile .
+docker build -t gk-nexus-web -f apps/web/Dockerfile .
+```
+
+#### **Manual Production Build**
 ```bash
 # Build applications
 bun run build
@@ -201,6 +223,16 @@ bun run db:migrate
 
 # Seed super admin (customize env vars first)
 bun run db:seed
+```
+
+#### **Production Environment Variables**
+```bash
+# Required for production
+POSTGRES_PASSWORD=<strong-password>
+REDIS_PASSWORD=<strong-password>
+JWT_SECRET=<32-char-secret>
+ENCRYPTION_KEY=<32-char-key>
+FRONTEND_URL=https://your-domain.com
 ```
 
 
@@ -342,4 +374,10 @@ The GK-Nexus Suite is enterprise-ready with:
 
 ---
 
-**Built with ❤️ for the Guyanese business community using modern TypeScript stack and enterprise-grade architecture.**
+## Author
+
+**Kareem Schultz** - [Karetech Solutions](https://karetech.gy)
+
+---
+
+**Built with care for the Guyanese business community using modern TypeScript stack and enterprise-grade architecture.**
