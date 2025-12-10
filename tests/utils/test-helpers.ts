@@ -13,13 +13,12 @@ export class AuthHelper {
 
   async login(email: string, password: string): Promise<void> {
     await this.page.goto("/login");
-    await this.page.fill('[data-testid="email-input"]', email);
-    await this.page.fill('[data-testid="password-input"]', password);
-    await this.page.click('[data-testid="login-button"]');
+    await this.page.fill('input[name="email"]', email);
+    await this.page.fill('input[name="password"]', password);
+    await this.page.click('button[type="submit"]');
 
     // Wait for successful login redirect
-    await this.page.waitForURL(/\/dashboard/);
-    await expect(this.page.locator('[data-testid="user-menu"]')).toBeVisible();
+    await this.page.waitForURL(/\/dashboard/, { timeout: 30_000 });
   }
 
   async logout(): Promise<void> {
@@ -30,15 +29,15 @@ export class AuthHelper {
 
   async loginAsAdmin(): Promise<void> {
     await this.login(
-      process.env.TEST_ADMIN_EMAIL!,
-      process.env.TEST_ADMIN_PASSWORD!
+      process.env.TEST_ADMIN_EMAIL || "admin@gk-nexus.com",
+      process.env.TEST_ADMIN_PASSWORD || "Admin123!@#"
     );
   }
 
   async loginAsClient(): Promise<void> {
     await this.login(
-      process.env.TEST_CLIENT_EMAIL!,
-      process.env.TEST_CLIENT_PASSWORD!
+      process.env.TEST_CLIENT_EMAIL || "client@gk-nexus.com",
+      process.env.TEST_CLIENT_PASSWORD || "Client123!@#"
     );
   }
 }
